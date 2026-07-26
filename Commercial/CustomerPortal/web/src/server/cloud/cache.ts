@@ -1,0 +1,131 @@
+/**
+ * Enterprise cache — Upstash Redis REST when configured, memory fallback otherwise.
+ * Used for: session hints · rate limiting · config · performance.
+ * Commercial layer only — Trading Engine never depends on this cache.
+ */
+
+type CacheEntry = { value: string; expiresAt: number };
+
+const memory = new Map<string, CacheEntry>();
+
+function now(): number {
+  return Date.now();
+}
+
+function memoryGet(key: string): string | null {
+  const e = memory.get(key);
+  if (!e) return null;
+  if (e.expiresAt < now()) {
+    memory.delete(key);
+    return null;
+  }
+  return e.value;
+}
+
+function memorySet(key: string, value: string, ttlSec: number): void {
+  memory.set(key, { value, expiresAt: now() + ttlSec * 1000 });
+  // Cap memory map
+  if (memory.size > 5000) {
+    const first = memory.keys().next().value;
+    if (first) memory.delete(first);
+  }
+}
+
+function memoryDel(key: string): void {
+  memory.delete(key);
+}
+
+function upstashConfigured(): boolean {
+  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+}
+
+export function getCacheBackend(): "upstash" | "memory" {
+  return upstashConfigured() ? "upstash" : "memory";
+}
+
+async function upstashCommand(args: (string | number)[]): Promise<unknown> {
+  const url = process.env.UPSTASH_REDIS_REST_URL!;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) throw new Error(`UPSTASH_${res.status}`);
+  const json = (await res.json()) as { result?: unknown };
+  return json.result;
+}
+
+export async function cacheGet(key: string): Promise<string | null> {
+  if (!upstashConfigured()) return memoryGet(key);
+  try {
+    const result = await upstashCommand(["GET", key]);
+    return result == null ? null : String(result);
+  } catch {
+    return memoryGet(key);
+  }
+}
+
+export async function cacheSet(key: string, value: string, ttlSec = 300): Promise<void> {
+  if (!upstashConfigured()) {
+    memorySet(key, value, ttlSec);
+    return;
+  }
+  try {
+    await upstashCommand(["SET", key, value, "EX", ttlSec]);
+  } catch {
+    memorySet(key, value, ttlSec);
+  }
+}
+
+export async function cacheDel(key: string): Promise<void> {
+  if (!upstashConfigured()) {
+    memoryDel(key);
+    return;
+  }
+  try {
+    await upstashCommand(["DEL", key]);
+  } catch {
+    memoryDel(key);
+  }
+}
+
+export async function cacheIncr(key: string, ttlSec = 60): Promise<number> {
+  if (!upstashConfigured()) {
+    const cur = Number(memoryGet(key) || "0") + 1;
+    memorySet(key, String(cur), ttlSec);
+    return cur;
+  }
+  try {
+    const n = Number(await upstashCommand(["INCR", key]));
+    if (n === 1) await upstashCommand(["EXPIRE", key, ttlSec]);
+    return n;
+  } catch {
+    const cur = Number(memoryGet(key) || "0") + 1;
+    memorySet(key, String(cur), ttlSec);
+    return cur;
+  }
+}
+
+/** Invalidate by exact key or prefix (memory scans; Upstash deletes exact key only unless KEYS allowed). */
+export async function cacheInvalidate(keyOrPrefix: string): Promise<void> {
+  if (keyOrPrefix.endsWith("*")) {
+    const prefix = keyOrPrefix.slice(0, -1);
+    for (const k of [...memory.keys()]) {
+      if (k.startsWith(prefix)) memory.delete(k);
+    }
+    return;
+  }
+  await cacheDel(keyOrPrefix);
+}
+
+export const CacheKeys = {
+  session: (email: string) => `tgm:session:${email}`,
+  rateLimit: (bucket: string) => `tgm:rl:${bucket}`,
+  config: (name: string) => `tgm:cfg:${name}`,
+  perf: (name: string) => `tgm:perf:${name}`,
+  bruteForce: (email: string) => `tgm:bf:${email}`,
+} as const;

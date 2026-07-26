@@ -1,0 +1,37 @@
+﻿{
+    "product":  "THE GOLD MIND PROFESSIONAL",
+    "version":  "1.0.0",
+    "channel":  "stable",
+    "releasedAt":  "2026-07-26T13:33:55.7468812Z",
+    "core":  {
+                 "mq5":  "Experts/TheGoldMindAI_Professional.mq5",
+                 "ex5Sha256":  "7883b4155aabb088e07f9f9563b413b7b63de7188d610021fb4fdca603e8c619",
+                 "frozen":  true,
+                 "mq5Sha256":  "75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce"
+             },
+    "artifacts":  {
+                      "setupExe":  {
+                                       "sha256":  "52116ac997e6be90b74cd2d6b94ed0213db9e6d0c926ee6cf851758a9f049cc7",
+                                       "file":  "installer/Setup.exe"
+                                   },
+                      "checksums":  "SHA256SUMS.txt",
+                      "sbom":  "SBOM.json",
+                      "professionalZip":  {
+                                              "sha256":  "919639976b79d40d5f5eb15993d94b36c4b9ee7ffb1e916a377f833e2006dbd0",
+                                              "file":  "TGM_PROFESSIONAL_1.0.0_stable.zip"
+                                          },
+                      "theGoldMindSetupExe":  {
+                                                  "sha256":  "52116ac997e6be90b74cd2d6b94ed0213db9e6d0c926ee6cf851758a9f049cc7",
+                                                  "file":  "installer/TheGoldMindSetup.exe"
+                                              }
+                  },
+    "installer":  {
+                      "mt5DeployPath":  "MQL5/Experts/The Gold Mind/TheGoldMindAI_Professional.ex5",
+                      "uninstallRegistry":  "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\TheGoldMindProfessional",
+                      "licenseActivation":  true,
+                      "desktopShortcut":  true,
+                      "googleLoginOptional":  true,
+                      "startMenu":  true
+                  },
+    "signMode":  "unsigned"
+}

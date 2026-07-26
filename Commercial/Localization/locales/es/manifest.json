@@ -1,0 +1,27 @@
+{
+  "code": "es",
+  "name": "Spanish",
+  "nativeName": "Español",
+  "version": "1.0.0",
+  "direction": "ltr",
+  "fallback": "en",
+  "currencyDefault": "EUR",
+  "dateStyle": "medium",
+  "namespaces": [
+    "common",
+    "website",
+    "portal",
+    "admin",
+    "partner",
+    "installer",
+    "updater",
+    "emails",
+    "knowledge",
+    "support",
+    "errors",
+    "notifications",
+    "docs",
+    "legal",
+    "regional"
+  ]
+}

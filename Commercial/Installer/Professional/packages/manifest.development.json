@@ -1,0 +1,23 @@
+{
+  "product": "THE GOLD MIND PROFESSIONAL",
+  "edition": "Website",
+  "channel": "development",
+  "version": "2.1.0-dev",
+  "buildNumber": "21070",
+  "releasedAt": "2026-07-26T00:00:00.000Z",
+  "packageFile": "TGM_PROFESSIONAL_2.1.0-dev_development.zip",
+  "signature": {
+    "type": "authenticode",
+    "required": false,
+    "subject": "dev only",
+    "status": "none"
+  },
+  "compatibility": {
+    "os": ["Windows 10", "Windows 11"],
+    "mt5": "build 3800+",
+    "coreTag": "2.0.0",
+    "coreFrozen": true
+  },
+  "releaseNotes": "Development channel — internal testing only.",
+  "httpsOnly": true
+}

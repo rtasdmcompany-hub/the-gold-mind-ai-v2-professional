@@ -1,0 +1,75 @@
+{
+  "info": {
+    "name": "THE GOLD MIND API v1",
+    "description": "Commercial APIs only — Core Trading Engine isolated",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "apiKey",
+      "value": "tgm_live_xxx"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{apiKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/health"
+      }
+    },
+    {
+      "name": "Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{apiKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/profile"
+      }
+    },
+    {
+      "name": "Licenses",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{apiKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/licenses"
+      }
+    },
+    {
+      "name": "OAuth Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"grant_type\":\"client_credentials\",\"api_key\":\"{{apiKey}}\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/oauth/token"
+      }
+    }
+  ]
+}

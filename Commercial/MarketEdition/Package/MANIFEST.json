@@ -1,0 +1,26 @@
+{
+  "sku": "GM_EDITION_MARKET",
+  "productName": "THE GOLD MIND MARKET",
+  "version": "2.0.0",
+  "channel": "market-rc",
+  "coreFile": "Experts/TheGoldMindAI_Professional.mq5",
+  "coreSha256": "75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce",
+  "copyright": "Copyright 2026, RTAS Group of Companies",
+  "division": "RTAS Digital Marketing Company",
+  "delivery": "MQL5 Market one-click (no Website installer)",
+  "excludedFromPackage": [
+    "CustomerPortal",
+    "PaymentPort",
+    "Website license server",
+    "Installer/Professional",
+    "Automatic Website updater"
+  ],
+  "includedCommercialShell": [
+    "MarketEdition/Listing/*",
+    "MarketEdition/Docs/*",
+    "Assets/Market/*",
+    "Licensing/Market policy"
+  ],
+  "buildNote": "Compile Market profile from the SAME certified Core tag. Do not modify trading behaviour.",
+  "createdAt": "2026-07-26"
+}

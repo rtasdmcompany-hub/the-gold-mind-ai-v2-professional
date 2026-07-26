@@ -1,0 +1,5 @@
+Subject: Scheduled maintenance — Customer Portal
+
+We will perform maintenance on {{window}}. Portal features may be briefly unavailable. Core EA on your MT5 terminal continues independently.
+
+— RTAS

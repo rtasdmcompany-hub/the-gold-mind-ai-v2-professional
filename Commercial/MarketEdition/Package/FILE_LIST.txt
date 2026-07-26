@@ -1,0 +1,25 @@
+# FILE_LIST.txt
+
+Market commercial package inventory (Core referenced, not duplicated as editable source):
+
+1. CORE (certified, frozen)
+   - Experts/TheGoldMindAI_Professional.mq5
+   - Include/** (as required by Core compile — unchanged)
+
+2. MARKET LISTING
+   - MarketEdition/Listing/*.md
+   - MarketEdition/Package/MANIFEST.json
+   - MarketEdition/Package/STORE_METADATA.json
+   - MarketEdition/Package/CORE_TAG.txt
+
+3. ASSETS
+   - Assets/Market/Icons/*
+   - Assets/Market/Logos/*
+   - Assets/Market/Banners/*
+   - Assets/Market/Covers/*
+   - Assets/Market/Screenshots/* (live captures before upload)
+
+EXCLUDED (Website Professional only):
+   - Commercial/CustomerPortal/**
+   - Commercial/Installer/Professional/**
+   - Payment / Website license activation flows

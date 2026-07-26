@@ -1,0 +1,8 @@
+Subject: Service update — {{summary}}
+
+We are investigating an issue affecting {{scope}}. Trading Core on MT5 is not modified by this commercial incident.
+
+Status: {{status}}
+Next update: {{eta}}
+
+— RTAS

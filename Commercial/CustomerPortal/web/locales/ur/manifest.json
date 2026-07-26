@@ -1,0 +1,27 @@
+{
+  "code": "ur",
+  "name": "Urdu",
+  "nativeName": "اردو",
+  "version": "1.0.0",
+  "direction": "rtl",
+  "fallback": "en",
+  "currencyDefault": "PKR",
+  "dateStyle": "medium",
+  "namespaces": [
+    "common",
+    "website",
+    "portal",
+    "admin",
+    "partner",
+    "installer",
+    "updater",
+    "emails",
+    "knowledge",
+    "support",
+    "errors",
+    "notifications",
+    "docs",
+    "legal",
+    "regional"
+  ]
+}

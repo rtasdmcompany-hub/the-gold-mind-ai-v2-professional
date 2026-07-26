@@ -1,0 +1,6 @@
+﻿Welcome to THE GOLD MIND PROFESSIONAL Setup.
+
+This wizard installs the commercial shell and can deploy
+TheGoldMindAI_Professional.ex5 into your MetaTrader 5 terminal.
+
+The certified Core Trading Engine is never modified by this installer.

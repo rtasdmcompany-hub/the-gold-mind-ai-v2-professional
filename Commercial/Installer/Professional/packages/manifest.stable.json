@@ -1,0 +1,28 @@
+﻿{
+    "edition":  "Website",
+    "channel":  "stable",
+    "releaseNotes":  "Commercial packaging release 1.0.0 - Core frozen.",
+    "releasedAt":  "2026-07-26T13:33:55.9538061Z",
+    "packageFile":  "TGM_PROFESSIONAL_1.0.0_stable.zip",
+    "packageSizeBytes":  4200499,
+    "buildNumber":  "26DDD",
+    "signature":  {
+                      "subject":  "unsigned development build",
+                      "status":  "unsigned_dev",
+                      "type":  "authenticode",
+                      "required":  false
+                  },
+    "version":  "1.0.0",
+    "product":  "THE GOLD MIND PROFESSIONAL",
+    "compatibility":  {
+                          "coreTag":  "1.0.0",
+                          "coreFrozen":  true,
+                          "mt5":  "build 3800+",
+                          "os":  [
+                                     "Windows 10",
+                                     "Windows 11"
+                                 ]
+                      },
+    "httpsOnly":  true,
+    "sha256":  "919639976b79d40d5f5eb15993d94b36c4b9ee7ffb1e916a377f833e2006dbd0"
+}

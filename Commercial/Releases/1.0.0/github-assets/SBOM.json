@@ -1,0 +1,40 @@
+﻿{
+    "bomFormat":  "CycloneDX",
+    "specVersion":  "1.5",
+    "version":  1,
+    "metadata":  {
+                     "timestamp":  "2026-07-26T13:33:55.3592127Z",
+                     "component":  {
+                                       "publisher":  "RTAS Group of Companies",
+                                       "name":  "THE GOLD MIND PROFESSIONAL",
+                                       "version":  "1.0.0",
+                                       "type":  "application"
+                                   }
+                 },
+    "components":  [
+                       {
+                           "hashes":  [
+                                          {
+                                              "alg":  "SHA-256",
+                                              "content":  "7883b4155aabb088e07f9f9563b413b7b63de7188d610021fb4fdca603e8c619"
+                                          }
+                                      ],
+                           "description":  "Certified Core EA binary (logic frozen; packaging copy only)",
+                           "name":  "TheGoldMindAI_Professional.ex5",
+                           "version":  "1.0.0",
+                           "type":  "file"
+                       },
+                       {
+                           "description":  "Windows commercial installer",
+                           "name":  "Setup.exe",
+                           "version":  "1.0.0",
+                           "type":  "application"
+                       },
+                       {
+                           "description":  "License activation backend (commercial)",
+                           "name":  "CustomerPortal",
+                           "version":  "1.0.10-phase12.s1",
+                           "type":  "library"
+                       }
+                   ]
+}

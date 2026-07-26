@@ -1,0 +1,16 @@
+{
+  "name": "tgm-mobile-companion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "THE GOLD MIND Mobile Companion — commercial management only (no trading / no Core)",
+  "main": "src/App.tsx",
+  "scripts": {
+    "start": "echo Expo start — wire to Expo CLI in CI",
+    "typecheck": "echo Typecheck placeholder"
+  },
+  "dependencies": {
+    "expo": "~52.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.0"
+  }
+}

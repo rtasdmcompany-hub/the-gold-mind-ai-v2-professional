@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <AssemblyName>TGM-Professional-Launcher</AssemblyName>
+    <RootNamespace>TgmProfessionalLauncher</RootNamespace>
+    <Version>1.0.0</Version>
+    <Company>RTAS Group of Companies</Company>
+    <Product>THE GOLD MIND PROFESSIONAL</Product>
+    <Copyright>Copyright (C) 2026 RTAS Group of Companies</Copyright>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,53 @@
+{
+  "productName": "THE GOLD MIND MARKET",
+  "shortDescription": "Systematic MetaTrader 5 Expert Advisor with certified Core engine. Market-compliant activation. Trading involves risk of loss.",
+  "longDescriptionPath": "MarketEdition/Listing/PRODUCT_DESCRIPTION.md",
+  "version": "2.0.0",
+  "releaseNotesPath": "MarketEdition/Listing/CHANGELOG.md",
+  "keywords": [
+    "expert advisor",
+    "mt5",
+    "systematic",
+    "risk management",
+    "goldmind",
+    "rtas"
+  ],
+  "category": "Expert Advisors · Others",
+  "tags": [
+    "EA",
+    "MT5",
+    "Systematic",
+    "Risk-aware",
+    "Market"
+  ],
+  "languageSupport": [
+    "English"
+  ],
+  "minimumMt5Build": 3800,
+  "compatibility": [
+    {
+      "item": "MetaTrader 5 (hedging & netting per broker)",
+      "status": "supported"
+    },
+    {
+      "item": "Windows MT5 terminal",
+      "status": "supported"
+    },
+    {
+      "item": "Strategy Tester",
+      "status": "supported"
+    },
+    {
+      "item": "Website Customer Portal",
+      "status": "excluded_from_market_package"
+    },
+    {
+      "item": "External PSP checkout",
+      "status": "excluded_from_market_package"
+    },
+    {
+      "item": "Core SHA-256 75002e46e3c20029…",
+      "status": "required_match"
+    }
+  ]
+}

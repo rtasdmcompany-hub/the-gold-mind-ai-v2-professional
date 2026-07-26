@@ -1,0 +1,53 @@
+{
+  "releaseCandidate": "RC-2",
+  "product": "THE GOLD MIND",
+  "version": "2.0.0-rc.2",
+  "buildNumber": "21082",
+  "releasedAt": "2026-07-26T12:00:00.000Z",
+  "phase": 9,
+  "sprint": 9,
+  "core": {
+    "file": "Experts/TheGoldMindAI_Professional.mq5",
+    "sha256": "75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce",
+    "bytes": 9235,
+    "status": "CERTIFIED_UNCHANGED",
+    "certification": "Commercial/Documentation/RC2_CORE_CERTIFICATION.txt"
+  },
+  "editions": {
+    "websiteProfessional": {
+      "code": "GM_EDITION_PROFESSIONAL",
+      "channel": "Website",
+      "portal": "Commercial/CustomerPortal/web",
+      "installer": "Commercial/Installer/Professional",
+      "billing": "PaymentPort (Paddle/PayPal/Sandbox)",
+      "status": "RC-2"
+    },
+    "mql5Market": {
+      "code": "GM_EDITION_MARKET",
+      "channel": "MQL5 Market",
+      "shell": "Commercial/MarketEdition",
+      "billing": "MQL5 Market only — no Website payment coupling",
+      "status": "RC-2_SHELL"
+    }
+  },
+  "sharedCore": true,
+  "artifacts": {
+    "portalPackage": "tgm-customer-portal@0.5.0",
+    "installerScripts": [
+      "Install-TheGoldMindProfessional.ps1",
+      "Update-TheGoldMindProfessional.ps1",
+      "Uninstall-TheGoldMindProfessional.ps1"
+    ],
+    "validationHarness": "npm run validate:rc2",
+    "documentationRoot": "Commercial/Documentation"
+  },
+  "quality": {
+    "tsc": "PASS",
+    "rc2Harness": "16/16 PASS",
+    "criticalDefectsOpen": 0
+  },
+  "executiveRecommendation": "READY_FOR_RC-2",
+  "phase9FinalDecision": "APPROVED_WITH_CONDITIONS",
+  "phase9FinalDecisionDoc": "Commercial/Documentation/FINAL_EXECUTIVE_DECISION.md",
+  "sprint10CompletedAt": "2026-07-26"
+}

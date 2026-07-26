@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "THE GOLD MIND Companion",
+    "slug": "tgm-mobile-companion",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "ios": {
+      "bundleIdentifier": "com.rtas.goldmind.companion",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.rtas.goldmind.companion"
+    },
+    "extra": {
+      "tradingProhibited": true,
+      "apiBasePath": "/api/mobile"
+    }
+  }
+}

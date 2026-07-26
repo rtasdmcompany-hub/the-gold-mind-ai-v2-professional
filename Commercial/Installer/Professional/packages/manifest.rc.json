@@ -1,0 +1,23 @@
+{
+  "product": "THE GOLD MIND PROFESSIONAL",
+  "edition": "Website",
+  "channel": "rc",
+  "version": "2.0.1-rc.1",
+  "buildNumber": "21061",
+  "releasedAt": "2026-07-25T00:00:00.000Z",
+  "packageFile": "TGM_PROFESSIONAL_2.0.1-rc.1_rc.zip",
+  "signature": {
+    "type": "authenticode",
+    "required": false,
+    "subject": "unsigned RC",
+    "status": "none"
+  },
+  "compatibility": {
+    "os": ["Windows 10", "Windows 11"],
+    "mt5": "build 3800+",
+    "coreTag": "2.0.0",
+    "coreFrozen": true
+  },
+  "releaseNotes": "Release Candidate — installer hardening. Not for production accounts.",
+  "httpsOnly": true
+}

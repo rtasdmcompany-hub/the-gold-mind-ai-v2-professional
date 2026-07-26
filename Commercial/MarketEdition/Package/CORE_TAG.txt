@@ -1,0 +1,8 @@
+# CORE_TAG.txt
+
+Edition: THE GOLD MIND MARKET (GM_EDITION_MARKET)
+Shared Core: Experts/TheGoldMindAI_Professional.mq5
+SHA-256: 75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce
+Cert: Commercial/Documentation/RC2_CORE_CERTIFICATION.txt
+
+Rule: Market packaging must never alter this Core file.
