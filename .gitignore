@@ -67,3 +67,6 @@ Experts/*.log
 # Cursor / agent
 .cursor/
 agent-transcripts/
+
+# Deferred until gh token has workflow scope
+.github/workflows/commercial-release.yml
