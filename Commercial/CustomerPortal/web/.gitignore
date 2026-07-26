@@ -42,3 +42,6 @@ next-env.d.ts
 
 # licensing encrypted store (commercial)
 .data/
+
+.vercel
+.env*

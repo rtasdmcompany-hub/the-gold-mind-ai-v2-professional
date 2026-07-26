@@ -7,7 +7,7 @@ import { issueSensitiveConfirmToken, consumeSensitiveConfirmToken, logAdminSecur
 import { writeAudit } from "@/server/cloud/audit";
 
 export async function actionCreateAdminSupportTicket(formData: FormData): Promise<void> {
-  const s = await requirePermission("admin.support.write");
+  await requirePermission("admin.support.write");
   ensureDemoTickets();
   const email = String(formData.get("customerEmail") || "").trim().toLowerCase();
   const subject = String(formData.get("subject") || "").trim();

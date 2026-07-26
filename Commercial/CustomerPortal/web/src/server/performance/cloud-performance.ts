@@ -108,7 +108,6 @@ export async function validateCloudPerformance() {
     recommendation: "Keep gateway middleware thin; rate-limit by IP+user",
   });
 
-  const configuredOrOk = checks.filter((c) => c.status === "ok" || c.status === "configured" || c.status === "fallback").length;
   // fallback is acceptable in local; score weighted
   const score = Math.round(
     (checks.reduce((s, c) => {

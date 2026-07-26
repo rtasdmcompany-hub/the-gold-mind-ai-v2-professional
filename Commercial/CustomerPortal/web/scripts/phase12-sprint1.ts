@@ -22,7 +22,7 @@ async function main() {
         phase12Progress: d.scores.phase12Progress,
         coreMatches: d.coreMatches,
         v2EngineeringAuthorized: d.v2EngineeringAuthorized,
-        conditions: d.conditions.map((c) => `${c.id}:${c.severity}`),
+        conditions: d.conditions.map((c: { id: string; severity: string }) => `${c.id}:${c.severity}`),
         monthlyReports: suite.reportFiles.length,
         v2Backlog: suite.v2.backlogCount,
       },

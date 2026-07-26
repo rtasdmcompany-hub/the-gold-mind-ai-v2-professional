@@ -78,7 +78,10 @@ export function revokeApiKey(keyId: string, ownerEmail: string): boolean {
 export function listApiKeys(ownerEmail: string): Omit<ApiKeyRecord, "keyHash">[] {
   return readApiStore()
     .keys.filter((k) => k.ownerEmail === ownerEmail.toLowerCase())
-    .map(({ keyHash: _h, ...rest }) => rest);
+    .map(({ keyHash, ...rest }) => {
+      void keyHash;
+      return rest;
+    });
 }
 
 export function resolveApiKey(plaintext: string): ApiKeyRecord | null {

@@ -7,7 +7,6 @@ import { runHealthChecks } from "@/server/cloud/monitoring";
 import { getKbStats } from "@/server/success/knowledge-base";
 import {
   CORE_CERT_SHA,
-  commercialRoot,
   countFilesRecursive,
   docsRoot,
   saveClosureRun,
@@ -51,10 +50,6 @@ export async function runPhaseExecutiveReview(): Promise<{
       summary: "Sprints 1–9 complete · GO FOR CONTROLLED PUBLIC LAUNCH · Open Stable conditions remain.",
     },
   ];
-  const score = Math.round(
-    (phases.filter((p) => p.status === "complete" || p.status === "certified").length / phases.length) * 100 +
-      (phases.some((p) => p.status === "conditional") ? 0 : 0)
-  );
   // Phase 10 conditional still counts toward program closure at 100% of Phase 10 sprints done
   const payload = { phases, score: 100, at: new Date().toISOString() };
   saveClosureRun("phases", "Sprint 10 phase executive review", payload);

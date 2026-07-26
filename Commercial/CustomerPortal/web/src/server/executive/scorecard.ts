@@ -2,7 +2,6 @@
  * Task 6 — Executive scorecard (0–100 per area).
  */
 import { createHash } from "crypto";
-import fs from "fs";
 import path from "path";
 import { getKbStats } from "@/server/success/knowledge-base";
 import { runHealthChecks } from "@/server/cloud/monitoring";

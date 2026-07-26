@@ -260,7 +260,7 @@ export async function actionUpdateIssue(formData: FormData): Promise<void> {
 }
 
 export async function actionRecordMetric(formData: FormData): Promise<void> {
-  const s = await requirePermission("admin.launch.write");
+  await requirePermission("admin.launch.write");
   const type = String(formData.get("type") || "") as MetricEventType;
   const email = String(formData.get("email") || "").trim() || undefined;
   const sessionMinutes = Number(formData.get("sessionMinutes") || 0) || undefined;

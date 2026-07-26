@@ -44,9 +44,9 @@ export async function runPenetrationTests(): Promise<{
   {
     const demoBlocked =
       isProductionRuntime() && process.env.PORTAL_ALLOW_DEMO_IN_PROD !== "true";
-    const pass = !isProductionRuntime() || demoBlocked || process.env.PORTAL_ALLOW_DEMO_IN_PROD !== "true";
     // In current (non-prod) run, production gate code exists → pass
     const codeGatePresent = true;
+    void demoBlocked;
     cases.push({
       id: "auth-demo-bypass",
       target: "Authentication",

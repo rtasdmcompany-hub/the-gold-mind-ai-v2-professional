@@ -62,7 +62,7 @@ export async function runFullPhase11Sprint5Suite() {
   });
   approveTranslation(review.id, "localization-lead");
 
-  const missingEn = missingTranslationReport("en");
+  void missingTranslationReport("en");
   const sampleRtl = {
     ar: { dir: textDirection("ar"), welcome: t("portal.dashboard.welcome", "ar") },
     ur: { dir: textDirection("ur"), welcome: t("portal.dashboard.welcome", "ur") },
