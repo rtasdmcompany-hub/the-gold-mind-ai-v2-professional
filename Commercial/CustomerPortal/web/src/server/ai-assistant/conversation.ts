@@ -215,7 +215,8 @@ export function getConversation(id: string): Conversation | null {
 
 export function listConversations(filter?: { email?: string; surface?: AiSurface }) {
   let rows = readAiStore().conversations;
-  if (filter?.email) rows = rows.filter((c) => c.customerEmail === filter.email.toLowerCase());
+  const email = filter?.email;
+  if (email) rows = rows.filter((c) => c.customerEmail === email.toLowerCase());
   if (filter?.surface) rows = rows.filter((c) => c.surface === filter.surface);
   return rows.slice(0, 100);
 }

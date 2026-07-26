@@ -1,5 +1,6 @@
 import { auth, signIn } from "@/auth";
 import { redirect } from "next/navigation";
+import { BrandLogo, RtasGroupBadge } from "@/components/BrandLogo";
 
 export default async function LoginPage({
   searchParams,
@@ -16,9 +17,19 @@ export default async function LoginPage({
   return (
     <div className="login-page">
       <div className="login-card">
-        <p className="brand-mark">RTAS GROUP OF COMPANIES</p>
-        <h1>THE GOLD MIND</h1>
-        <p>Sign in to your Professional Customer Portal. This service is separate from the Trading Engine.</p>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+          <BrandLogo variant="login" priority />
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+          <RtasGroupBadge height={48} />
+        </div>
+        <p className="brand-mark" style={{ textAlign: "center" }}>
+          RTAS GROUP OF COMPANIES
+        </p>
+        <h1 style={{ textAlign: "center" }}>THE GOLD MIND</h1>
+        <p style={{ textAlign: "center" }}>
+          Sign in to your Professional Customer Portal. This service is separate from the Trading Engine.
+        </p>
 
         <div className="stack">
           {googleEnabled && (

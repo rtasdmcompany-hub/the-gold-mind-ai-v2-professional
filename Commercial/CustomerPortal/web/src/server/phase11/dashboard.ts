@@ -38,7 +38,7 @@ export async function runFullPhase11Sprint1Suite() {
     kpiPresent: true,
     commercialScore: commercial.score,
     healthScore: health.score,
-    csSatisfaction: success.customerSatisfaction,
+    csSatisfaction: success.customerSatisfaction ?? 0,
     csAtRisk: success.atRisk,
     csTracked: success.totalTracked,
     reportsGenerated: reports.reports.length,

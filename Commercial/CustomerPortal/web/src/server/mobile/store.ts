@@ -105,7 +105,7 @@ export function readMobileStore(): MobileStore {
     cache = structuredClone(EMPTY);
   }
   for (const k of Object.keys(EMPTY) as (keyof MobileStore)[]) {
-    if (cache[k] === undefined) (cache as Record<string, unknown>)[k] = structuredClone(EMPTY[k]);
+    if (cache[k] === undefined) (cache as unknown as Record<string, unknown>)[k] = structuredClone(EMPTY[k]);
   }
   return cache;
 }

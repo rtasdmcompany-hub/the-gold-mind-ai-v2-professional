@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { PLAN_CATALOG, formatMoney } from "@/server/billing/util";
 
 export const metadata: Metadata = {
@@ -45,6 +46,7 @@ export default function PricingPage() {
           Live checkout uses PaymentPort when production PSP credentials are configured. Sandbox available for RC.
         </p>
       </main>
+      <SiteFooter />
     </div>
   );
 }

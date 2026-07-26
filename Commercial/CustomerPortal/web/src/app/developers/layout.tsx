@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/BrandLogo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { developerPortalNav } from "@/server/api-platform/catalog";
 
 export default function DevelopersLayout({ children }: { children: React.ReactNode }) {
@@ -15,10 +17,8 @@ export default function DevelopersLayout({ children }: { children: React.ReactNo
           alignItems: "center",
         }}
       >
-        <Link href="/developers" style={{ fontWeight: 700, textDecoration: "none" }}>
-          THE GOLD MIND Developer Portal
-        </Link>
-        <span className="meta">API v1 · commercial only</span>
+        <BrandLogo variant="header" href="/developers" />
+        <span className="meta">Developer Portal · API v1 · commercial only</span>
         <nav style={{ display: "flex", flexWrap: "wrap", gap: 8, marginLeft: "auto" }}>
           {nav.map((n) => (
             <Link key={n.href} href={n.href} className="btn">
@@ -28,9 +28,7 @@ export default function DevelopersLayout({ children }: { children: React.ReactNo
         </nav>
       </header>
       <main style={{ flex: 1, padding: "24px" }}>{children}</main>
-      <footer style={{ padding: "16px 24px", fontSize: 12, opacity: 0.75 }}>
-        Core Trading Engine is never exposed through the Public API.
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

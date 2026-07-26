@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Contact — THE GOLD MIND PROFESSIONAL",
@@ -45,6 +46,7 @@ export default function ContactPage() {
           Legal entity: RTAS Group of Companies · Division RTAS Digital Marketing Company (address pending BC-LEGAL).
         </p>
       </main>
+      <SiteFooter />
     </div>
   );
 }

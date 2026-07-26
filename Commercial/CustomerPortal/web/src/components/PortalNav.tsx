@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { customerNav } from "@/lib/nav";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export function PortalNav({ showAdmin = false }: { showAdmin?: boolean }) {
   const pathname = usePathname();
@@ -13,8 +14,7 @@ export function PortalNav({ showAdmin = false }: { showAdmin?: boolean }) {
   return (
     <aside className="nav" aria-label="Customer Portal">
       <div className="brand">
-        <p className="brand-mark">RTAS</p>
-        <p className="brand-name">THE GOLD MIND</p>
+        <BrandLogo variant="nav" href="/portal" priority />
         <p className="brand-sub">Customer Portal · Professional</p>
       </div>
       {items.map((item) => {

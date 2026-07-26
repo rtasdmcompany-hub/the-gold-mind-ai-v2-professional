@@ -80,7 +80,7 @@ export function readAiStore(): AiStore {
     cache = structuredClone(EMPTY);
   }
   for (const k of Object.keys(EMPTY) as (keyof AiStore)[]) {
-    if (cache[k] === undefined) (cache as Record<string, unknown>)[k] = structuredClone(EMPTY[k]);
+    if (cache[k] === undefined) (cache as unknown as Record<string, unknown>)[k] = structuredClone(EMPTY[k]);
   }
   return cache;
 }

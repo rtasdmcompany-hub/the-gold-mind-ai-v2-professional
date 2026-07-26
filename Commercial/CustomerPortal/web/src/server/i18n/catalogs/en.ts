@@ -2,7 +2,7 @@
  * English master catalog — all user-facing keys live here (no hardcoded UI strings).
  * Other packs may omit keys and fall back to en.
  */
-import type { TranslationCatalog } from "./types";
+import type { TranslationCatalog } from "../types";
 
 export const EN_CATALOG: TranslationCatalog = {
   // common

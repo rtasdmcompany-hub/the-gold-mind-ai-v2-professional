@@ -23,7 +23,40 @@ import type { Phase12Condition, Phase12Scores } from "./types";
 
 const PORTAL_VERSION = "1.0.10-phase12.s1";
 
-export async function runFullPhase12LtsSuite() {
+export type Phase12Dashboard = {
+  portalVersion: string;
+  coreMatches: boolean;
+  coreSha: string;
+  isolation: string;
+  scope: string;
+  scores: Phase12Scores;
+  conditions: Phase12Condition[];
+  customerSuccess: unknown;
+  support: unknown;
+  bi: unknown;
+  ops: unknown;
+  release: unknown;
+  v2Planning: unknown;
+  monthly: unknown;
+  v2EngineeringAuthorized: boolean;
+  stopMessage: string;
+  at: string;
+};
+
+export async function runFullPhase12LtsSuite(): Promise<{
+  scores: Phase12Scores;
+  core: ReturnType<typeof verifyCoreSha>;
+  cs: Awaited<ReturnType<typeof buildCustomerSuccessOps>>;
+  support: Awaited<ReturnType<typeof buildSupportExcellence>>;
+  bi: Awaited<ReturnType<typeof buildBusinessIntelligence>>;
+  ops: Awaited<ReturnType<typeof buildOperationalExcellence>>;
+  release: Awaited<ReturnType<typeof buildReleaseManagement>>;
+  v2: Awaited<ReturnType<typeof buildV2Planning>>;
+  conditions: Phase12Condition[];
+  reportFiles: string[];
+  portalVersion: string;
+  dashboard: Phase12Dashboard;
+}> {
   const core = verifyCoreSha();
   if (!core.matches) {
     throw new Error(
@@ -120,7 +153,7 @@ export async function runFullPhase12LtsSuite() {
   };
 }
 
-export async function getPhase12Dashboard(opts?: { refresh?: boolean }) {
+export async function getPhase12Dashboard(opts?: { refresh?: boolean }): Promise<Phase12Dashboard> {
   if (opts?.refresh) await runFullPhase12LtsSuite();
   const suite = latestPhase12Run("lts_suite");
   const scorecard = latestPhase12Run("scorecard");

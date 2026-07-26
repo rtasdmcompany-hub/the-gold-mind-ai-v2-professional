@@ -83,7 +83,7 @@ export function readApiStore(): ApiPlatformStore {
     cache = structuredClone(EMPTY);
   }
   for (const k of Object.keys(EMPTY) as (keyof ApiPlatformStore)[]) {
-    if (cache[k] === undefined) (cache as Record<string, unknown>)[k] = structuredClone(EMPTY[k]);
+    if (cache[k] === undefined) (cache as unknown as Record<string, unknown>)[k] = structuredClone(EMPTY[k]);
   }
   return cache;
 }
