@@ -18,8 +18,8 @@ const SRC: Record<Variant, { src: string; width: number; height: number; alt: st
   },
   login: {
     src: "/brand/the-gold-mind-logo-login.png",
-    width: 280,
-    height: 280,
+    width: 120,
+    height: 120,
     alt: "THE GOLD MIND Automated Trading Software",
   },
   footer: {
@@ -55,38 +55,78 @@ export function BrandLogo({
       width={cfg.width}
       height={cfg.height}
       priority={priority}
-      className={className}
+      className={className ?? "e-brand-logo"}
       style={{ width: "auto", height: "auto", maxWidth: "100%", objectFit: "contain" }}
     />
   );
   if (!href) return img;
   return (
-    <Link href={href} style={{ display: "inline-flex", alignItems: "center", textDecoration: "none" }}>
+    <Link href={href} className="e-brand-link" style={{ display: "inline-flex", alignItems: "center", textDecoration: "none" }}>
       {img}
     </Link>
   );
 }
 
-export function RtasGroupBadge({ height = 48 }: { height?: number }) {
+export function RtasGroupBadge({ height = 48, className }: { height?: number; className?: string }) {
   return (
     <Image
       src="/brand/rtas-group-footer-badge.png"
       alt="A Project Of RTAS GROUP OF COMPANIES"
       width={Math.round(height * 1.4)}
       height={height}
+      className={className ?? "e-brand-logo e-brand-logo--badge"}
       style={{ width: "auto", height, objectFit: "contain" }}
     />
   );
 }
 
-export function RtasDigitalBadge({ height = 40 }: { height?: number }) {
+export function RtasDigitalBadge({ height = 40, className }: { height?: number; className?: string }) {
   return (
     <Image
       src="/brand/rtas-digital-marketing-footer.png"
       alt="RTAS Digital Marketing Company"
       width={Math.round(height * 1.4)}
       height={height}
+      className={className ?? "e-brand-logo e-brand-logo--badge"}
       style={{ width: "auto", height, objectFit: "contain" }}
     />
+  );
+}
+
+export function UserAvatar({
+  name,
+  image,
+  size = 40,
+}: {
+  name?: string | null;
+  image?: string | null;
+  size?: number;
+}) {
+  const initials =
+    (name || "?")
+      .split(/\s+/)
+      .map((s) => s[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
+  if (image) {
+    return (
+      <Image
+        src={image}
+        alt={name || "User"}
+        width={size}
+        height={size}
+        className="e-user-avatar"
+        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover" }}
+        unoptimized
+      />
+    );
+  }
+
+  return (
+    <span className="e-user-avatar e-user-avatar--fallback" style={{ width: size, height: size, fontSize: size * 0.38 }}>
+      {initials}
+    </span>
   );
 }

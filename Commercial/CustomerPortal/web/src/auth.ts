@@ -121,6 +121,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = (user.email || "").toLowerCase();
         token.role = resolveRole(email, (user as { role?: string }).role);
         token.email = email;
+        if (user.image) token.picture = user.image;
         // Session cache hint for gateway / rate-limit affinity
         if (email) {
           await cacheSet(CacheKeys.session(email), String(token.role || "customer"), 60 * 60 * 8);
@@ -146,6 +147,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         (session.user as { role?: string }).role = (token.role as string) || "customer";
+        if (token.picture) session.user.image = token.picture as string;
+        else if (token.image) session.user.image = token.image as string;
       }
       return session;
     },

@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { PortalNav } from "@/components/PortalNav";
-import { SignOutButton } from "@/components/SignOutButton";
+import { PortalUserBar } from "@/components/PortalUserBar";
 import { BrandLogo, RtasGroupBadge } from "@/components/BrandLogo";
 import { canAccessAdminConsole } from "@/server/admin/roles";
 import { isDevAdminBypass } from "@/server/security/dev-bypass";
@@ -17,17 +17,16 @@ export default async function PortalLayout({
   const showAdmin = canAccessAdminConsole(role) || isDevAdminBypass(session.user.email);
 
   return (
-    <div className="shell">
+    <div className="shell portal-shell">
       <PortalNav showAdmin={!!showAdmin} />
       <div className="main">
-        <div className="topbar">
-          <div>
-            <div className="page-sub" style={{ margin: 0 }}>
-              Signed in as {session.user.name || session.user.email}
-              {role ? ` · role: ${role}` : ""}
-            </div>
-          </div>
-          <SignOutButton />
+        <div className="topbar portal-topbar">
+          <PortalUserBar
+            name={session.user.name}
+            email={session.user.email}
+            image={session.user.image}
+            role={role}
+          />
         </div>
         {children}
         <div

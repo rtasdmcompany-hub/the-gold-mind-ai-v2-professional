@@ -17,10 +17,15 @@ const LINKS = [
 export function EnterpriseNav({ transparent = false }: { transparent?: boolean }) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+  const [shrunk, setShrunk] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 48);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 32);
+      setShrunk(y > 120);
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -29,9 +34,11 @@ export function EnterpriseNav({ transparent = false }: { transparent?: boolean }
   const solid = scrolled || !transparent;
 
   return (
-    <header className={`e-nav ${solid ? "e-nav--solid" : "e-nav--transparent"}`}>
+    <header
+      className={`e-nav ${solid ? "e-nav--solid" : "e-nav--transparent"} ${shrunk ? "e-nav--shrunk" : ""}`}
+    >
       <div className="e-nav-inner">
-        <BrandLogo variant="header" href="/" priority />
+        <BrandLogo variant="header" href="/" priority className="e-brand-logo e-brand-logo--header" />
         <nav>
           <ul className={`e-nav-links ${menuOpen ? "e-open" : ""}`}>
             {LINKS.map((l) => (
