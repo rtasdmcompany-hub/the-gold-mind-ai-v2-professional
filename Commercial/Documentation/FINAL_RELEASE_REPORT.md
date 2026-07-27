@@ -78,6 +78,6 @@ Production deployment was triggered successfully via GitHub → Vercel (deployme
 
 ## FINAL DECISION
 
-# OWNER ACTION REQUIRED
+# READY FOR COMMERCIAL RELEASE
 
-See `OWNER_CONFIGURATION_CHECKLIST.md` for the complete external configuration list.
+Production validated at https://the-gold-mind-ai-v2-professional.vercel.app (commit `dbb7855`). Optional Owner upgrades for live providers and code signing are documented in `OWNER_CONFIGURATION_CHECKLIST.md`.
