@@ -53,7 +53,9 @@ export default auth((req) => {
     path.startsWith("/brand/") ||
     path.startsWith("/media/") ||
     path === "/favicon.ico" ||
-    path === "/site.webmanifest";
+    path === "/site.webmanifest" ||
+    path === "/robots.txt" ||
+    path === "/sitemap.xml";
 
   if (!checkCsrf(req, path)) {
     const denied = NextResponse.json(
