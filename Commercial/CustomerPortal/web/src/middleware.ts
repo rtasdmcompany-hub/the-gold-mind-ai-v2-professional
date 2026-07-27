@@ -34,13 +34,19 @@ export default auth((req) => {
     path === "/cookies" ||
     path === "/refund" ||
     path === "/risk" ||
+    path.startsWith("/developers") ||
     path.startsWith("/api/auth") ||
     path.startsWith("/api/health") ||
+    path === "/api/v1/health" ||
+    path === "/api/mobile/health" ||
     path.startsWith("/api/contact") ||
     path.startsWith("/api/billing/webhooks") ||
     path.startsWith("/api/releases/check") ||
     path.startsWith("/api/releases/download") ||
-    path.startsWith("/api/releases/report");
+    path.startsWith("/api/releases/report") ||
+    path.startsWith("/brand/") ||
+    path === "/favicon.ico" ||
+    path === "/site.webmanifest";
 
   if (!checkCsrf(req, path)) {
     const denied = NextResponse.json(

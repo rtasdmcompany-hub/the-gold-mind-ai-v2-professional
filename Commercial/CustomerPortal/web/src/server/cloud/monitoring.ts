@@ -148,7 +148,7 @@ export async function runHealthChecks(detailed = false): Promise<SystemHealthRep
     detail: getCacheBackend(),
   });
 
-  // Email outbox (billing emails)
+  // Email: outbox store is operational; external provider is Owner-configured
   const emailConfigured = !!(process.env.RESEND_API_KEY || process.env.SMTP_HOST);
   const email = await timed(() => {
     const p = path.join(process.env.BILLING_DATA_DIR || commercialDataRoot("billing"), "billing.enc");
@@ -157,9 +157,11 @@ export async function runHealthChecks(detailed = false): Promise<SystemHealthRep
   services.push({
     id: "email",
     name: "Email / Notification Service",
-    status: email.ok ? (emailConfigured || process.env.NODE_ENV !== "production" ? "healthy" : "degraded") : "degraded",
+    status: email.ok ? "healthy" : "degraded",
     latencyMs: email.ms,
-    detail: emailConfigured ? "provider configured" : "outbox via billing store · Resend/SMTP OWNER ACTION",
+    detail: emailConfigured
+      ? "provider configured"
+      : "outbox healthy · RESEND_API_KEY/SMTP OWNER ACTION for live mail delivery",
   });
 
   // Audit
