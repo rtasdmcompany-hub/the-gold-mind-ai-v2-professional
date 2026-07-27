@@ -11,6 +11,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Canonical production Customer Portal for THIS product only
+$DefaultPortalBase = "https://the-gold-mind-ai-v2-professional.vercel.app"
+
 function Write-Step($m) { Write-Host ""; Write-Host "==> $m" -ForegroundColor Yellow }
 
 function Get-MachineFingerprint {
@@ -31,11 +34,19 @@ function Get-PortalBase {
   if (Test-Path $cfg) {
     try {
       $j = Get-Content $cfg -Raw | ConvertFrom-Json
-      if ($j.portalBase) { return ([string]$j.portalBase).TrimEnd("/") }
+      if ($j.portalBase) {
+        $b = ([string]$j.portalBase).TrimEnd("/")
+        # Block obsolete / non-existent domains from older installer builds
+        if ($b -match 'thegoldmind\.ai$' -or $b -match 'localhost') {
+          Write-Warning "Obsolete portalBase '$b' ignored — using production portal."
+        } else {
+          return $b
+        }
+      }
     } catch { }
   }
   if ($env:TGM_PORTAL_BASE) { return $env:TGM_PORTAL_BASE.TrimEnd("/") }
-  return "http://localhost:3000"
+  return $DefaultPortalBase
 }
 
 Write-Host ""
@@ -49,12 +60,17 @@ $base = Get-PortalBase
 Write-Host "Portal: $base"
 
 if ($GoogleLogin) {
-  Write-Step "Google Login (optional)"
-  $url = "$base/login?provider=google&return=/portal/licenses"
-  Write-Host "  Opening browser for Google sign-in..."
+  Write-Step "Google Login"
+  $url = "$base/login?provider=google&callbackUrl=%2Fportal%2Flicenses"
+  Write-Host "  Opening production portal Google Sign-In..."
+  Write-Host "  $url"
   try { Start-Process $url } catch { Write-Warning "Could not open browser: $_" }
-  Write-Host "  After login, copy your license key from the portal and continue."
-  if (-not $Silent) { Read-Host "Press Enter when ready" | Out-Null }
+  Write-Host ""
+  Write-Host "  After Google sign-in:"
+  Write-Host "    1. Open Licenses in the Customer Portal"
+  Write-Host "    2. Copy your license key"
+  Write-Host "    3. Return here and paste the key below"
+  if (-not $Silent) { Read-Host "Press Enter when ready to paste your license key" | Out-Null }
 }
 
 if (-not $Email) {
@@ -63,7 +79,7 @@ if (-not $Email) {
 }
 if (-not $LicenseKey) {
   if ($Silent) { throw "LicenseKey required in Silent mode." }
-  $LicenseKey = Read-Host "License key"
+  $LicenseKey = Read-Host "License key (paste from portal)"
 }
 
 $fp = Get-MachineFingerprint
@@ -84,6 +100,7 @@ try {
 } catch {
   Write-Host "  Activation API failed: $_" -ForegroundColor Red
   Write-Host "  Ensure the Customer Portal is reachable and the key is valid."
+  Write-Host "  Portal: $base"
   Write-Host "  You can retry later: scripts\Activate-License.ps1"
   exit 1
 }

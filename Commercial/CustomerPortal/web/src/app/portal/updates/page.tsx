@@ -7,17 +7,21 @@ import {
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
+/**
+ * Customer Updates — stable channel only.
+ * RC / development remain Admin Console exclusives.
+ */
 export default async function UpdatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ version?: string; channel?: string }>;
+  searchParams: Promise<{ version?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
   const sp = await searchParams;
-  const channel = (sp.channel || "stable") as "stable" | "rc" | "development";
+  const channel = "stable" as const;
   const reported = getReportedInstalledVersion(session.user.email);
-  const version = sp.version || reported || "2.0.0";
+  const version = sp.version || reported || "1.0.0";
   const check = checkForUpdate({ channel, version, email: session.user.email });
   const all = listPublished(channel);
 
@@ -26,19 +30,9 @@ export default async function UpdatesPage({
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">Updates</h1>
         <p className="page-sub">
-          Version check · release notes viewer · verified packages. Failed verification cancels install and keeps
-          previous version.
+          Stable release channel · verified packages · automatic rollback on checksum failure
         </p>
       </header>
-
-      <div className="meta" style={{ marginBottom: 12 }}>
-        Channel:{" "}
-        <Link href="/portal/updates?channel=stable">stable</Link>
-        {" · "}
-        <Link href="/portal/updates?channel=rc">rc</Link>
-        {" · "}
-        <Link href="/portal/updates?channel=development">development</Link>
-      </div>
 
       <div className="grid grid-2" style={{ marginBottom: 16 }}>
         <div className="card">
@@ -47,17 +41,18 @@ export default async function UpdatesPage({
             {version}
           </div>
           <div className="meta">
-            Channel: {channel}
-            {reported ? " · from updater telemetry" : " · override with ?version="}
+            Channel: Stable
+            {reported ? " · from updater telemetry" : ""}
           </div>
         </div>
         <div className="card">
-          <h3>Latest on channel</h3>
+          <h3>Latest Stable</h3>
           <div className="value" style={{ fontSize: 18 }}>
             {check.latest?.version || "—"}
           </div>
           <div className="meta">
-            {check.updateAvailable ? "Update available" : "Up to date"} · Build {check.latest?.buildNumber}
+            {check.updateAvailable ? "Update available" : "Up to date"}
+            {check.latest ? ` · Build ${check.latest.buildNumber}` : ""}
           </div>
         </div>
       </div>
@@ -68,37 +63,21 @@ export default async function UpdatesPage({
           <p style={{ margin: "8px 0" }}>{check.latest.releaseNotes}</p>
           <div className="meta mono">SHA-256: {check.latest.sha256}</div>
           <div className="meta">
-            Signature: {check.latest.signatureStatus} · {check.latest.signatureSubject}
-            {check.latest.signatureRequired ? " · required" : " · optional this channel"}
-          </div>
-          <div className="meta">
-            Size: {(check.latest.packageSizeBytes / 1024).toFixed(1)} KB · HTTPS only · Core frozen:{" "}
-            {String(check.latest.compatibility.coreFrozen)}
-          </div>
-          <div className="meta">
-            Compatibility: {check.latest.compatibility.os.join(", ")} · MT5 {check.latest.compatibility.mt5} · Core
-            tag {check.latest.compatibility.coreTag}
+            Signature: {check.latest.signatureStatus}
+            {check.latest.signatureSubject ? ` · ${check.latest.signatureSubject}` : ""}
           </div>
           <p style={{ marginTop: 12 }}>
             <a className="btn btn-primary" href={`/api/releases/download/${check.latest.id}`}>
-              Download package
+              Download latest installer
             </a>{" "}
             <Link className="btn" href="/portal/downloads">
-              All downloads
+              Download Center
             </Link>
-          </p>
-          <p className="meta" style={{ marginTop: 12 }}>
-            Client apply (safe · verified · recoverable):
-            <br />
-            <code>
-              Update-TheGoldMindProfessional.ps1 -Channel {channel} -CurrentVersion {version} -Apply
-              -CustomerEmail {session.user.email}
-            </code>
           </p>
         </div>
       )}
 
-      <h2 style={{ fontSize: 16 }}>Channel packages</h2>
+      <h2 style={{ fontSize: 15, margin: "0 0 10px" }}>Stable packages</h2>
       <div className="table-wrap">
         <table className="data">
           <thead>

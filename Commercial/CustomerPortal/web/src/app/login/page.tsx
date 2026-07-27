@@ -8,15 +8,21 @@ import { shouldEnableDemoAuth } from "@/server/security/dev-bypass";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string; error?: string }>;
+  searchParams: Promise<{ callbackUrl?: string; error?: string; provider?: string; return?: string }>;
 }) {
   const session = await auth();
   if (session?.user) redirect("/portal");
 
   const sp = await searchParams;
-  const callbackUrl = sp.callbackUrl || "/portal";
+  const callbackUrl = sp.callbackUrl || sp.return || "/portal";
   const googleConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   const demoAllowed = shouldEnableDemoAuth(googleConfigured);
+  const preferGoogle = (sp.provider || "").toLowerCase() === "google";
+
+  // Installer launches /login?provider=google — start OAuth immediately when configured
+  if (preferGoogle && googleConfigured && !sp.error) {
+    await signIn("google", { redirectTo: callbackUrl });
+  }
 
   return (
     <div className="e-login-page">
@@ -44,6 +50,13 @@ export default async function LoginPage({
           )}
 
           <div className="e-login-actions">
+            {preferGoogle && !googleConfigured && (
+              <p className="e-login-oauth-note" role="status">
+                Installer requested Google Sign-In. Add this product&apos;s GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET to
+                enable automatic OAuth.
+              </p>
+            )}
+
             <GoogleSignInButton callbackUrl={callbackUrl} configured={googleConfigured} />
 
             {!googleConfigured && (

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getPackageBytes, recordDownload } from "@/server/releases/release-service";
+import { canAccessAdminConsole } from "@/server/admin/roles";
 import { isReleaseDownloadAuthRequired } from "@/server/security/dev-bypass";
 
 /**
  * Secure package download — serves verified ZIP whose SHA-256 matches catalog.
- * Production default: session required (RELEASE_DOWNLOAD_AUTH=public to open).
- * Never ships Trading Engine source.
+ * Customers: stable channel only. RC / development require Admin Console role.
  */
 export async function GET(
   req: Request,
@@ -27,6 +27,15 @@ export async function GET(
   const session = await auth();
   if (isReleaseDownloadAuthRequired() && !session?.user?.email) {
     return NextResponse.json({ error: "AUTHENTICATION_REQUIRED" }, { status: 401 });
+  }
+
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const isAdmin = canAccessAdminConsole(role);
+  if (pkg.channel !== "stable" && !isAdmin) {
+    return NextResponse.json(
+      { error: "CHANNEL_RESTRICTED", message: "Only stable releases are available in the Customer Portal." },
+      { status: 403 }
+    );
   }
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";

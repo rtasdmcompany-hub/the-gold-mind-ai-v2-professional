@@ -97,8 +97,13 @@ Trading / Risk / Recovery / Money / Entry / Exit / Order logic: NOT MODIFIED.
   if ((Resolve-Path $scriptSrc).Path -ne (Resolve-Path $scriptDst -EA SilentlyContinue).Path) {
     Copy-Item -Force (Join-Path $scriptSrc "*.ps1") $scriptDst
   }
+  # Commercial updater must ship with install payload and use production portal
+  Copy-Item -Force (Join-Path $InstallerProf "scripts\Update-TheGoldMindProfessional.ps1") (Join-Path $scriptDst "Update-TheGoldMindProfessional.ps1")
   if (-not (Test-Path (Join-Path $scriptDst "Deploy-EA-To-MT5.ps1"))) {
     throw "Deploy-EA-To-MT5.ps1 missing under payload scripts"
+  }
+  if (-not (Test-Path (Join-Path $scriptDst "Activate-License.ps1"))) {
+    throw "Activate-License.ps1 missing under payload scripts"
   }
 
   $readme = @"
@@ -442,7 +447,8 @@ function Write-Guides {
 2. Run ``Setup.exe``.
 3. Confirm install location (default: ``%LOCALAPPDATA%\THE GOLD MIND PROFESSIONAL``).
 4. Allow MT5 detection / EA deploy when prompted.
-5. Activate license (email + key). Optional: Google login via portal first.
+5. Activate license (email + key). Optional: Google login via
+   https://the-gold-mind-ai-v2-professional.vercel.app/login?provider=google
 6. Open MT5 -> Navigator -> Expert Advisors -> **The Gold Mind**.
 7. Attach ``TheGoldMindAI_Professional`` to your chart.
 

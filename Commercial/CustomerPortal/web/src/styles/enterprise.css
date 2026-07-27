@@ -317,13 +317,29 @@
 
 /* ── Glass cards ── */
 .e-glass-card {
-  background: linear-gradient(145deg, rgba(24, 24, 24, 0.9), rgba(17, 17, 17, 0.95));
+  background: linear-gradient(145deg, rgba(28, 28, 28, 0.72), rgba(14, 14, 14, 0.92));
   border: 1px solid var(--e-border);
   border-radius: var(--e-radius-lg);
   padding: var(--e-space-lg);
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(184, 155, 95, 0.04);
   transition: transform 0.4s var(--e-ease), box-shadow 0.4s, border-color 0.4s;
+}
+
+.e-glass-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 12% -40% 12%;
+  height: 55%;
+  background: radial-gradient(ellipse at center, rgba(184, 155, 95, 0.08), transparent 70%);
+  pointer-events: none;
+  filter: blur(12px);
 }
 
 .e-glass-card::before {

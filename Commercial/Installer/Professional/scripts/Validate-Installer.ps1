@@ -45,9 +45,17 @@ $ea = Join-Path $InstallRoot "ea\TheGoldMindAI_Professional.ex5"
 $launcher = Join-Path $InstallRoot "bin\TGM-Professional-Launcher.exe"
 if (-not (Test-Path $ea)) { throw "EA missing in payload" }
 if (-not (Test-Path $launcher)) { throw "Launcher missing in payload" }
-foreach ($s in @("Deploy-EA-To-MT5.ps1", "Activate-License.ps1", "PostInstall-Wizard.ps1")) {
+foreach ($s in @("Deploy-EA-To-MT5.ps1", "Activate-License.ps1", "PostInstall-Wizard.ps1", "Update-TheGoldMindProfessional.ps1")) {
   if (-not (Test-Path (Join-Path $InstallRoot "scripts\$s"))) { throw "Missing script: $s" }
 }
+$portalCfg = Join-Path $InstallRoot "config\portal.json"
+if (-not (Test-Path $portalCfg)) { throw "portal.json missing after install" }
+$pb = (Get-Content $portalCfg -Raw | ConvertFrom-Json).portalBase
+if ($pb -notmatch 'the-gold-mind-ai-v2-professional\.vercel\.app') {
+  throw "portalBase must be production Vercel URL, got: $pb"
+}
+if ($pb -match 'thegoldmind\.ai') { throw "Obsolete thegoldmind.ai still packaged" }
+Write-Host "  Portal base OK: $pb" -ForegroundColor Green
 Write-Host "  Payload structure OK" -ForegroundColor Green
 
 Write-Step "Timed silent Setup.exe install"

@@ -6,9 +6,10 @@ import type { ReleaseChannel } from "@/server/releases/types";
 export async function GET() {
   try {
     await requireSession();
+    // Customer-facing catalog: stable only (RC/dev via Admin Console)
     return NextResponse.json({
-      packages: listPublished(),
-      channels: ["stable", "rc", "development"],
+      packages: listPublished("stable"),
+      channels: ["stable"],
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "ERROR";

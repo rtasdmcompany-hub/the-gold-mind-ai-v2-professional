@@ -2,7 +2,7 @@
     "product":  "THE GOLD MIND PROFESSIONAL",
     "version":  "1.0.0",
     "channel":  "stable",
-    "releasedAt":  "2026-07-26T13:33:55.7468812Z",
+    "releasedAt":  "2026-07-27T15:48:20.7920201Z",
     "core":  {
                  "mq5":  "Experts/TheGoldMindAI_Professional.mq5",
                  "ex5Sha256":  "7883b4155aabb088e07f9f9563b413b7b63de7188d610021fb4fdca603e8c619",
@@ -11,17 +11,17 @@
              },
     "artifacts":  {
                       "setupExe":  {
-                                       "sha256":  "52116ac997e6be90b74cd2d6b94ed0213db9e6d0c926ee6cf851758a9f049cc7",
+                                       "sha256":  "5981f411970ed94d6f84b5099ab13e2671f29f1dad7db61c8f1614b93d42e776",
                                        "file":  "installer/Setup.exe"
                                    },
                       "checksums":  "SHA256SUMS.txt",
                       "sbom":  "SBOM.json",
                       "professionalZip":  {
-                                              "sha256":  "919639976b79d40d5f5eb15993d94b36c4b9ee7ffb1e916a377f833e2006dbd0",
+                                              "sha256":  "42ee8b10912854706dd5fee9c3e54bf8325e26e17819dacb2de9946447af34a1",
                                               "file":  "TGM_PROFESSIONAL_1.0.0_stable.zip"
                                           },
                       "theGoldMindSetupExe":  {
-                                                  "sha256":  "52116ac997e6be90b74cd2d6b94ed0213db9e6d0c926ee6cf851758a9f049cc7",
+                                                  "sha256":  "5981f411970ed94d6f84b5099ab13e2671f29f1dad7db61c8f1614b93d42e776",
                                                   "file":  "installer/TheGoldMindSetup.exe"
                                               }
                   },
