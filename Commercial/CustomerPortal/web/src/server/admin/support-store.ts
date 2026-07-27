@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
 import { writeAudit } from "@/server/cloud/audit";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 
 export type TicketPriority = "low" | "normal" | "high" | "urgent";
 export type TicketStatus = "open" | "pending" | "resolved" | "closed";
@@ -61,8 +62,7 @@ function decryptJson<T>(blob: string): T {
 }
 
 function storePath(): string {
-  const dir = process.env.SUPPORT_DATA_DIR || path.join(process.cwd(), ".data", "support");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const dir = process.env.SUPPORT_DATA_DIR || commercialDataRoot("support");
   return path.join(dir, "tickets.enc");
 }
 

@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 import type { RegionalSettings } from "./types";
 import { DEFAULT_REGIONAL, applyRegional } from "./runtime";
 
@@ -101,8 +102,7 @@ function seedStore(): RegionalStore {
 let cache: RegionalStore | null = null;
 
 function storePath(): string {
-  const dir = path.join(process.cwd(), ".data", "i18n");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const dir = commercialDataRoot("i18n");
   return path.join(dir, "regional.enc");
 }
 

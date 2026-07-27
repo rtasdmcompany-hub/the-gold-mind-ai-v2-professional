@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 import type { LocaleCode, TranslationReviewItem, TranslationStatus } from "./types";
 import { masterKeys, getLocalePack } from "./packs";
 
@@ -43,8 +44,7 @@ const EMPTY: WorkflowStore = { version: 1, reviews: [] };
 let cache: WorkflowStore | null = null;
 
 function storePath(): string {
-  const dir = path.join(process.cwd(), ".data", "i18n");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const dir = commercialDataRoot("i18n");
   return path.join(dir, "workflow.enc");
 }
 

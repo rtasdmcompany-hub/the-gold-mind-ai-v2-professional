@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 import type {
   AiAuditEntry,
   AiFeedback,
@@ -62,8 +63,7 @@ const EMPTY: AiStore = {
 let cache: AiStore | null = null;
 
 function storePath(): string {
-  const dir = path.join(process.cwd(), ".data", "ai-assistant");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const dir = commercialDataRoot("ai-assistant");
   return path.join(dir, "assistant.enc");
 }
 

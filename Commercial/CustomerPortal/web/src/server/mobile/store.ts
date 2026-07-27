@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 import type {
   DiagnosticReport,
   MobileAppVersion,
@@ -87,8 +88,7 @@ const EMPTY: MobileStore = {
 let cache: MobileStore | null = null;
 
 function storePath(): string {
-  const dir = path.join(process.cwd(), ".data", "mobile");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const dir = commercialDataRoot("mobile");
   return path.join(dir, "companion.enc");
 }
 

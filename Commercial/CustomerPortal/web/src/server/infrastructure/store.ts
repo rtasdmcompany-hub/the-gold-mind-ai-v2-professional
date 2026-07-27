@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 import type { OpsIncident } from "./types";
 
 const ALGO = "aes-256-gcm";
@@ -44,8 +45,7 @@ const EMPTY: InfraStore = { version: 1, incidents: [], scalingEvents: [] };
 let cache: InfraStore | null = null;
 
 function storePath(): string {
-  const dir = path.join(process.cwd(), ".data", "infrastructure");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const dir = commercialDataRoot("infrastructure");
   return path.join(dir, "ops.enc");
 }
 
