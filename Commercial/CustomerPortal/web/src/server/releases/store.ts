@@ -2,9 +2,10 @@ import fs from "fs";
 import path from "path";
 import { createHash, randomBytes } from "crypto";
 import type { ReleaseChannel, ReleasePackage, ReleaseStoreData } from "./types";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 
 function dataDir(): string {
-  const dir = process.env.RELEASE_DATA_DIR || path.join(process.cwd(), ".data", "releases");
+  const dir = process.env.RELEASE_DATA_DIR || commercialDataRoot("releases");
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }

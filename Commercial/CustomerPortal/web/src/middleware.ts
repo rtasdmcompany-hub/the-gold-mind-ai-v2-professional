@@ -19,7 +19,8 @@ export default auth((req) => {
   if (httpsRedirect) return applySecurityHeaders(httpsRedirect);
 
   const path = req.nextUrl.pathname;
-  const isLoggedIn = !!req.auth;
+  // Require a real user identity — empty/error auth objects must not count as logged-in
+  const isLoggedIn = !!(req.auth?.user?.email || req.auth?.user?.id);
 
   const isPublic =
     path === "/" ||

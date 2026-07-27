@@ -1,11 +1,16 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import path from "path";
 import fs from "fs";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 
 const ALGO = "aes-256-gcm";
 
 function masterKey(): Buffer {
-  const raw = process.env.LICENSE_STORE_SECRET || process.env.NEXTAUTH_SECRET || "dev-license-store-insecure";
+  const raw =
+    process.env.LICENSE_STORE_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    process.env.AUTH_SECRET ||
+    "dev-license-store-insecure";
   return createHash("sha256").update(raw).digest();
 }
 
@@ -71,7 +76,7 @@ export function decryptJson<T>(blob: string): T {
 }
 
 export function dataDir(): string {
-  const dir = process.env.LICENSE_DATA_DIR || path.join(process.cwd(), ".data", "licensing");
+  const dir = process.env.LICENSE_DATA_DIR || commercialDataRoot("licensing");
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }

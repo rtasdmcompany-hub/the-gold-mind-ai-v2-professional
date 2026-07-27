@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
 import type { BillingStoreData } from "./types";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 
 const ALGO = "aes-256-gcm";
 
@@ -10,6 +11,7 @@ function masterKey(): Buffer {
     process.env.BILLING_STORE_SECRET ||
     process.env.LICENSE_STORE_SECRET ||
     process.env.NEXTAUTH_SECRET ||
+    process.env.AUTH_SECRET ||
     "dev-billing-store";
   return createHash("sha256").update(raw).digest();
 }
@@ -46,7 +48,7 @@ const EMPTY: BillingStoreData = {
 };
 
 function dataDir(): string {
-  const dir = process.env.BILLING_DATA_DIR || path.join(process.cwd(), ".data", "billing");
+  const dir = process.env.BILLING_DATA_DIR || commercialDataRoot("billing");
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }

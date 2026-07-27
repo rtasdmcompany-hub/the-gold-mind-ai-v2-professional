@@ -12,6 +12,7 @@ import type {
   WebhookDelivery,
   WebhookEndpoint,
 } from "./types";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 
 const ALGO = "aes-256-gcm";
 
@@ -65,8 +66,7 @@ const EMPTY: ApiPlatformStore = {
 let cache: ApiPlatformStore | null = null;
 
 function storePath(): string {
-  const dir = path.join(process.cwd(), ".data", "api-platform");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const dir = commercialDataRoot("api-platform");
   return path.join(dir, "platform.enc");
 }
 

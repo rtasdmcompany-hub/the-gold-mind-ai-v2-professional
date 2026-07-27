@@ -8,6 +8,7 @@ import { getCacheBackend, cacheSet, cacheGet, CacheKeys } from "./cache";
 import { auditCount } from "./audit";
 import { getUptimeSec } from "./gateway";
 import { validateSecretsPresent } from "./security";
+import { commercialDataRoot } from "./data-root";
 import type { HealthStatus, ServiceHealth, SystemHealthReport } from "./types";
 import { writeAudit } from "./audit";
 
@@ -50,7 +51,7 @@ export async function runHealthChecks(detailed = false): Promise<SystemHealthRep
 
   // License store
   const lic = await timed(() => {
-    const dir = process.env.LICENSE_DATA_DIR || path.join(process.cwd(), ".data", "licensing");
+    const dir = process.env.LICENSE_DATA_DIR || commercialDataRoot("licensing");
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     return fs.readdirSync(dir).length;
   });
@@ -64,7 +65,7 @@ export async function runHealthChecks(detailed = false): Promise<SystemHealthRep
 
   // Billing / subscription store
   const bill = await timed(() => {
-    const dir = process.env.BILLING_DATA_DIR || path.join(process.cwd(), ".data", "billing");
+    const dir = process.env.BILLING_DATA_DIR || commercialDataRoot("billing");
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     return true;
   });
@@ -79,32 +80,50 @@ export async function runHealthChecks(detailed = false): Promise<SystemHealthRep
   // Payments (provider mode awareness — sandbox vs live)
   const payMode = (process.env.PAYMENT_MODE || process.env.BILLING_MODE || "sandbox").toLowerCase();
   const liveReady = !!(process.env.PADDLE_API_KEY || process.env.PAYPAL_CLIENT_ID);
+  const paymentsStatus: ServiceHealth["status"] = !bill.ok
+    ? "unhealthy"
+    : payMode === "live" && !liveReady
+      ? "degraded"
+      : "healthy";
   services.push({
     id: "payments",
     name: "Payments",
-    status: bill.ok ? (payMode === "live" && !liveReady ? "degraded" : "healthy") : "unhealthy",
+    status: paymentsStatus,
     latencyMs: bill.ms,
     detail:
       payMode === "live"
         ? liveReady
           ? "live mode · credentials present"
-          : "live mode · credentials missing"
+          : "live mode · credentials missing (OWNER ACTION)"
         : `sandbox mode · store ${bill.ok ? "ok" : "fail"}`,
   });
 
   // Authentication (session secret + NextAuth)
   const authSecret = !!(process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET);
+  const hasProvider =
+    !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) ||
+    process.env.PORTAL_ALLOW_DEMO_IN_PROD === "true";
   services.push({
     id: "auth",
     name: "Authentication",
-    status: authSecret || process.env.NODE_ENV !== "production" ? "healthy" : "degraded",
+    status: authSecret
+      ? hasProvider || process.env.NODE_ENV !== "production"
+        ? "healthy"
+        : "degraded"
+      : process.env.NODE_ENV === "production"
+        ? "unhealthy"
+        : "degraded",
     latencyMs: 0,
-    detail: authSecret ? "session secret configured" : "dev fallback secret",
+    detail: authSecret
+      ? hasProvider
+        ? "session secret configured · provider available"
+        : "session secret configured · no OAuth/demo provider (OWNER ACTION: Google OAuth)"
+      : "missing AUTH_SECRET/NEXTAUTH_SECRET",
   });
 
   // Update / releases
   const rel = await timed(() => {
-    const dir = process.env.RELEASE_DATA_DIR || path.join(process.cwd(), ".data", "releases");
+    const dir = process.env.RELEASE_DATA_DIR || commercialDataRoot("releases");
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     return true;
   });
@@ -130,16 +149,17 @@ export async function runHealthChecks(detailed = false): Promise<SystemHealthRep
   });
 
   // Email outbox (billing emails)
+  const emailConfigured = !!(process.env.RESEND_API_KEY || process.env.SMTP_HOST);
   const email = await timed(() => {
-    const p = path.join(process.env.BILLING_DATA_DIR || path.join(process.cwd(), ".data", "billing"), "billing.enc");
+    const p = path.join(process.env.BILLING_DATA_DIR || commercialDataRoot("billing"), "billing.enc");
     return fs.existsSync(p) || true;
   });
   services.push({
     id: "email",
     name: "Email / Notification Service",
-    status: email.ok ? "healthy" : "degraded",
+    status: email.ok ? (emailConfigured || process.env.NODE_ENV !== "production" ? "healthy" : "degraded") : "degraded",
     latencyMs: email.ms,
-    detail: "outbox via billing store",
+    detail: emailConfigured ? "provider configured" : "outbox via billing store · Resend/SMTP OWNER ACTION",
   });
 
   // Audit
@@ -163,12 +183,21 @@ export async function runHealthChecks(detailed = false): Promise<SystemHealthRep
 
   // Database / persistence health
   const secrets = validateSecretsPresent();
+  const persistenceOk = bill.ok && lic.ok && rel.ok;
   services.push({
     id: "database",
     name: "Database / Persistence",
-    status: secrets.ok ? "healthy" : process.env.NODE_ENV === "production" ? "degraded" : "healthy",
+    status: persistenceOk
+      ? secrets.ok
+        ? "healthy"
+        : "degraded"
+      : "unhealthy",
     latencyMs: 0,
-    detail: secrets.ok ? "secrets present · encrypted file stores" : `missing: ${secrets.missing.join(", ")}`,
+    detail: persistenceOk
+      ? secrets.ok
+        ? "writable commercial stores · secrets present"
+        : `writable stores · missing optional secrets: ${secrets.missing.join(", ")}`
+      : `store write failed · missing: ${secrets.missing.join(", ")}`,
   });
 
   const report: SystemHealthReport = {

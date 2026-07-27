@@ -97,6 +97,8 @@ if (shouldEnableDemoAuth(providers.length > 0)) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Prefer AUTH_SECRET; fall back to NEXTAUTH_SECRET for Auth.js v5
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   providers,
   session: {
     strategy: "jwt",

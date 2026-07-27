@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
 import type { AuditAction, AuditEntry, AuditResult } from "./types";
+import { commercialDataRoot } from "./data-root";
 
 const ALGO = "aes-256-gcm";
 
@@ -26,6 +27,7 @@ function masterKey(): Buffer {
     process.env.AUDIT_STORE_SECRET ||
     process.env.LICENSE_STORE_SECRET ||
     process.env.NEXTAUTH_SECRET ||
+    process.env.AUTH_SECRET ||
     "dev-audit-store";
   return createHash("sha256").update(raw).digest();
 }
@@ -51,7 +53,7 @@ function decryptJson<T>(blob: string): T {
 }
 
 function dataDir(): string {
-  const dir = process.env.AUDIT_DATA_DIR || path.join(process.cwd(), ".data", "audit");
+  const dir = process.env.AUDIT_DATA_DIR || commercialDataRoot("audit");
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }

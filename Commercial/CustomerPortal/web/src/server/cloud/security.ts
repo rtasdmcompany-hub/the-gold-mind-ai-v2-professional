@@ -46,12 +46,11 @@ export function encodeOutput(text: string): string {
 }
 
 export function validateSecretsPresent(): { ok: boolean; missing: string[] } {
-  const required = ["NEXTAUTH_SECRET"];
-  const recommended = ["LICENSE_STORE_SECRET", "BILLING_STORE_SECRET", "AUDIT_STORE_SECRET"];
   const missing: string[] = [];
-  for (const k of required) {
-    if (!process.env[k]) missing.push(k);
+  if (!process.env.NEXTAUTH_SECRET && !process.env.AUTH_SECRET) {
+    missing.push("NEXTAUTH_SECRET|AUTH_SECRET");
   }
+  const recommended = ["LICENSE_STORE_SECRET", "BILLING_STORE_SECRET", "AUDIT_STORE_SECRET"];
   for (const k of recommended) {
     if (!process.env[k] && process.env.NODE_ENV === "production") missing.push(k);
   }
