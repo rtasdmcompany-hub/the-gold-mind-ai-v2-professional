@@ -1,74 +1,133 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteNav } from "@/components/SiteNav";
-import { SiteFooter } from "@/components/SiteFooter";
-import { BrandLogo } from "@/components/BrandLogo";
+import type { Metadata } from "next";
+import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
+import { HeroBackground } from "@/components/enterprise/HeroBackground";
+import { HeroDashboard } from "@/components/enterprise/HeroDashboard";
+import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
+import { SoftwareShowcase } from "@/components/enterprise/SoftwareShowcase";
+import { TrustSection } from "@/components/enterprise/TrustSection";
 import { AiAssistantWidget } from "@/components/AiAssistantWidget";
 
 export const metadata: Metadata = {
   title: "Official Website",
   description:
-    "THE GOLD MIND AI v2.0 PROFESSIONAL by RTAS — systematic MetaTrader 5 Expert Advisor with certified Core. Customer Portal, licensing, and updates. Trading involves risk of loss.",
+    "THE GOLD MIND AI v2.0 PROFESSIONAL — institutional-grade MetaTrader 5 Expert Advisor. Licensed, certified, and enterprise-ready.",
 };
+
+const FEATURES = [
+  {
+    icon: "◆",
+    title: "Certified Core Engine",
+    desc: "Frozen SHA-256 certified trading core operating exclusively on MetaTrader 5 Professional.",
+  },
+  {
+    icon: "◇",
+    title: "AI Signal Intelligence",
+    desc: "Advanced pattern recognition and systematic execution with institutional risk parameters.",
+  },
+  {
+    icon: "⬡",
+    title: "Enterprise Portal",
+    desc: "Unified licensing, downloads, device management, and subscription billing in one secure hub.",
+  },
+  {
+    icon: "◈",
+    title: "Global Infrastructure",
+    desc: "Cloud-isolated commercial services with encrypted stores, audit trails, and health monitoring.",
+  },
+  {
+    icon: "◎",
+    title: "Professional Updates",
+    desc: "Signed installers, checksum verification, and controlled release channels for every deployment.",
+  },
+  {
+    icon: "◉",
+    title: "Dedicated Support",
+    desc: "Knowledge base, ticket intake, and AI-assisted guidance for licensed customers worldwide.",
+  },
+];
 
 export default function HomePage() {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <SiteNav />
-      <section
-        style={{
-          flex: 1,
-          minHeight: "78vh",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 32,
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          padding: "48px 28px 64px",
-          background:
-            "radial-gradient(ellipse 90% 70% at 70% 20%, rgba(198,167,94,0.18), transparent 55%), linear-gradient(165deg, #0b0b0c 0%, #1c1c1f 45%, #0b0b0c 100%)",
-          borderBottom: "1px solid var(--gm-border)",
-        }}
-      >
-        <div>
-          <p className="brand-mark" style={{ marginBottom: 12 }}>
-            WEBSITE EDITION · AI v2.0 PROFESSIONAL
-          </p>
-          <h1
-            style={{
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: "clamp(40px, 8vw, 72px)",
-              fontWeight: 400,
-              margin: "0 0 16px",
-              letterSpacing: "-0.02em",
-              color: "var(--gm-ivory-100)",
-              maxWidth: 900,
-              lineHeight: 1.05,
-            }}
-          >
-            THE GOLD MIND
-            <span style={{ display: "block", color: "var(--gm-gold-300)", fontSize: "0.55em", marginTop: 8 }}>
-              PROFESSIONAL
-            </span>
-          </h1>
-          <p style={{ maxWidth: 480, color: "var(--gm-ivory-300)", fontSize: 17, marginBottom: 28 }}>
-            Certified Core on MetaTrader 5. License, download, and update through the official Customer Portal.
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-            <Link className="btn btn-primary" href="/pricing">
-              View pricing
-            </Link>
-            <Link className="btn" href="/login">
-              Sign in
-            </Link>
-          </div>
-        </div>
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-          <BrandLogo variant="hero" priority />
+    <EnterpriseShell navTransparent>
+      <section className="e-hero">
+        <HeroBackground />
+        <div className="e-hero-grid">
+          <ScrollReveal className="e-hero-content">
+            <p className="e-eyebrow">THE GOLD MIND AI · v2.0 Professional</p>
+            <h1 className="e-hero-title">Institutional AI Trading Software</h1>
+            <p className="e-lead">
+              Systematic MetaTrader 5 automation with certified Core integrity, enterprise licensing, and global
+              infrastructure.
+            </p>
+            <div className="e-btn-group">
+              <Link href="/pricing" className="e-btn e-btn-primary">
+                View Pricing
+              </Link>
+              <Link href="/login" className="e-btn e-btn-ghost">
+                Customer Portal
+              </Link>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal delay={2}>
+            <HeroDashboard />
+          </ScrollReveal>
         </div>
       </section>
-      <SiteFooter />
+
+      <hr className="e-divider" />
+
+      <section className="e-section">
+        <div className="e-container">
+          <ScrollReveal>
+            <div className="e-section-header">
+              <p className="e-eyebrow">Capabilities</p>
+              <h2 className="e-section-title">Engineered for professional traders</h2>
+              <p className="e-section-sub">
+                Every component is designed for reliability, transparency, and institutional-grade operation.
+              </p>
+            </div>
+          </ScrollReveal>
+          <div className="e-grid-3">
+            {FEATURES.map((f, i) => (
+              <ScrollReveal key={f.title} delay={(i % 3) as 0 | 1 | 2}>
+                <div className="e-glass-card">
+                  <div className="e-icon-wrap">{f.icon}</div>
+                  <h3>{f.title}</h3>
+                  <p>{f.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <hr className="e-divider" />
+      <SoftwareShowcase />
+      <hr className="e-divider" />
+      <TrustSection />
+
+      <section className="e-section">
+        <div className="e-container" style={{ textAlign: "center" }}>
+          <ScrollReveal>
+            <p className="e-eyebrow">Get Started</p>
+            <h2 className="e-section-title">Begin your professional journey</h2>
+            <p className="e-section-sub">
+              License THE GOLD MIND through the official Customer Portal. Trading involves substantial risk of loss.
+            </p>
+            <div className="e-btn-group" style={{ justifyContent: "center" }}>
+              <Link href="/register" className="e-btn e-btn-primary">
+                Create Account
+              </Link>
+              <Link href="/docs" className="e-btn e-btn-ghost">
+                Read Documentation
+              </Link>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
       <AiAssistantWidget surface="website" role="anonymous" title="Ask AI" />
-    </div>
+    </EnterpriseShell>
   );
 }

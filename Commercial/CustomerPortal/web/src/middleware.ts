@@ -24,6 +24,11 @@ export default auth((req) => {
 
   const isPublic =
     path === "/" ||
+    path === "/about" ||
+    path === "/company" ||
+    path === "/technology" ||
+    path === "/infrastructure" ||
+    path === "/security" ||
     path === "/login" ||
     path === "/register" ||
     path === "/pricing" ||
@@ -34,6 +39,7 @@ export default auth((req) => {
     path === "/cookies" ||
     path === "/refund" ||
     path === "/risk" ||
+    path.startsWith("/partners") ||
     path.startsWith("/developers") ||
     path.startsWith("/api/auth") ||
     path.startsWith("/api/health") ||
@@ -45,6 +51,7 @@ export default auth((req) => {
     path.startsWith("/api/releases/download") ||
     path.startsWith("/api/releases/report") ||
     path.startsWith("/brand/") ||
+    path.startsWith("/media/") ||
     path === "/favicon.ico" ||
     path === "/site.webmanifest";
 
