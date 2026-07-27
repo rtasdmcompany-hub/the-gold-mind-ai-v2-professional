@@ -5,7 +5,7 @@
 #define MyAppName "THE GOLD MIND PROFESSIONAL"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "RTAS Group of Companies"
-#define MyAppURL "https://thegoldmind.ai"
+#define MyAppURL "https://the-gold-mind-ai-v2-professional.vercel.app"
 #define MyAppExeName "TGM-Professional-Launcher.exe"
 #define MyAppId "RTAS.TheGoldMind.Professional.1"
 

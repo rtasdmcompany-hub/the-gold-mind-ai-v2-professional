@@ -41,7 +41,7 @@ const FOOTER = {
 };
 
 const SOCIAL = [
-  { href: "https://github.com/rtasdmcompany-hub", label: "GitHub", external: true },
+  { href: "https://github.com/rtasdmcompany-hub/the-gold-mind-ai-v2-professional", label: "GitHub", external: true },
   { href: "/contact", label: "LinkedIn", external: false },
   { href: "/contact", label: "X / Twitter", external: false },
 ];

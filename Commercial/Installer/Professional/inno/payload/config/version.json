@@ -1,10 +1,11 @@
 ﻿{
-    "product":  "THE GOLD MIND PROFESSIONAL",
-    "version":  "1.0.0",
-    "channel":  "stable",
-    "buildAt":  "2026-07-26T13:31:42.8668515Z",
-    "portalBase":  "https://thegoldmind.ai",
-    "coreMq5Sha":  "75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce",
-    "coreEx5Sha":  "7883b4155aabb088e07f9f9563b413b7b63de7188d610021fb4fdca603e8c619",
-    "coreFrozen":  true
+  "product": "THE GOLD MIND PROFESSIONAL",
+  "productId": "the-gold-mind-ai-v2-professional",
+  "version": "1.0.0",
+  "channel": "stable",
+  "buildAt": "2026-07-27T00:00:00.000Z",
+  "portalBase": "https://the-gold-mind-ai-v2-professional.vercel.app",
+  "coreMq5Sha": "75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce",
+  "coreEx5Sha": "7883b4155aabb088e07f9f9563b413b7b63de7188d610021fb4fdca603e8c619",
+  "coreFrozen": true
 }

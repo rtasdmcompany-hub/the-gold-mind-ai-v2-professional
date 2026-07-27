@@ -8,7 +8,7 @@
 param(
   [string]$Version = "1.0.0",
   [string]$Channel = "stable",
-  [string]$PortalBase = "https://thegoldmind.ai",
+  [string]$PortalBase = "https://the-gold-mind-ai-v2-professional.vercel.app",
   [ValidateSet("unsigned", "standard", "ev")]
   [string]$SignMode = "unsigned",
   [string]$SignCertPath = "",
