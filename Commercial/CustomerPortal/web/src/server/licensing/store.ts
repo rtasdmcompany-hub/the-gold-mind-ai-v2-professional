@@ -1,5 +1,11 @@
 import fs from "fs";
 import {
+  assertDurableStoreForLicensing,
+  durableGet,
+  durableSet,
+  isDurableStoreConfigured,
+} from "@/server/cloud/cache";
+import {
   decryptJson,
   encryptJson,
   hmacSha256,
@@ -17,8 +23,12 @@ const EMPTY: LicenseStoreData = {
   audit: [],
 };
 
+/** Durable Redis key — survives Vercel /tmp wipes when UPSTASH_* is set. */
+const DURABLE_KEY = "tgm:licensing:store:v1";
+
 let memoryCache: LicenseStoreData | null = null;
 let writeChain: Promise<void> = Promise.resolve();
+let loadPromise: Promise<void> | null = null;
 
 export function licenseIntegrityPayload(lic: Omit<LicenseRecord, "integrityMac">): string {
   return [
@@ -44,7 +54,7 @@ export function verifyIntegrity(lic: LicenseRecord): boolean {
   return safeEqualHex(hmacSha256(licenseIntegrityPayload(rest)), integrityMac);
 }
 
-function loadRaw(): LicenseStoreData {
+function loadRawFromDisk(): LicenseStoreData {
   const p = storePath();
   if (!fs.existsSync(p)) return structuredClone(EMPTY);
   try {
@@ -55,19 +65,77 @@ function loadRaw(): LicenseStoreData {
   }
 }
 
+/**
+ * Load licensing store into memory.
+ * Prefer Upstash durable blob (production), then local/encrypted file.
+ * Call this at the start of every portal/API request that reads licenses.
+ */
+export async function ensureStoreLoaded(): Promise<void> {
+  if (memoryCache) return;
+  if (!loadPromise) {
+    loadPromise = (async () => {
+      if (isDurableStoreConfigured()) {
+        try {
+          const remote = await durableGet(DURABLE_KEY);
+          if (remote) {
+            memoryCache = decryptJson<LicenseStoreData>(remote);
+            return;
+          }
+        } catch {
+          /* fall through to disk */
+        }
+      }
+      memoryCache = loadRawFromDisk();
+      if (isDurableStoreConfigured() && memoryCache.licenses.length > 0) {
+        try {
+          await durableSet(DURABLE_KEY, encryptJson(memoryCache));
+        } catch {
+          /* non-fatal */
+        }
+      }
+    })().finally(() => {
+      /* keep memoryCache; allow retry only if still null */
+      if (!memoryCache) loadPromise = null;
+    });
+  }
+  await loadPromise;
+  if (!memoryCache) memoryCache = structuredClone(EMPTY);
+}
+
 export function readStore(): LicenseStoreData {
   if (!memoryCache) {
-    memoryCache = loadRaw();
+    memoryCache = loadRawFromDisk();
   }
   return memoryCache;
 }
 
 export function writeStore(data: LicenseStoreData): void {
+  assertDurableStoreForLicensing();
   memoryCache = data;
-  writeChain = writeChain.then(() => {
-    const blob = encryptJson(data);
-    fs.writeFileSync(storePath(), blob, "utf8");
+  const blob = encryptJson(data);
+  writeChain = writeChain.then(async () => {
+    try {
+      fs.writeFileSync(storePath(), blob, "utf8");
+    } catch {
+      /* serverless may only have durable store */
+    }
+    if (isDurableStoreConfigured()) {
+      await durableSet(DURABLE_KEY, blob);
+      return;
+    }
+    // Local/dev only — file write above is enough. Production is blocked by assertDurableStoreForLicensing.
   });
+}
+
+/** Confirm the last write finished (Redis + disk). Call after create/activate before returning to installer. */
+export async function flushStoreVerified(): Promise<void> {
+  await writeChain;
+  if (isDurableStoreConfigured()) {
+    const remote = await durableGet(DURABLE_KEY);
+    if (!remote) {
+      throw new Error("DURABLE_STORE_VERIFY_FAILED: license write did not persist to Redis");
+    }
+  }
 }
 
 export async function flushStore(): Promise<void> {

@@ -2,15 +2,16 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import type { Provider } from "next-auth/providers";
+import { authConfig } from "@/auth.config";
 import { writeAudit } from "@/server/cloud/audit";
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/server/cloud/security";
 import { cacheSet, CacheKeys } from "@/server/cloud/cache";
 import type { CloudRole } from "@/server/cloud/types";
 import { normalizeAdminRole } from "@/server/admin/roles";
-import { shouldEnableDemoAuth } from "@/server/security/dev-bypass";
+import { authenticatePassword, upsertOAuthAccount } from "@/server/accounts/service";
 
 /**
- * Enterprise portal auth — Google OAuth · Email/Demo login · JWT sessions · RBAC.
+ * Enterprise portal auth — Google OAuth · verified email/password · JWT · RBAC.
  * Standalone commercial service — no MetaTrader / Core Trading Engine imports.
  */
 
@@ -40,80 +41,100 @@ function resolveRole(email: string, explicit?: string): CloudRole {
   return "customer";
 }
 
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+const googleClientId = (process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID || "").trim();
+const googleClientSecret = (process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET || "").trim();
+const googleLooksValid =
+  googleClientId.includes(".apps.googleusercontent.com") && googleClientSecret.length >= 20;
+
+if (googleLooksValid) {
   providers.push(
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    })
-  );
-}
-
-if (shouldEnableDemoAuth(providers.length > 0)) {
-  providers.push(
-    Credentials({
-      id: "demo",
-      name: "Email Login",
-      credentials: {
-        email: { label: "Email", type: "email" },
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
+      // Google advertises authorization_response_iss_parameter_supported but often omits `iss`
+      // on the auth redirect; Auth.js then fails with Configuration / CallbackRouteError.
+      // Use OAuth + userinfo (not discovery OIDC) so iss is not required on the callback.
+      type: "oauth",
+      authorization: {
+        url: "https://accounts.google.com/o/oauth2/v2/auth",
+        params: {
+          scope: "openid email profile",
+          prompt: "select_account",
+        },
       },
-      async authorize(credentials) {
-        const email = ((credentials?.email as string) || "demo@goldmind.local").toLowerCase();
-        if (await isLoginBlocked(email)) {
-          writeAudit({
-            user: email,
-            action: "login_failed",
-            ip: "auth",
-            result: "denied",
-            detail: "brute-force lockout",
-          });
-          return null;
-        }
-        const role = resolveRole(email);
-        await clearLoginFailures(email);
-        const label =
-          role === "super_admin" || role === "admin"
-            ? "Portal Admin"
-            : role === "support_agent" || role === "support"
-              ? "Support Agent"
-              : role === "finance_manager"
-                ? "Finance Manager"
-                : role === "commercial_manager"
-                  ? "Commercial Manager"
-                  : role === "qa_manager"
-                    ? "QA Manager"
-                    : role === "auditor"
-                      ? "Auditor"
-                      : "Customer";
+      token: "https://oauth2.googleapis.com/token",
+      userinfo: "https://openidconnect.googleapis.com/v1/userinfo",
+      checks: ["pkce", "state"],
+      profile(profile) {
         return {
-          id: `${role}-${email}`,
-          name: label,
-          email,
-          role,
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
         };
       },
-    })
+    } as Parameters<typeof Google>[0])
   );
 }
 
+providers.push(
+  Credentials({
+    id: "credentials",
+    name: "Email & Password",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    async authorize(credentials) {
+      const email = String(credentials?.email || "").trim().toLowerCase();
+      const password = String(credentials?.password || "");
+      if (!email || !password) return null;
+      if (await isLoginBlocked(email)) {
+        writeAudit({
+          user: email,
+          action: "login_failed",
+          ip: "auth",
+          result: "denied",
+          detail: "brute-force lockout",
+        });
+        return null;
+      }
+      const account = await authenticatePassword(email, password);
+      if (!account) {
+        await recordLoginFailure(email, "auth");
+        writeAudit({
+          user: email,
+          action: "login_failed",
+          ip: "auth",
+          result: "denied",
+          detail: "invalid credentials or unverified email",
+        });
+        return null;
+      }
+      await clearLoginFailures(email);
+      const role = resolveRole(email);
+      return {
+        id: account.id,
+        name: account.name,
+        email: account.email,
+        role,
+      };
+    },
+  })
+);
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // Prefer AUTH_SECRET; fall back to NEXTAUTH_SECRET for Auth.js v5
+  ...authConfig,
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   providers,
-  session: {
-    strategy: "jwt",
-    // Access session 8h; JWT acts as refreshable session token (Auth.js rotation on activity)
-    maxAge: 60 * 60 * 8,
-    updateAge: 60 * 30,
-  },
-  pages: {
-    signIn: "/login",
-  },
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       const email = (user.email || "").toLowerCase();
       if (!email) return false;
       if (await isLoginBlocked(email)) return false;
+      if (account?.provider === "google") {
+        await upsertOAuthAccount({ email, name: user.name });
+      }
       return true;
     },
     async jwt({ token, user, trigger }) {
@@ -122,7 +143,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = resolveRole(email, (user as { role?: string }).role);
         token.email = email;
         if (user.image) token.picture = user.image;
-        // Session cache hint for gateway / rate-limit affinity
         if (email) {
           await cacheSet(CacheKeys.session(email), String(token.role || "customer"), 60 * 60 * 8);
         }
@@ -138,7 +158,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = resolveRole(String(token.email));
       }
       if (!token.role) token.role = "customer";
-      // Soft refresh: on session update, extend cache
       if (trigger === "update" && token.email) {
         await cacheSet(CacheKeys.session(String(token.email)), String(token.role), 60 * 60 * 8);
       }
@@ -168,5 +187,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
 });
 
-/** Export for login page brute-force recording */
 export { recordLoginFailure, resolveRole };

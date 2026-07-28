@@ -14,8 +14,11 @@ export function PortalNav({ showAdmin = false }: { showAdmin?: boolean }) {
   return (
     <aside className="nav" aria-label="Customer Portal">
       <div className="brand">
-        <BrandLogo variant="nav" href="/portal" priority />
+        <BrandLogo variant="nav" href="/" priority />
         <p className="brand-sub">Customer Portal · Professional</p>
+        <Link href="/" className="nav-link portal-home-link">
+          ← Website Home
+        </Link>
       </div>
       {items.map((item) => {
         const active =
@@ -32,6 +35,11 @@ export function PortalNav({ showAdmin = false }: { showAdmin?: boolean }) {
           </Link>
         );
       })}
+      <div style={{ marginTop: "auto", paddingTop: 16 }}>
+        <Link href="/" className="nav-link">
+          Official Website
+        </Link>
+      </div>
     </aside>
   );
 }

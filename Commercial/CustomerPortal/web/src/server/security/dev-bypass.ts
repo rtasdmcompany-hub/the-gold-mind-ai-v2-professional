@@ -19,15 +19,12 @@ export function isDevAdminBypass(email: string | null | undefined): boolean {
 }
 
 /**
- * Demo credentials provider:
- * - Production: disabled unless PORTAL_ALLOW_DEMO_IN_PROD=true
- * - Non-prod: enabled when PORTAL_DEMO_AUTH=true or no other providers
+ * Demo credentials provider — permanently disabled.
+ * Use verified email/password accounts or Google OAuth instead.
  */
-export function shouldEnableDemoAuth(hasOtherProviders: boolean): boolean {
-  if (isProductionRuntime()) {
-    return process.env.PORTAL_ALLOW_DEMO_IN_PROD === "true" && process.env.PORTAL_DEMO_AUTH !== "false";
-  }
-  return process.env.PORTAL_DEMO_AUTH === "true" || !hasOtherProviders;
+export function shouldEnableDemoAuth(_unused?: boolean): boolean {
+  void _unused;
+  return false;
 }
 
 export function isReleaseDownloadAuthRequired(): boolean {

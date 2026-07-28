@@ -1,12 +1,13 @@
 import { auth } from "@/auth";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LicenseActionsPanel } from "@/components/LicenseActionsPanel";
+import { LicenseStoreBanner } from "@/components/LicenseStoreBanner";
 import { ensureSeedData } from "@/server/licensing/seed";
 import { listLicensesForCustomer } from "@/server/licensing/license-service";
 import { redirect } from "next/navigation";
 
 export default async function LicensesPage() {
-  ensureSeedData();
+  await ensureSeedData();
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
   const licenses = listLicensesForCustomer(session.user.email);
@@ -16,10 +17,12 @@ export default async function LicensesPage() {
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">My Licenses</h1>
         <p className="page-sub">
-          Real-time status from Licensing Engine. Full keys are never returned after generation.
+          Step 1: generate a key here. Step 2: paste it into Setup.exe. Installation finishes only after
+          portal activation succeeds — no second trip, no skipped licenses.
         </p>
       </header>
 
+      <LicenseStoreBanner />
       <LicenseActionsPanel />
 
       <div className="table-wrap">
@@ -38,7 +41,7 @@ export default async function LicensesPage() {
           <tbody>
             {licenses.length === 0 && (
               <tr>
-                <td colSpan={7}>No licenses yet — generate one above.</td>
+                <td colSpan={7}>No licenses yet — generate one above, then paste the key into Setup.exe.</td>
               </tr>
             )}
             {licenses.map((lic) => (

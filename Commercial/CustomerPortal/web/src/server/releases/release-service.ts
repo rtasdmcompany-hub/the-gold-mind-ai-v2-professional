@@ -170,11 +170,17 @@ function maskIp(ip?: string): string {
 
 /** @deprecated use ensurePackageArtifact — kept for import compatibility */
 export function buildPlaceholderPackageBuffer(pkg: ReleasePackage): Buffer {
-  return ensurePackageArtifact(pkg).buffer;
+  const result = ensurePackageArtifact(pkg);
+  if (result.buffer) return result.buffer;
+  throw new Error("Package bytes unavailable — configure RELEASE_STABLE_ZIP_URL or local Commercial/Releases ZIP.");
 }
 
-export function getPackageBytes(packageId: string): { buffer: Buffer; package: ReleasePackage } | null {
+export function getPackageBytes(
+  packageId: string
+): { buffer?: Buffer; redirectUrl?: string; package: ReleasePackage } | null {
   const pkg = readReleaseStore().packages.find((p) => p.id === packageId);
   if (!pkg || pkg.status !== "published") return null;
-  return ensurePackageArtifact(pkg);
+  const result = ensurePackageArtifact(pkg);
+  if (!result.buffer && !result.redirectUrl) return null;
+  return result;
 }

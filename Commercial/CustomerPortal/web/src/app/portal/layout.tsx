@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import Link from "next/link";
 import { PortalNav } from "@/components/PortalNav";
 import { PortalUserBar } from "@/components/PortalUserBar";
 import { BrandLogo, RtasGroupBadge } from "@/components/BrandLogo";
@@ -20,6 +21,17 @@ export default async function PortalLayout({
     <div className="shell portal-shell">
       <PortalNav showAdmin={!!showAdmin} />
       <div className="main">
+        <div className="portal-site-bar">
+          <Link href="/" className="portal-site-bar-brand">
+            THE GOLD MIND AI · Official Website
+          </Link>
+          <div className="portal-site-bar-links">
+            <Link href="/">Home</Link>
+            <Link href="/pricing">Pricing</Link>
+            <Link href="/docs">Docs</Link>
+            <Link href="/contact">Contact</Link>
+          </div>
+        </div>
         <div className="topbar portal-topbar">
           <PortalUserBar
             name={session.user.name}
@@ -29,25 +41,22 @@ export default async function PortalLayout({
           />
         </div>
         {children}
-        <div
-          style={{
-            marginTop: 28,
-            paddingTop: 16,
-            borderTop: "1px solid var(--gm-border)",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 16,
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <BrandLogo variant="footer" />
-          <RtasGroupBadge height={44} />
-        </div>
-        <p className="footer-note">
-          THE GOLD MIND AI v2.0 PROFESSIONAL · Customer Portal · Commercial service only · Core Trading Engine is not
-          connected to this application.
-        </p>
+        <footer className="portal-footer-block">
+          <div className="portal-footer-brands">
+            <BrandLogo variant="footer" href="/" />
+            <RtasGroupBadge height={44} />
+          </div>
+          <p className="footer-note">
+            THE GOLD MIND AI v2.0 PROFESSIONAL · Customer Portal · Commercial service only · Core Trading Engine is not
+            connected to this application.
+          </p>
+          <div className="portal-footer-links">
+            <Link href="/">← Back to Official Website</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
+            <Link href="/contact">Support</Link>
+          </div>
+        </footer>
       </div>
     </div>
   );

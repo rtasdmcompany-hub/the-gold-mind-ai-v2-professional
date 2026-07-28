@@ -1,25 +1,22 @@
-import { auth } from "@/auth";
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
+import { authConfig } from "@/auth.config";
 import { applySecurityHeaders, checkCsrf, enforceHttps } from "@/server/cloud/security-headers";
 
 /**
- * Cloud edge middleware — session gate · HTTPS · CSRF · security headers.
- *
- * Public (no session):
- * - /login
- * - /api/auth/*
- * - /api/health
- * - /api/billing/webhooks/*
- * - /api/releases/check|download|report
- *
- * Trading Engine / MQL5 Market are never involved.
+ * Edge middleware — session gate only (no Node crypto / accounts store).
+ * Full Google + credentials providers live in auth.ts (Node runtime).
  */
+const { auth } = NextAuth({
+  ...authConfig,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+});
+
 export default auth((req) => {
   const httpsRedirect = enforceHttps(req);
   if (httpsRedirect) return applySecurityHeaders(httpsRedirect);
 
   const path = req.nextUrl.pathname;
-  // Require a real user identity — empty/error auth objects must not count as logged-in
   const isLoggedIn = !!(req.auth?.user?.email || req.auth?.user?.id);
 
   const isPublic =
@@ -31,6 +28,7 @@ export default auth((req) => {
     path === "/security" ||
     path === "/login" ||
     path === "/register" ||
+    path === "/verify-email" ||
     path === "/pricing" ||
     path === "/docs" ||
     path === "/contact" ||
@@ -50,6 +48,10 @@ export default auth((req) => {
     path.startsWith("/api/releases/check") ||
     path.startsWith("/api/releases/download") ||
     path.startsWith("/api/releases/report") ||
+    path === "/api/licenses/installer-activate" ||
+    path === "/api/licenses/ready" ||
+    path === "/api/trading/sync" ||
+    path === "/api/notifications/trade-closed" ||
     path.startsWith("/brand/") ||
     path.startsWith("/media/") ||
     path === "/favicon.ico" ||

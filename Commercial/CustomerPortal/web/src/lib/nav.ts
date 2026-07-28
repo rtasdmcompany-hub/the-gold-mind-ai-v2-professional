@@ -1,5 +1,6 @@
 export const customerNav = [
   { href: "/portal", label: "Dashboard" },
+  { href: "/portal/trading", label: "Trading Account" },
   { href: "/portal/licenses", label: "My Licenses" },
   { href: "/portal/downloads", label: "Downloads" },
   { href: "/portal/updates", label: "Updates" },

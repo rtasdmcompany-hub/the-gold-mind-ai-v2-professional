@@ -3,6 +3,16 @@ import path from "path";
 import { createHash, randomBytes } from "crypto";
 import type { ReleaseChannel, ReleasePackage, ReleaseStoreData } from "./types";
 import { commercialDataRoot } from "@/server/cloud/data-root";
+import {
+  STABLE_PACKAGE_FILE,
+  STABLE_PACKAGE_ID,
+  STABLE_SHA256,
+  STABLE_SIZE_BYTES,
+  STABLE_VERSION,
+  configuredReleaseAssetUrl,
+  isLegacySyntheticPackageId,
+  stableReleaseNotes,
+} from "./commercial-source";
 
 function dataDir(): string {
   const dir = process.env.RELEASE_DATA_DIR || commercialDataRoot("releases");
@@ -18,92 +28,102 @@ const EMPTY: ReleaseStoreData = { version: 1, packages: [], updateEvents: [], do
 
 let cache: ReleaseStoreData | null = null;
 
-function seedPackages(): ReleasePackage[] {
+function buildStablePackage(): ReleasePackage {
   const base = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  return [
-    {
-      id: "rel_200_stable",
-      product: "THE GOLD MIND PROFESSIONAL",
-      version: "2.0.0",
-      buildNumber: "21060",
-      channel: "stable",
-      status: "published",
-      releasedAt: "2026-07-20T00:00:00.000Z",
-      packageFile: "TGM_PROFESSIONAL_2.0.0_stable.zip",
-      packageUrl: `${base}/api/releases/download/rel_200_stable`,
-      packageSizeBytes: 1300234,
-      sha256: "a3f1c9e8b2d4470f91c6e5a8d0b3f7e1c4a6928d5e7b1f0c3d6a9e2b5c8f1d4a",
-      signatureRequired: false,
-      signatureSubject: "CN=RTAS Group of Companies (pending public code sign)",
-      signatureStatus: "pending_code_sign",
-      releaseNotes:
-        "Professional commercial shell · installer/updater · Core Trading Engine unchanged (certified frozen).",
-      compatibility: {
-        os: ["Windows 10", "Windows 11"],
-        mt5: "build 3800+",
-        coreTag: "2.0.0",
-        coreFrozen: true,
-      },
-      downloadCount: 0,
-      updateSuccessCount: 0,
-      updateFailCount: 0,
-      rollbackEvents: 0,
+  const external = configuredReleaseAssetUrl() || undefined;
+  return {
+    id: STABLE_PACKAGE_ID,
+    product: "THE GOLD MIND PROFESSIONAL",
+    version: STABLE_VERSION,
+    buildNumber: "10000",
+    channel: "stable",
+    status: "published",
+    releasedAt: "2026-07-28T12:28:31.000Z",
+    packageFile: STABLE_PACKAGE_FILE,
+    packageUrl: `${base}/api/releases/download/${STABLE_PACKAGE_ID}`,
+    externalAssetUrl: external,
+    packageSizeBytes: STABLE_SIZE_BYTES,
+    sha256: STABLE_SHA256,
+    signatureRequired: false,
+    signatureSubject: "CN=RTAS Group of Companies (pending public code sign)",
+    signatureStatus: "pending_code_sign",
+    releaseNotes: stableReleaseNotes(),
+    compatibility: {
+      os: ["Windows 10", "Windows 11"],
+      mt5: "build 3800+",
+      coreTag: "1.0.0",
+      coreFrozen: true,
     },
-    {
-      id: "rel_201_rc",
-      product: "THE GOLD MIND PROFESSIONAL",
-      version: "2.0.1-rc.1",
-      buildNumber: "21061",
-      channel: "rc",
-      status: "published",
-      releasedAt: "2026-07-25T00:00:00.000Z",
-      packageFile: "TGM_PROFESSIONAL_2.0.1-rc.1_rc.zip",
-      packageUrl: `${base}/api/releases/download/rel_201_rc`,
-      packageSizeBytes: 1310000,
-      sha256: "b8e2d1a7c4f9053e62a1b9d8c7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8",
-      signatureRequired: false,
-      signatureSubject: "unsigned RC",
-      signatureStatus: "none",
-      releaseNotes: "Release Candidate — installer hardening. Not for production accounts.",
-      compatibility: {
-        os: ["Windows 10", "Windows 11"],
-        mt5: "build 3800+",
-        coreTag: "2.0.0",
-        coreFrozen: true,
-      },
-      downloadCount: 0,
-      updateSuccessCount: 0,
-      updateFailCount: 0,
-      rollbackEvents: 0,
-    },
-    {
-      id: "rel_dev_nightly",
-      product: "THE GOLD MIND PROFESSIONAL",
-      version: "2.1.0-dev",
-      buildNumber: "21070",
-      channel: "development",
-      status: "published",
-      releasedAt: "2026-07-26T00:00:00.000Z",
-      packageFile: "TGM_PROFESSIONAL_2.1.0-dev_development.zip",
-      packageUrl: `${base}/api/releases/download/rel_dev_nightly`,
-      packageSizeBytes: 900000,
-      sha256: "c1d2e3f4a5b697887766554433221100ffeeddccbbaa99887766554433221100",
-      signatureRequired: false,
-      signatureSubject: "dev only",
-      signatureStatus: "none",
-      releaseNotes: "Development channel — internal testing.",
-      compatibility: {
-        os: ["Windows 10", "Windows 11"],
-        mt5: "build 3800+",
-        coreTag: "2.0.0",
-        coreFrozen: true,
-      },
-      downloadCount: 0,
-      updateSuccessCount: 0,
-      updateFailCount: 0,
-      rollbackEvents: 0,
-    },
-  ];
+    downloadCount: 0,
+    updateSuccessCount: 0,
+    updateFailCount: 0,
+    rollbackEvents: 0,
+  };
+}
+
+function seedPackages(): ReleasePackage[] {
+  return [buildStablePackage()];
+}
+
+/** Ensure real 1.0.0 stable is catalogued; supersede legacy synthetic seeds. */
+function migrateCatalog(data: ReleaseStoreData): boolean {
+  let changed = false;
+
+  for (const pkg of data.packages) {
+    if (isLegacySyntheticPackageId(pkg.id) && pkg.status === "published") {
+      pkg.status = "superseded";
+      changed = true;
+    }
+  }
+
+  const existing = data.packages.find((p) => p.id === STABLE_PACKAGE_ID);
+  const fresh = buildStablePackage();
+  if (!existing) {
+    data.packages.unshift(fresh);
+    changed = true;
+  } else {
+    // Keep counters; refresh identity / notes / integrity defaults when still on placeholders
+    if (existing.version !== STABLE_VERSION) {
+      existing.version = STABLE_VERSION;
+      changed = true;
+    }
+    if (existing.packageFile !== STABLE_PACKAGE_FILE) {
+      existing.packageFile = STABLE_PACKAGE_FILE;
+      changed = true;
+    }
+    if (existing.status !== "published") {
+      existing.status = "published";
+      changed = true;
+    }
+    if (existing.channel !== "stable") {
+      existing.channel = "stable";
+      changed = true;
+    }
+    if (!existing.sha256 || existing.sha256.length < 32) {
+      existing.sha256 = STABLE_SHA256;
+      changed = true;
+    }
+    if (!existing.packageSizeBytes || existing.packageSizeBytes < 100_000) {
+      existing.packageSizeBytes = STABLE_SIZE_BYTES;
+      changed = true;
+    }
+    const ext = configuredReleaseAssetUrl();
+    if (ext && existing.externalAssetUrl !== ext) {
+      existing.externalAssetUrl = ext;
+      changed = true;
+    }
+    if (!existing.releaseNotes?.includes("1.0.0")) {
+      existing.releaseNotes = stableReleaseNotes();
+      changed = true;
+    }
+    existing.compatibility = {
+      ...existing.compatibility,
+      coreTag: "1.0.0",
+      coreFrozen: true,
+    };
+  }
+
+  return changed;
 }
 
 export function readReleaseStore(): ReleaseStoreData {
@@ -115,6 +135,12 @@ export function readReleaseStore(): ReleaseStoreData {
     return cache;
   }
   cache = JSON.parse(fs.readFileSync(p, "utf8")) as ReleaseStoreData;
+  if (!Array.isArray(cache.packages)) cache.packages = [];
+  if (!Array.isArray(cache.updateEvents)) cache.updateEvents = [];
+  if (!Array.isArray(cache.downloadEvents)) cache.downloadEvents = [];
+  if (migrateCatalog(cache)) {
+    writeReleaseStore(cache);
+  }
   return cache;
 }
 
@@ -145,7 +171,6 @@ export function compareSemver(a: string, b: string): number {
     if ((aa[i] || 0) > (bb[i] || 0)) return 1;
     if ((aa[i] || 0) < (bb[i] || 0)) return -1;
   }
-  // rc/dev always "newer" metadata-wise if base equal and channel differs — treat string inequality
   if (a === b) return 0;
   return a > b ? 1 : -1;
 }

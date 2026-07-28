@@ -5,7 +5,7 @@ import { canAccessAdminConsole } from "@/server/admin/roles";
 import { isReleaseDownloadAuthRequired } from "@/server/security/dev-bypass";
 
 /**
- * Secure package download — serves verified ZIP whose SHA-256 matches catalog.
+ * Secure package download — serves verified commercial ZIP (or redirects to hosted asset).
  * Customers: stable channel only. RC / development require Admin Console role.
  */
 export async function GET(
@@ -15,9 +15,16 @@ export async function GET(
   const { id } = await ctx.params;
   const packed = getPackageBytes(id);
   if (!packed) {
-    return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    return NextResponse.json(
+      {
+        error: "NOT_FOUND",
+        message:
+          "Release package unavailable. For production, set RELEASE_STABLE_ZIP_URL to the GitHub/Blob ZIP URL.",
+      },
+      { status: 404 }
+    );
   }
-  const { buffer, package: pkg } = packed;
+  const { buffer, redirectUrl, package: pkg } = packed;
 
   const proto = req.headers.get("x-forwarded-proto");
   if (process.env.NODE_ENV === "production" && proto && proto !== "https") {
@@ -40,6 +47,21 @@ export async function GET(
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
   recordDownload(id, session?.user?.email || undefined, ip);
+
+  // Hosted asset (GitHub Release / Vercel Blob / CDN) — auth already checked
+  if (redirectUrl && !buffer) {
+    return NextResponse.redirect(redirectUrl, 302);
+  }
+
+  if (!buffer) {
+    return NextResponse.json(
+      {
+        error: "ASSET_UNAVAILABLE",
+        message: "Set RELEASE_STABLE_ZIP_URL or place TGM_PROFESSIONAL_1.0.0_stable.zip on the release path.",
+      },
+      { status: 503 }
+    );
+  }
 
   const body = new Uint8Array(buffer);
   return new NextResponse(body, {

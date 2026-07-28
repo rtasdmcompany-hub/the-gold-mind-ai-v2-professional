@@ -32,22 +32,43 @@ export function queueCommercialEmail(input: {
   template: EmailTemplate;
   body: string;
   subject?: string;
-}): void {
+  /** Default queued — only mark sent after a real provider accept. */
+  status?: "queued" | "sent" | "failed";
+}): string {
+  const emailId = id("eml");
   mutateBilling((data) => {
     data.emails.unshift({
-      id: id("eml"),
+      id: emailId,
       to: input.to,
       template: input.template,
       subject: input.subject || SUBJECTS[input.template],
       body: input.body,
       createdAt: nowIso(),
-      status: "sent",
+      status: input.status || "queued",
     });
   });
 
   if (process.env.NODE_ENV !== "production" || process.env.BILLING_EMAIL_LOG === "true") {
-    console.info(`[billing-email] → ${input.to} · ${input.template}`);
+    console.info(`[billing-email] ${input.status || "queued"} → ${input.to} · ${input.template}`);
   }
+  return emailId;
+}
+
+/** Update outbox row after Resend attempt (sent | failed). */
+export function updateCommercialEmailStatus(
+  emailId: string,
+  status: "queued" | "sent" | "failed",
+  errorDetail?: string
+): void {
+  mutateBilling((data) => {
+    const row = data.emails.find((e) => e.id === emailId);
+    if (!row) return;
+    row.status = status;
+    if (errorDetail && status === "failed") {
+      const note = `\n[delivery] ${errorDetail}`;
+      if (!row.body.includes("[delivery]")) row.body = `${row.body}${note}`;
+    }
+  });
 }
 
 export function listEmailsForCustomer(email: string) {

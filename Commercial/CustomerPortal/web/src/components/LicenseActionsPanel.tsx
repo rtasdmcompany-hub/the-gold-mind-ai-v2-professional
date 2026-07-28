@@ -12,9 +12,10 @@ export function LicenseActionsPanel() {
   return (
     <div className="grid grid-2" style={{ marginBottom: 20 }}>
       <div className="card">
-        <h3>Purchase → Generate (MVP)</h3>
+        <h3>1. Generate license key</h3>
         <p className="meta" style={{ marginBottom: 12 }}>
-          Creates a license for your signed-in account. Full key shown once — never stored in the browser afterward.
+          Create your key here (trial, monthly, yearly, or lifetime). Copy it once, then paste the same
+          email + key into Setup.exe. Installation will not finish until the portal activates that key.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {(["trial", "monthly", "yearly", "lifetime"] as LicenseType[]).map((type) => (
@@ -27,7 +28,7 @@ export function LicenseActionsPanel() {
                 start(async () => {
                   const r = await actionCreateLicense(type);
                   setOneTimeKey(r.plaintextKey);
-                  setMessage(`Created ${type} license ${r.license.id}`);
+                  setMessage(`Created ${type} license ${r.license.id} — copy the key into Setup.exe`);
                 })
               }
             >
@@ -37,13 +38,17 @@ export function LicenseActionsPanel() {
         </div>
         {oneTimeKey && (
           <p className="mono" style={{ marginTop: 12, color: "var(--gm-gold-300)" }}>
-            One-time key: {oneTimeKey}
+            One-time key (paste into installer): {oneTimeKey}
           </p>
         )}
       </div>
 
       <div className="card">
-        <h3>Activate license</h3>
+        <h3>2. Optional: activate in browser</h3>
+        <p className="meta" style={{ marginBottom: 12 }}>
+          Preferred path is Setup.exe activation (binds your Windows PC). Use this only to re-check a key
+          in the portal.
+        </p>
         <form
           className="stack"
           action={(fd) =>
@@ -68,7 +73,7 @@ export function LicenseActionsPanel() {
           </div>
           <input type="hidden" name="deviceFingerprint" value="portal-browser-fingerprint-mvp" />
           <button type="submit" className="btn btn-primary" disabled={pending}>
-            Activate
+            Activate in portal
           </button>
         </form>
       </div>

@@ -1,13 +1,19 @@
 /**
- * Minimal ZIP (store method) + on-disk release artifacts.
- * Commercial packages only — never embeds Trading Engine binaries.
+ * Minimal ZIP (store method) + on-disk / remote commercial release artifacts.
+ * Stable channel serves the real TGM_PROFESSIONAL_*_stable.zip when available.
+ * Synthetic shells are only used for non-stable channels without a real artifact.
  */
 import fs from "fs";
 import path from "path";
 import { createHash } from "crypto";
 import type { ReleasePackage } from "./types";
 import { mutateReleases, readReleaseStore } from "./store";
-
+import {
+  STABLE_PACKAGE_ID,
+  configuredReleaseAssetUrl,
+  findLocalCommercialZip,
+  isLegacySyntheticPackageId,
+} from "./commercial-source";
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
   for (let i = 0; i < 256; i++) {
@@ -117,7 +123,11 @@ export function artifactPath(packageId: string): string {
   return path.join(artifactsDir(), `${packageId}.zip`);
 }
 
-/** Build commercial-shell ZIP payload for a release package. */
+function isValidZip(buf: Buffer): boolean {
+  return buf.length >= 4 && buf[0] === 0x50 && buf[1] === 0x4b;
+}
+
+/** Build commercial-shell ZIP payload for non-stable / fallback packages. */
 export function buildCommercialPackageZip(pkg: ReleasePackage): Buffer {
   const launcher = Buffer.from(
     [
@@ -170,40 +180,87 @@ export function buildCommercialPackageZip(pkg: ReleasePackage): Buffer {
   ]);
 }
 
+function syncPackageMeta(pkg: ReleasePackage, hash: string, size: number): ReleasePackage {
+  if (pkg.sha256 === hash && pkg.packageSizeBytes === size) return pkg;
+  mutateReleases((data) => {
+    const row = data.packages.find((x) => x.id === pkg.id);
+    if (!row) return;
+    row.sha256 = hash;
+    row.packageSizeBytes = size;
+  });
+  return readReleaseStore().packages.find((x) => x.id === pkg.id)!;
+}
+
+export type PackageArtifactResult = {
+  buffer?: Buffer;
+  /** When set, download API should redirect (auth already checked). */
+  redirectUrl?: string;
+  package: ReleasePackage;
+};
+
 /**
  * Ensure on-disk artifact exists and package metadata (sha256, size) matches bytes.
- * Call before serving downloads so updater checksum validation succeeds.
+ * Stable packages prefer the real Commercial/Releases ZIP or RELEASE_STABLE_ZIP_URL.
  */
-export function ensurePackageArtifact(pkg: ReleasePackage): { buffer: Buffer; package: ReleasePackage } {
-  const p = artifactPath(pkg.id);
-  let buffer: Buffer;
-  const needsRebuild =
-    !fs.existsSync(p) ||
-    (() => {
-      const existing = fs.readFileSync(p);
-      // ZIP local file header magic
-      return existing.length < 4 || existing[0] !== 0x50 || existing[1] !== 0x4b;
-    })();
+export function ensurePackageArtifact(pkg: ReleasePackage): PackageArtifactResult {
+  const external =
+    (pkg.id === STABLE_PACKAGE_ID || pkg.channel === "stable"
+      ? configuredReleaseAssetUrl()
+      : null) ||
+    pkg.externalAssetUrl ||
+    null;
 
-  if (needsRebuild) {
-    buffer = buildCommercialPackageZip(pkg);
-    fs.writeFileSync(p, buffer);
-  } else {
-    buffer = fs.readFileSync(p);
+  // Prefer cached artifact under RELEASE_ARTIFACTS_DIR
+  const cached = artifactPath(pkg.id);
+  if (fs.existsSync(cached)) {
+    try {
+      const buffer = fs.readFileSync(cached);
+      if (isValidZip(buffer) && buffer.length > 1024) {
+        // Reject tiny synthetic shells when this is the stable commercial package
+        if (pkg.id === STABLE_PACKAGE_ID && buffer.length < 100_000 && findLocalCommercialZip()) {
+          /* fall through to replace with real ZIP */
+        } else if (!(pkg.id === STABLE_PACKAGE_ID && buffer.length < 100_000 && external)) {
+          const refreshed = syncPackageMeta(pkg, sha256Buffer(buffer), buffer.length);
+          return { buffer, package: refreshed };
+        }
+      }
+    } catch {
+      /* rebuild */
+    }
   }
-  const hash = sha256Buffer(buffer);
-  const size = buffer.length;
-  if (pkg.sha256 !== hash || pkg.packageSizeBytes !== size) {
-    mutateReleases((data) => {
-      const row = data.packages.find((x) => x.id === pkg.id);
-      if (!row) return;
-      row.sha256 = hash;
-      row.packageSizeBytes = size;
-    });
-    const refreshed = readReleaseStore().packages.find((x) => x.id === pkg.id)!;
-    return { buffer, package: refreshed };
+
+  // Real commercial ZIP from monorepo (local / CI)
+  if (pkg.id === STABLE_PACKAGE_ID || (pkg.channel === "stable" && !isLegacySyntheticPackageId(pkg.id))) {
+    const localZip = findLocalCommercialZip();
+    if (localZip) {
+      const buffer = fs.readFileSync(localZip);
+      try {
+        fs.writeFileSync(cached, buffer);
+      } catch {
+        /* serverless may not persist */
+      }
+      const refreshed = syncPackageMeta(pkg, sha256Buffer(buffer), buffer.length);
+      return { buffer, package: refreshed };
+    }
+
+    // Production without local bytes: redirect to hosted asset
+    if (external) {
+      return { redirectUrl: external, package: pkg };
+    }
+
+    // Never invent a fake installer for the stable commercial package
+    return { package: pkg };
   }
-  return { buffer, package: pkg };
+
+  // Non-stable / legacy fallback: synthetic commercial shell
+  const buffer = buildCommercialPackageZip(pkg);
+  try {
+    fs.writeFileSync(cached, buffer);
+  } catch {
+    /* ignore */
+  }
+  const refreshed = syncPackageMeta(pkg, sha256Buffer(buffer), buffer.length);
+  return { buffer, package: refreshed };
 }
 
 export function ensureAllPackageArtifacts(): void {

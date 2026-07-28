@@ -17,6 +17,8 @@ export interface ReleasePackage {
   releasedAt: string;
   packageFile: string;
   packageUrl: string;
+  /** Optional public HTTPS asset (GitHub Release / Blob / CDN) used when local ZIP is unavailable. */
+  externalAssetUrl?: string;
   packageSizeBytes: number;
   sha256: string;
   signatureRequired: boolean;

@@ -21,6 +21,10 @@ import type {
   LicenseType,
   SubscriptionStatus,
 } from "./types";
+import {
+  sendLicenseActivatedEmail,
+  sendLicenseCreatedEmail,
+} from "@/server/accounts/license-emails";
 
 function withoutMac(lic: LicenseRecord): Omit<LicenseRecord, "integrityMac"> {
   const { integrityMac, ...rest } = lic;
@@ -86,6 +90,8 @@ export function createLicense(input: {
   customerName: string;
   type: LicenseType;
   actorEmail?: string;
+  /** Skip Resend delivery (seed / internal). */
+  skipEmail?: boolean;
 }): { license: LicensePublicDto; plaintextKey: string } {
   const email = input.customerEmail.trim().toLowerCase();
   const plaintextKey = generateLicenseKey(input.type);
@@ -145,7 +151,18 @@ export function createLicense(input: {
     });
   });
 
-  return { license: toPublicLicense(license, seatsUsed), plaintextKey };
+  const publicLic = toPublicLicense(license, seatsUsed);
+  if (!input.skipEmail) {
+    void sendLicenseCreatedEmail({
+      to: email,
+      customerName: input.customerName,
+      packageType: input.type,
+      plaintextKey,
+      licenseId: id,
+    }).catch((e) => console.warn("[licensing] create email failed:", e));
+  }
+
+  return { license: publicLic, plaintextKey };
 }
 
 export function listLicensesForCustomer(email: string): LicensePublicDto[] {
@@ -267,6 +284,8 @@ export function activateLicense(input: {
   customerEmail: string;
   deviceName: string;
   deviceFingerprint: string;
+  /** Skip Resend delivery (seed / internal). */
+  skipEmail?: boolean;
 }): ActivateResult {
   const email = input.customerEmail.trim().toLowerCase();
   const key = input.plaintextKey.trim().toUpperCase();
@@ -338,10 +357,22 @@ export function activateLicense(input: {
 
   const token = createValidationToken(finalLic.id, deviceId, email);
   const seatsUsed = readStore().devices.filter((d) => d.licenseId === finalLic.id && d.status === "active").length;
+  const publicLic = toPublicLicense(finalLic, seatsUsed);
+
+  if (!input.skipEmail) {
+    void sendLicenseActivatedEmail({
+      to: email,
+      customerName: finalLic.customerName,
+      packageType: finalLic.type,
+      keyMasked: publicLic.keyMasked,
+      licenseId: finalLic.id,
+      deviceName: input.deviceName,
+    }).catch((e) => console.warn("[licensing] activate email failed:", e));
+  }
 
   return {
     ok: true,
-    license: toPublicLicense(finalLic, seatsUsed),
+    license: publicLic,
     deviceId,
     token,
   };
@@ -352,6 +383,44 @@ export function createValidationToken(licenseId: string, deviceId: string, email
   const payload = `${licenseId}.${deviceId}.${email}.${exp}`;
   const sig = sha256(`${payload}|${process.env.LICENSE_STORE_SECRET || process.env.NEXTAUTH_SECRET || "dev"}`);
   return Buffer.from(`${payload}.${sig}`).toString("base64url");
+}
+
+/** Verify activation/validation token issued by createValidationToken. */
+export function parseValidationToken(
+  token: string
+): { licenseId: string; deviceId: string; email: string; exp: string } | null {
+  try {
+    const raw = Buffer.from(token.trim(), "base64url").toString("utf8");
+    const lastDot = raw.lastIndexOf(".");
+    if (lastDot <= 0) return null;
+    const sig = raw.slice(lastDot + 1);
+    const withoutSig = raw.slice(0, lastDot);
+
+    // exp is ISO at end (contains `.` for milliseconds): 2026-07-29T18:10:00.000Z
+    const expMatch = withoutSig.match(/\.(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)$/);
+    if (!expMatch) return null;
+    const exp = expMatch[1];
+    const beforeExp = withoutSig.slice(0, -expMatch[0].length);
+
+    const firstDot = beforeExp.indexOf(".");
+    const secondDot = beforeExp.indexOf(".", firstDot + 1);
+    if (firstDot < 0 || secondDot < 0) return null;
+
+    const licenseId = beforeExp.slice(0, firstDot);
+    const deviceId = beforeExp.slice(firstDot + 1, secondDot);
+    const emailRaw = beforeExp.slice(secondDot + 1);
+    if (!licenseId || !deviceId || !emailRaw || !sig) return null;
+    if (Date.parse(exp) < Date.now()) return null;
+
+    const payload = `${licenseId}.${deviceId}.${emailRaw}.${exp}`;
+    const expected = sha256(
+      `${payload}|${process.env.LICENSE_STORE_SECRET || process.env.NEXTAUTH_SECRET || "dev"}`
+    );
+    if (!safeEqualHex(sig, expected) && sig !== expected) return null;
+    return { licenseId, deviceId, email: emailRaw.toLowerCase(), exp };
+  } catch {
+    return null;
+  }
 }
 
 export function validateLicenseOnline(input: {

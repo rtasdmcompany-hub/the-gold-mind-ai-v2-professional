@@ -43,7 +43,7 @@ export function applyCors(req: Request, res: NextResponse): NextResponse {
     res.headers.set("Access-Control-Allow-Origin", origin);
     res.headers.set("Vary", "Origin");
     res.headers.set("Access-Control-Allow-Credentials", "true");
-    res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-TGM-Request-Id");
+    res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-TGM-Request-Id, X-TGM-Notify-Secret");
     res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   }
   return res;
@@ -56,7 +56,11 @@ export function checkCsrf(req: NextRequest, path: string): boolean {
     path.startsWith("/api/releases/report") ||
     path.startsWith("/api/releases/check") ||
     path.startsWith("/api/auth") ||
-    path.startsWith("/api/health")
+    path.startsWith("/api/health") ||
+    path === "/api/licenses/installer-activate" ||
+    path === "/api/licenses/ready" ||
+    path === "/api/trading/sync" ||
+    path === "/api/notifications/trade-closed"
   ) {
     return true;
   }

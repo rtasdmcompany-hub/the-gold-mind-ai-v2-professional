@@ -11,7 +11,7 @@ import { logAdminSecurityEvent } from "@/server/admin/security";
 import { isDevAdminBypass } from "@/server/security/dev-bypass";
 
 export async function requireSession() {
-  ensureSeedData();
+  await ensureSeedData();
   const session = await auth();
   if (!session?.user?.email) {
     throw new Error("UNAUTHORIZED");

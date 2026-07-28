@@ -28,7 +28,7 @@ export default async function DownloadsPage() {
       <header style={{ marginBottom: 24 }}>
         <h1 className="page-title">Download Center</h1>
         <p className="page-sub">
-          Latest stable Windows installer · verified checksum · commercial release only
+          Latest stable Windows ZIP · unzip and run Setup.exe with your license key · verified checksum
         </p>
       </header>
 
@@ -51,12 +51,16 @@ export default async function DownloadsPage() {
 
           <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
             <a className="btn btn-primary" href={`/api/releases/download/${latest.id}`}>
-              Download Installer
+              Download ZIP ({(latest.packageSizeBytes / (1024 * 1024)).toFixed(1)} MB)
             </a>
             <Link className="btn" href="/portal/updates">
               Check for updates
             </Link>
           </div>
+          <p className="meta" style={{ marginTop: 12, lineHeight: 1.5 }}>
+            After download: unzip → run <strong>Setup.exe</strong> (or TheGoldMindSetup.exe) → enter your existing
+            license key → finish installation. MT5 EA deploy and activation are handled by the installer.
+          </p>
 
           <div className="grid grid-2" style={{ marginTop: 20, gap: 12 }}>
             <div>
@@ -77,7 +81,7 @@ export default async function DownloadsPage() {
                 {latest.signatureSubject ? ` · ${latest.signatureSubject}` : ""}
               </div>
               <div className="meta" style={{ marginTop: 6 }}>
-                Package size: {(latest.packageSizeBytes / 1024).toFixed(1)} KB
+                Package size: {(latest.packageSizeBytes / (1024 * 1024)).toFixed(2)} MB · {latest.packageFile}
               </div>
             </div>
           </div>
