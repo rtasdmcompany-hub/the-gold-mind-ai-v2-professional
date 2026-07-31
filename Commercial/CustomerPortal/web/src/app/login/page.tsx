@@ -1,4 +1,5 @@
 import { auth, signIn } from "@/auth";
+import type { Session } from "next-auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -13,7 +14,7 @@ export default async function LoginPage({
   searchParams: Promise<{ callbackUrl?: string; error?: string; provider?: string; return?: string }>;
 }) {
   // Stale cookies or transient auth config issues must not crash the login screen.
-  let session: Awaited<ReturnType<typeof auth>> = null;
+  let session: Session | null = null;
   try {
     session = await auth();
   } catch {
