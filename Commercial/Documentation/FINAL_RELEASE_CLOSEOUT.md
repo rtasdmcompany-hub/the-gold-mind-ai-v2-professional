@@ -2,6 +2,7 @@
 
 **Product:** THE GOLD MIND PROFESSIONAL  
 **Closeout date:** 2026-07-31  
+**Re-verified:** 2026-07-31 (final closeout pass)  
 **Mode:** Release Maintenance — STOP after this document  
 
 ---
@@ -57,10 +58,11 @@ Resolve: `git rev-parse v1.0.0-rc^{}`
 |------|--------|
 | Vercel CLI / token in agent | **ABSENT** |
 | Production host live | **YES** — `https://the-gold-mind-ai-v2-professional.vercel.app` |
+| `/api/health` | **healthy** |
 | Production == freeze SHA | **NO** — production still on older `main` revision |
 | Agent deploy attempt | Skipped (no auth) |
 
-Owner must merge PR #1 / redeploy Production, then confirm commit SHA match.
+Owner must merge PR #1 / redeploy Production, then confirm commit SHA match to `git rev-parse v1.0.0-rc^{}`.
 
 ---
 
@@ -76,11 +78,19 @@ Owner must merge PR #1 / redeploy Production, then confirm commit SHA match.
 | 6 | Documentation (legal, brand, product, go-live) | **PASS** |
 | 7 | Release reports (FINAL_*, OWNER_ACTION, GO_LIVE) | **PASS** |
 | 8 | Temporary debug files removed | **N/A** — none found in repo |
-| 9 | Temporary scripts removed | **N/A** — no disposable temp scripts; `export-brand.mjs` retained (required) |
+| 9 | Temporary scripts removed | **N/A** — sprint scripts retained (wired in `package.json`); `export-brand.mjs` required |
 | 10 | Dev-only assets removed | **N/A** — no safe orphan assets identified without risking tests/packaging |
 
-Core cert constants remain aligned to frozen MQ5  
-`9fd202466a0894577f12721610b4a9a80f6f8d02bb9fd908aed3d3e88654d49a`.
+### Certified artifact fingerprints
+
+| Artifact | SHA-256 |
+|----------|---------|
+| MQ5 | `9fd202466a0894577f12721610b4a9a80f6f8d02bb9fd908aed3d3e88654d49a` |
+| EX5 | `890e22254ef44f86e82bc3700cd2b0dd0eaddf57c3ce91ff0f801b999c347535` |
+| ZIP | `e61120628ba0d43d9d0f84d931cb0cd863890fa95a0e997b04d13a951d83229a` |
+| Setup.exe | `f48f3698a5401a66869481c7cb615505067fd4f64699b87f484db6afdfd29b07` |
+
+Core cert constants remain aligned to frozen MQ5 above.
 
 Trading Engine / strategy / MT5 execution / schema / APIs / commercial logic: **unchanged**.
 

@@ -14,7 +14,7 @@ This directory and the freeze commit named below constitute the official **Versi
 | Version | 1.0.0 |
 | Channel | stable |
 | Release tag (closeout) | `v1.0.0-rc` |
-| Git SHA (freeze closeout) | see `FINAL_RELEASE_CLOSEOUT.md` |
+| Git SHA (freeze closeout) | `git rev-parse v1.0.0-rc^{}` |
 | Branch | `cursor/cloud-agent-1785482281349-vtik0` |
 
 ## Certified artifacts
