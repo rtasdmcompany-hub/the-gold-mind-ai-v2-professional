@@ -24,12 +24,14 @@ Archive marker: `Commercial/Releases/1.0.0/RELEASE_CANDIDATE.md`
 
 ## Git SHA
 
-**`f04f84937b02b0f59c87a2e848aa8985780e5c10`**
+Release Candidate tag: **`v1.0.0-rc`**
+
+Resolve: `git rev-parse v1.0.0-rc^{}`
 
 | Check | Result |
 |-------|--------|
-| Local HEAD | `f04f84937b02b0f59c87a2e848aa8985780e5c10` |
-| `origin/cursor/cloud-agent-1785482281349-vtik0` | same |
+| Local HEAD | Matches `v1.0.0-rc` |
+| `origin/cursor/cloud-agent-1785482281349-vtik0` | Matches Local HEAD |
 | Working tree | **CLEAN** |
 | Local == GitHub | **YES** |
 
@@ -87,7 +89,7 @@ Trading Engine / strategy / MT5 execution / schema / APIs / commercial logic: **
 ## Known Owner Actions
 
 1. Promote freeze commit to **Vercel Production** (merge PR #1 → `main` or dashboard redeploy)  
-2. Confirm Production Git SHA == `f04f84937b02b0f59c87a2e848aa8985780e5c10`  
+2. Confirm Production Git SHA == `git rev-parse v1.0.0-rc^{}`  
 3. Authenticode code signing + signed Setup republish  
 4. Verify Resend domain `thegoldmind.ai` + branded From  
 5. Confirm/complete Production env (Paddle live, admin emails, OAuth allowlist)  
