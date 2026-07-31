@@ -1,7 +1,7 @@
 THE GOLD MIND — Core Unchanged Certification (RC-2)
 File: Experts/TheGoldMindAI_Professional.mq5
-Bytes: 9235
-SHA-256: 75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce
-CertifiedAt: 2026-07-26T07:06:12.568Z
+Bytes: 246499
+SHA-256: 9fd202466a0894577f12721610b4a9a80f6f8d02bb9fd908aed3d3e88654d49a
+CertifiedAt: 2026-07-31T07:50:38.785Z
 Statement: Phase 9 commercial sprints did not modify this Core Trading Engine file.
 Trading Engine / Strategy / Risk / Recovery / Order Execution / Magic Number Logic: FROZEN.
