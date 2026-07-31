@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AiAssistantWidget } from "@/components/AiAssistantWidget";
+import { AiCommandCenterPreview } from "@/components/AiCommandCenterPreview";
 import { ensureSeedData } from "@/server/licensing/seed";
 import { listLicensesForCustomer } from "@/server/licensing/license-service";
 import { listDevicesForCustomer } from "@/server/licensing/device-service";
@@ -119,6 +120,9 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <AiCommandCenterPreview />
+
       <AiAssistantWidget
         surface="customer_portal"
         role="customer"

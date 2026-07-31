@@ -552,3 +552,124 @@ table.data tbody tr:hover {
     min-width: 520px;
   }
 }
+
+/* —— AI Command Center preview (V1.0 UI polish only) —— */
+.ai-cc-preview {
+  margin-bottom: 16px;
+  border-color: rgba(198, 167, 94, 0.35);
+  background:
+    linear-gradient(145deg, rgba(198, 167, 94, 0.08), transparent 42%),
+    linear-gradient(155deg, rgba(28, 28, 31, 0.98), rgba(11, 11, 12, 0.99));
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(225, 197, 122, 0.08);
+}
+
+.ai-cc-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ai-cc-preview-head h3 {
+  margin: 0;
+}
+
+.ai-cc-preview-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gm-black-950);
+  background: linear-gradient(120deg, var(--gm-gold-300), var(--gm-gold-500));
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.ai-cc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.ai-cc-row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(198, 167, 94, 0.14);
+  background: rgba(11, 11, 12, 0.55);
+}
+
+.ai-cc-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gm-ivory-100);
+}
+
+.ai-cc-status {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.ai-cc-status--green {
+  color: var(--gm-success);
+}
+
+.ai-cc-status--yellow {
+  color: var(--gm-warning);
+}
+
+.ai-cc-status--red {
+  color: var(--gm-danger);
+}
+
+.ai-cc-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  justify-self: center;
+  box-shadow: 0 0 0 0 currentColor;
+  animation: ai-cc-pulse 2.2s ease-out infinite;
+}
+
+.ai-cc-dot--green {
+  background: var(--gm-success);
+  color: rgba(34, 197, 94, 0.45);
+}
+
+.ai-cc-dot--yellow {
+  background: var(--gm-warning);
+  color: rgba(234, 179, 8, 0.45);
+}
+
+.ai-cc-dot--red {
+  background: var(--gm-danger);
+  color: rgba(239, 68, 68, 0.45);
+}
+
+.ai-cc-preview-meta {
+  margin-top: 12px;
+}
+
+@keyframes ai-cc-pulse {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+    opacity: 0.85;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    opacity: 1;
+  }
+}
