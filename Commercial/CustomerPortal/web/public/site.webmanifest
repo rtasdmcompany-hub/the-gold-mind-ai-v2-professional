@@ -1,21 +1,9 @@
 {
   "name": "THE GOLD MIND AI v2.0 PROFESSIONAL",
-  "short_name": "GOLD MIND",
-  "description": "Official Customer Portal for THE GOLD MIND PROFESSIONAL by THE GOLD MIND.",
+  "short_name": "THE GOLD MIND",
+  "description": "THE GOLD MIND AI v2.0 PROFESSIONAL \u2014 Customer Portal, licensing, downloads, and certified automated trading software. Trading involves risk of loss.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0b0c",
-  "theme_color": "#c6a75e",
-  "icons": [
-    {
-      "src": "/brand/the-gold-mind-icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/brand/the-gold-mind-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "background_color": "#050505",
+  "theme_color": "#050505"
 }

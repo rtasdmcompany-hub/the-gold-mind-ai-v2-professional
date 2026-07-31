@@ -1,0 +1,39 @@
+{
+  "brandName": "THE GOLD MIND",
+  "companyName": "THE GOLD MIND",
+  "productName": "THE GOLD MIND PROFESSIONAL",
+  "productFullName": "THE GOLD MIND AI v2.0 PROFESSIONAL",
+  "productShortName": "THE GOLD MIND",
+  "productId": "the-gold-mind-ai-v2-professional",
+  "version": "1.0.0",
+  "tagline": "Automated Trading Software",
+  "domain": "thegoldmind.ai",
+  "website": "https://the-gold-mind-ai-v2-professional.vercel.app",
+  "emails": {
+    "support": "support@thegoldmind.ai",
+    "billing": "billing@thegoldmind.ai",
+    "license": "license@thegoldmind.ai",
+    "admin": "admin@thegoldmind.ai",
+    "noreply": "noreply@thegoldmind.ai",
+    "privacy": "privacy@thegoldmind.ai",
+    "legal": "legal@thegoldmind.ai",
+    "partners": "partners@thegoldmind.ai"
+  },
+  "resendFrom": "THE GOLD MIND PROFESSIONAL <noreply@thegoldmind.ai>",
+  "social": {
+    "twitter": "",
+    "x": "",
+    "linkedin": "",
+    "youtube": "",
+    "facebook": ""
+  },
+  "copyrightYear": "2026",
+  "copyright": "© 2026 THE GOLD MIND",
+  "copyrightProduct": "© 2026 THE GOLD MIND PROFESSIONAL",
+  "copyrightNotice": "© 2026 THE GOLD MIND. All rights reserved.",
+  "description": "THE GOLD MIND AI v2.0 PROFESSIONAL — Customer Portal, licensing, downloads, and certified automated trading software. Trading involves risk of loss.",
+  "mobile": {
+    "bundleId": "com.thegoldmind.companion",
+    "androidPackage": "com.thegoldmind.companion"
+  }
+}

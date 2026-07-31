@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { brand } from "@/lib/brand";
 
 const LINKS = [
   { href: "/", label: "Home" },
@@ -42,7 +43,7 @@ export function EnterpriseNav({ transparent = false }: { transparent?: boolean }
         <Link href="/" className="e-brand-lockup" onClick={() => setMenuOpen(false)}>
           <BrandLogo variant="header" priority className="e-brand-logo e-brand-logo--header" />
           <span className="e-brand-wordmark">
-            <span className="e-brand-wordmark-title">THE GOLD MIND</span>
+            <span className="e-brand-wordmark-title">{brand.brandName}</span>
             <span className="e-brand-wordmark-sub">AI v2.0 PROFESSIONAL</span>
           </span>
         </Link>

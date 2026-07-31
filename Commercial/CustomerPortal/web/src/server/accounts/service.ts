@@ -9,12 +9,13 @@ import {
   type AccountRecord,
 } from "./store";
 import { sendTransactionalEmail } from "./mailer";
+import { brand } from "@/lib/brand";
 
 function baseUrl(): string {
   return (
     process.env.AUTH_URL ||
     process.env.NEXTAUTH_URL ||
-    "https://the-gold-mind-ai-v2-professional.vercel.app"
+    brand.website
   ).replace(/\/$/, "");
 }
 
@@ -59,9 +60,9 @@ export async function registerAccount(input: {
   await saveAccount(account);
 
   const verifyUrl = `${baseUrl()}/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
-  const subject = "Confirm your email — THE GOLD MIND PROFESSIONAL";
-  const text = `Confirm your THE GOLD MIND PROFESSIONAL account:\n\n${verifyUrl}\n\nThis link expires in 24 hours.`;
-  const html = `<p>Confirm your <strong>THE GOLD MIND PROFESSIONAL</strong> account.</p><p><a href="${verifyUrl}">Verify email address</a></p><p>This link expires in 24 hours.</p>`;
+  const subject = `Confirm your email — ${brand.productName}`;
+  const text = `Confirm your ${brand.productName} account:\n\n${verifyUrl}\n\nThis link expires in 24 hours.`;
+  const html = `<p>Confirm your <strong>${brand.productName}</strong> account.</p><p><a href="${verifyUrl}">Verify email address</a></p><p>This link expires in 24 hours.</p>`;
 
   const sent = await sendTransactionalEmail({ to: email, subject, html, text });
   // If outbound email is not configured, still return the verify link so signup can complete.
@@ -202,9 +203,9 @@ export async function requestPasswordReset(emailRaw: string): Promise<PasswordRe
   await saveAccount(account);
 
   const resetUrl = `${baseUrl()}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
-  const subject = "Reset your password — THE GOLD MIND PROFESSIONAL";
-  const text = `A password reset was requested for your THE GOLD MIND PROFESSIONAL account:\n\n${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`;
-  const html = `<p>A password reset was requested for your <strong>THE GOLD MIND PROFESSIONAL</strong> account.</p><p><a href="${resetUrl}">Reset password</a></p><p>This link expires in 1 hour. If you did not request this, you can ignore this email.</p>`;
+  const subject = `Reset your password — ${brand.productName}`;
+  const text = `A password reset was requested for your ${brand.productName} account:\n\n${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`;
+  const html = `<p>A password reset was requested for your <strong>${brand.productName}</strong> account.</p><p><a href="${resetUrl}">Reset password</a></p><p>This link expires in 1 hour. If you did not request this, you can ignore this email.</p>`;
 
   const sent = await sendTransactionalEmail({ to: email, subject, html, text });
   const expose =

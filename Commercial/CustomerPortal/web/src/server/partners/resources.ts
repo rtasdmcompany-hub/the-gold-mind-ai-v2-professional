@@ -3,6 +3,7 @@
  */
 import fs from "fs";
 import path from "path";
+import { brand } from "@/lib/brand";
 
 export interface PartnerResource {
   id: string;
@@ -94,7 +95,7 @@ export function listPartnerResources(): PartnerResource[] {
     if (!fs.existsSync(abs)) {
       fs.writeFileSync(
         abs,
-        `# ${c.title}\n\n**Partner resource** · THE GOLD MIND PROFESSIONAL\n\n${c.description}\n\n## Rules\n\n- Use official brand assets only.\n- Do not claim trading performance guarantees.\n- Core Trading Engine is frozen — partners sell commercial access only.\n`,
+        `# ${c.title}\n\n**Partner resource** · ${brand.productName}\n\n${c.description}\n\n## Rules\n\n- Use official brand assets only.\n- Do not claim trading performance guarantees.\n- Core Trading Engine is frozen — partners sell commercial access only.\n`,
         "utf8"
       );
     }

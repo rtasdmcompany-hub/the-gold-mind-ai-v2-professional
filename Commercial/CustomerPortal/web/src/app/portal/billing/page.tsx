@@ -7,6 +7,7 @@ import { getProviderConfigStatus, isSandboxCheckoutAllowed } from "@/server/bill
 import { listLicensesForCustomer } from "@/server/licensing/license-service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { brand } from "@/lib/brand";
 
 export default async function BillingPage() {
   const session = await auth();
@@ -28,7 +29,7 @@ export default async function BillingPage() {
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">Billing</h1>
         <p className="page-sub">
-          THE GOLD MIND PROFESSIONAL · Website Edition billing center. Financial ops never touch the Trading Engine.
+          {brand.productName} · Website Edition billing center. Financial ops never touch the Trading Engine.
         </p>
       </header>
 

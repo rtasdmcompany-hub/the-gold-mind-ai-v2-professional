@@ -3,10 +3,11 @@ import Link from "next/link";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 import { PLAN_CATALOG, formatMoney } from "@/server/billing/util";
+import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Pricing — THE GOLD MIND PROFESSIONAL",
-  description: "Enterprise pricing for THE GOLD MIND AI v2.0 PROFESSIONAL. Trial, monthly, yearly, and lifetime plans.",
+  title: `Pricing — ${brand.productName}`,
+  description: `Enterprise pricing for ${brand.productFullName}. Trial, monthly, yearly, and lifetime plans.`,
 };
 
 const ORDER = ["trial", "monthly", "yearly", "lifetime"] as const;

@@ -7,6 +7,7 @@ import path from "path";
 import { writeAudit } from "@/server/cloud/audit";
 import { isProductionRuntime } from "@/server/security/dev-bypass";
 import { decryptJson, encryptJson, launchDataDir, newId } from "./store-crypto";
+import { brand } from "@/lib/brand";
 
 export type BetaGroup =
   | "internal_team"
@@ -430,7 +431,7 @@ export function ensureDemoBetaParticipants(): void {
   }> = [
     {
       email: "qa@thegoldmind.local",
-      name: "THE GOLD MIND QA",
+      name: `${brand.brandName} QA`,
       group: "internal_team",
       status: "active",
       steps: ENROLLMENT_STEPS,

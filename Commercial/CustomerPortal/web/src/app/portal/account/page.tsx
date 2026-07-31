@@ -8,6 +8,7 @@ import { isTradeAlertsEnabled } from "@/server/accounts/service";
 import { actionUpdateNotificationPrefs } from "@/server/accounts/actions";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { brand } from "@/lib/brand";
 
 export default async function AccountPage() {
   await ensureSeedData();
@@ -43,7 +44,7 @@ export default async function AccountPage() {
         <div className="card">
           <h3>Edition</h3>
           <div className="value" style={{ fontSize: 16 }}>
-            THE GOLD MIND PROFESSIONAL
+            {brand.productName}
           </div>
           <div className="meta">Provider: {account?.provider || "session"}</div>
         </div>

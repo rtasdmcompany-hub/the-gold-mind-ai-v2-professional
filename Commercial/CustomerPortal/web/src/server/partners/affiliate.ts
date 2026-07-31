@@ -9,13 +9,14 @@ import {
   readPartnerStore,
 } from "./store";
 import type { AttributionEvent, ReferralClick } from "./types";
+import { brand } from "@/lib/brand";
 
 export function hashVisitor(raw: string): string {
   return createHash("sha256").update(raw).digest("hex").slice(0, 32);
 }
 
 export function buildReferralLink(referralCode: string, baseUrl?: string, campaignId?: string): string {
-  const base = (baseUrl || process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || "https://the-gold-mind-ai-v2-professional.vercel.app").replace(
+  const base = (baseUrl || process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || brand.website).replace(
     /\/$/,
     ""
   );

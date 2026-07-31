@@ -8,10 +8,11 @@ import { semanticRetrieve } from "./retrieval";
 import { securityPolicySummary } from "./security";
 import type { AiRole, AiSurface } from "./types";
 import { AI_CORE_ISOLATION, AI_TRADING_PROHIBITED } from "./types";
+import { brand } from "@/lib/brand";
 
 export function aiGatewayInfo() {
   return {
-    name: "THE GOLD MIND Enterprise AI Gateway",
+    name: `${brand.brandName} Enterprise AI Gateway`,
     version: "1.0.0",
     surfaces: [
       "website",

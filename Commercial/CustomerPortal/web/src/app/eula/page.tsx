@@ -1,4 +1,5 @@
 import { LegalShell } from "@/components/enterprise/LegalShell";
+import { brand } from "@/lib/brand";
 
 export default function EulaPage() {
   return (
@@ -10,8 +11,8 @@ export default function EulaPage() {
 
       <h2>1. License Grant</h2>
       <p>
-        Subject to a valid paid or trial license, THE GOLD MIND grants you a limited, non-exclusive, non-transferable,
-        revocable license to install and use THE GOLD MIND PROFESSIONAL Expert Advisor and accompanying commercial
+        Subject to a valid paid or trial license, {brand.companyName} grants you a limited, non-exclusive, non-transferable,
+        revocable license to install and use {brand.productName} Expert Advisor and accompanying commercial
         installer components on authorized devices up to your seat limit.
       </p>
 
@@ -25,7 +26,7 @@ export default function EulaPage() {
 
       <h2>3. Ownership</h2>
       <p>
-        THE GOLD MIND retains all rights in the software, documentation, trademarks, and related materials. This EULA does
+        {brand.companyName} retains all rights in the software, documentation, trademarks, and related materials. This EULA does
         not transfer ownership.
       </p>
 
@@ -49,7 +50,7 @@ export default function EulaPage() {
 
       <h2>7. Contact</h2>
       <p>
-        <a href="mailto:legal@thegoldmind.ai">legal@thegoldmind.ai</a>
+        <a href={`mailto:${brand.emails.legal}`}>{brand.emails.legal}</a>
       </p>
     </LegalShell>
   );

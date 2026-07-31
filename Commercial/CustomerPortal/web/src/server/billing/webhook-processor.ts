@@ -4,6 +4,7 @@ import { deliverBillingEmail } from "./mail-delivery";
 import { mutateBilling, readBillingStore } from "./store";
 import type { NormalizedPaymentEvent, PlanCode } from "./types";
 import { PLAN_CATALOG, formatMoney, id, nowIso } from "./util";
+import { brand } from "@/lib/brand";
 
 function planToLicenseType(plan: PlanCode): LicenseType {
   return plan;
@@ -102,7 +103,7 @@ export function processNormalizedEvent(event: NormalizedPaymentEvent): {
       deliverBillingEmail({
         to: event.customerEmail,
         template: "purchase_confirmation",
-        body: `Thank you for purchasing THE GOLD MIND PROFESSIONAL (${plan}). Amount ${formatMoney(amount)}.`,
+        body: `Thank you for purchasing ${brand.productName} (${plan}). Amount ${formatMoney(amount)}.`,
       });
       deliverBillingEmail({
         to: event.customerEmail,
@@ -193,7 +194,7 @@ export function processNormalizedEvent(event: NormalizedPaymentEvent): {
       deliverBillingEmail({
         to: event.customerEmail,
         template: "payment_failure",
-        body: `We could not process your payment for THE GOLD MIND PROFESSIONAL. Update billing in the Customer Portal. The Core Trading Engine is unaffected.`,
+        body: `We could not process your payment for ${brand.productName}. Update billing in the Customer Portal. The Core Trading Engine is unaffected.`,
       });
       detail = "Payment failed recorded";
       break;

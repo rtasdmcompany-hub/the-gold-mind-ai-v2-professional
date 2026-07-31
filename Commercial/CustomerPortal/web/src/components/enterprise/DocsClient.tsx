@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { brand } from "@/lib/brand";
 
 const SECTIONS = [
   {
@@ -64,7 +65,7 @@ const FAQ = [
 const CONTENT: Record<string, { title: string; body: string }> = {
   overview: {
     title: "Overview",
-    body: "THE GOLD MIND AI v2.0 PROFESSIONAL is a certified MetaTrader 5 Expert Advisor with enterprise licensing, updates, and support delivered through the official Customer Portal. This documentation covers installation, activation, portal usage, and developer integration.",
+    body: `${brand.productFullName} is a certified MetaTrader 5 Expert Advisor with enterprise licensing, updates, and support delivered through the official Customer Portal. This documentation covers installation, activation, portal usage, and developer integration.`,
   },
   installation: {
     title: "Installation Guide",

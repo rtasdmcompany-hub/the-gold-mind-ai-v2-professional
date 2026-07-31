@@ -1,6 +1,8 @@
 /**
  * Translation runtime — t(), pluralization, Intl formatting, fallback.
+ * Brand tokens (`{productName}`, `{supportEmail}`, …) always resolve from `@/lib/brand`.
  */
+import { brandTokens } from "@/lib/brand";
 import type { LocaleCode, RegionalSettings } from "./types";
 import { getLocalePack } from "./packs";
 
@@ -15,9 +17,9 @@ export const DEFAULT_REGIONAL: RegionalSettings = {
 };
 
 function interpolate(template: string, vars?: Record<string, string | number>): string {
-  if (!vars) return template;
+  const merged: Record<string, string | number> = { ...brandTokens(), ...vars };
   return template.replace(/\{(\w+)\}/g, (_, k: string) =>
-    vars[k] !== undefined ? String(vars[k]) : `{${k}}`
+    merged[k] !== undefined ? String(merged[k]) : `{${k}}`
   );
 }
 

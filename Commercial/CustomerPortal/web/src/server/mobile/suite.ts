@@ -42,6 +42,7 @@ import {
 } from "./security";
 import { MOBILE_CORE_ISOLATION, MOBILE_TRADING_PROHIBITED } from "./types";
 import { readMobileStore } from "./store";
+import { brand } from "@/lib/brand";
 
 export interface MobileOutputScores {
   mobilePlatformScore: number;
@@ -83,7 +84,7 @@ function writeCompanionScaffold() {
         version: "1.0.0",
         private: true,
         description:
-          "THE GOLD MIND Mobile Companion — commercial management only (no trading / no Core)",
+          `${brand.brandName} Mobile Companion — commercial management only (no trading / no Core)`,
         main: "src/App.tsx",
         scripts: {
           start: "echo Expo start — wire to Expo CLI in CI",
@@ -106,12 +107,12 @@ function writeCompanionScaffold() {
     JSON.stringify(
       {
         expo: {
-          name: "THE GOLD MIND Companion",
+          name: `${brand.brandName} Companion`,
           slug: "tgm-mobile-companion",
           version: "1.0.0",
           orientation: "portrait",
-          ios: { bundleIdentifier: "com.thegoldmind.companion", supportsTablet: true },
-          android: { package: "com.thegoldmind.companion" },
+          ios: { bundleIdentifier: brand.mobile.bundleId, supportsTablet: true },
+          android: { package: brand.mobile.bundleId },
           extra: {
             tradingProhibited: true,
             apiBasePath: "/api/mobile",
@@ -126,7 +127,7 @@ function writeCompanionScaffold() {
 
   fs.writeFileSync(
     path.join(root, "README.md"),
-    `# THE GOLD MIND Mobile Companion
+    `# ${brand.brandName} Mobile Companion
 
 Commercial customer management for Android and iOS.
 
@@ -389,7 +390,7 @@ function writeMobileDocs(data: {
     `# MOBILE_ARCHITECTURE.md
 
 **Phase:** 11 · Sprint 6  
-**Product:** THE GOLD MIND Mobile Companion  
+**Product:** ${brand.brandName} Mobile Companion  
 **Isolation:** ${MOBILE_CORE_ISOLATION}
 
 ## Platforms

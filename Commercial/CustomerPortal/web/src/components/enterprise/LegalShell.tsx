@@ -1,12 +1,13 @@
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
+import { brand } from "@/lib/brand";
 
 export function LegalShell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <EnterpriseShell>
       <div className="e-page-hero e-container">
         <ScrollReveal>
-          <p className="e-eyebrow">THE GOLD MIND PROFESSIONAL</p>
+          <p className="e-eyebrow">{brand.productName}</p>
           <h1 className="e-section-title">{title}</h1>
           <p className="e-section-sub">
             Production legal draft — OWNER REVIEW REQUIRED before open commercial launch.

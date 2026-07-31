@@ -3,9 +3,10 @@ import Link from "next/link";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 import { verifyAccountEmail } from "@/server/accounts/service";
+import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Verify Email — THE GOLD MIND PROFESSIONAL",
+  title: `Verify Email — ${brand.productName}`,
 };
 
 export default async function VerifyEmailPage({

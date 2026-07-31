@@ -24,12 +24,19 @@
   },
   "futureCustomDomain": "https://thegoldmind.ai",
   "brandEmails": {
-    "domain": "thegoldmind.ai",
     "support": "support@thegoldmind.ai",
-    "admin": "admin@thegoldmind.ai",
     "billing": "billing@thegoldmind.ai",
     "license": "license@thegoldmind.ai",
+    "admin": "admin@thegoldmind.ai",
     "noreply": "noreply@thegoldmind.ai",
-    "note": "Temporary placeholders until custom domain DNS cutover."
+    "privacy": "privacy@thegoldmind.ai",
+    "legal": "legal@thegoldmind.ai",
+    "partners": "partners@thegoldmind.ai"
+  },
+  "brandConfig": {
+    "source": "Commercial/CustomerPortal/web/src/lib/brand.ts",
+    "exportScript": "Commercial/CustomerPortal/web/scripts/export-brand.mjs",
+    "generatedSnapshot": "Commercial/CustomerPortal/web/brand.generated.json",
+    "report": "Commercial/Documentation/BRAND_CONFIGURATION_REPORT.md"
   }
 }

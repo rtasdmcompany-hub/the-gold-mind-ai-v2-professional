@@ -6,6 +6,7 @@ import path from "path";
 import { CORE_CERT_SHA, docsRoot, savePhase12Run } from "./store";
 import type { Phase12Scores } from "./types";
 import type { verifyCoreSha } from "./core";
+import { brand } from "@/lib/brand";
 
 export function computePhase12Scores(input: {
   coreMatches: boolean;
@@ -81,7 +82,7 @@ export function writeMonthlyExecutiveReports(data: {
       file: "PHASE12_CUSTOMER_SUCCESS_REPORT.md",
       body: `# Customer Success Report — ${month}
 
-**Platform:** THE GOLD MIND v1.0 LTS  
+**Platform:** ${brand.brandName} v1.0 LTS  
 **Core:** ${coreLine}  
 **Score:** ${s.customerSuccessScore}
 

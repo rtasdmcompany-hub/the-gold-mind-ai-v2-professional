@@ -5,6 +5,7 @@
  */
 import { sendTransactionalEmail } from "@/server/accounts/mailer";
 import { commercialEmailSubject, type EmailTemplate } from "./email";
+import { brand } from "@/lib/brand";
 
 function escapeHtml(s: string): string {
   return s
@@ -25,7 +26,7 @@ export function deliverBillingEmail(input: {
   const text = input.body;
   const html = `<div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.5;color:#111">
     <p style="white-space:pre-wrap">${escapeHtml(text)}</p>
-    <p style="color:#666;font-size:12px;margin-top:24px">THE GOLD MIND PROFESSIONAL</p>
+    <p style="color:#666;font-size:12px;margin-top:24px">${brand.productName}</p>
   </div>`;
 
   void sendTransactionalEmail({

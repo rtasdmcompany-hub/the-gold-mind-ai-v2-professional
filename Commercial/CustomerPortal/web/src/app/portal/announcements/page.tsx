@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { listPublishedAnnouncements, ensureAnnouncementsLoaded } from "@/server/announcements/store";
 import { redirect } from "next/navigation";
+import { brand } from "@/lib/brand";
 
 export default async function AnnouncementsPage() {
   const session = await auth();
@@ -14,7 +15,7 @@ export default async function AnnouncementsPage() {
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">Announcements</h1>
         <p className="page-sub">
-          Product and commercial notices for THE GOLD MIND PROFESSIONAL. Empty until an admin publishes.
+          Product and commercial notices for {brand.productName}. Empty until an admin publishes.
         </p>
       </header>
       {announcements.length === 0 ? (

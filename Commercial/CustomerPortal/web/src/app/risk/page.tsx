@@ -1,4 +1,5 @@
 import { LegalShell } from "@/components/enterprise/LegalShell";
+import { brand } from "@/lib/brand";
 
 export default function RiskPage() {
   return (
@@ -22,7 +23,7 @@ export default function RiskPage() {
 
       <h2>3. No Advice</h2>
       <p>
-        THE GOLD MIND PROFESSIONAL is commercial software, not financial, tax, or investment advice. Consult
+        {brand.productName} is commercial software, not financial, tax, or investment advice. Consult
         qualified professionals before trading decisions.
       </p>
 

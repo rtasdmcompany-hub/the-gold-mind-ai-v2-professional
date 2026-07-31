@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { brand } from "@/lib/brand";
 
-const BASE = process.env.NEXTAUTH_URL || "https://the-gold-mind-ai-v2-professional.vercel.app";
+const BASE = process.env.NEXTAUTH_URL || brand.website;
 
 const PUBLIC_PATHS = [
   "",

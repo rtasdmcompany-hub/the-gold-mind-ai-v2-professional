@@ -74,7 +74,7 @@ export const UR_CATALOG: TranslationCatalog = {
   "legal.risk.title": "رسک ڈسکلوزر",
   "legal.cookies.banner": "ہم کمرشل پورٹل چلانے اور تجربہ بہتر بنانے کے لیے کوکیز استعمال کرتے ہیں۔",
   "legal.accept": "قبول کریں",
-  "regional.support.contact": "partners@thegoldmind.ai · support@thegoldmind.ai",
+  "regional.support.contact": "{partnersEmail} · {supportEmail}",
   "regional.legal.notice": "ٹریڈنگ میں خطرہ ہے۔ ماضی کی کارکردگی مستقبل کی ضمانت نہیں۔",
   "regional.measurement.metric": "میٹرک",
   "regional.measurement.imperial": "امپیریل",

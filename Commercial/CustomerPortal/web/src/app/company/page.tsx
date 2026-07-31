@@ -1,28 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { brand } from "@/lib/brand";
+import { brandPageMetadata } from "@/lib/brand-metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = brandPageMetadata({
   title: "Company",
-  description: "About THE GOLD MIND — the commercial product behind THE GOLD MIND PROFESSIONAL.",
-};
+  description: `About ${brand.brandName} — the commercial product behind ${brand.productName}.`,
+});
 
 export default function CompanyPage() {
   return (
     <main className="legal-page">
       <div className="legal-inner">
         <p className="eyebrow">COMPANY</p>
-        <h1>THE GOLD MIND</h1>
+        <h1>{brand.brandName}</h1>
         <p className="legal-lead">
-          THE GOLD MIND is an independent commercial product offering professional MT5 Expert Advisor
-          licensing, customer portal access, billing, and support for THE GOLD MIND PROFESSIONAL.
+          {brand.brandName} is an independent commercial product offering professional MT5 Expert Advisor
+          licensing, customer portal access, billing, and support for {brand.productName}.
         </p>
 
         <section className="legal-section">
           <h2>What we sell</h2>
           <p>
-            We sell licenses and access to THE GOLD MIND PROFESSIONAL — a trading-automation product for
+            We sell licenses and access to {brand.productName} — a trading-automation product for
             MetaTrader 5 — through our Customer Portal. Infrastructure partners may power email, auth,
-            billing, and hosting behind the scenes; customer-facing identity remains THE GOLD MIND only.
+            billing, and hosting behind the scenes; customer-facing identity remains {brand.brandName} only.
           </p>
         </section>
 
@@ -38,17 +40,20 @@ export default function CompanyPage() {
         <section className="legal-section">
           <h2>Contact</h2>
           <p>
-            Product and support: <a href="mailto:support@thegoldmind.ai">support@thegoldmind.ai</a>
+            Product and support:{" "}
+            <a href={`mailto:${brand.emails.support}`}>{brand.emails.support}</a>
           </p>
           <p>
-            Billing: <a href="mailto:billing@thegoldmind.ai">billing@thegoldmind.ai</a>
+            Billing: <a href={`mailto:${brand.emails.billing}`}>{brand.emails.billing}</a>
           </p>
           <p>
             <Link href="/contact">Contact page →</Link>
           </p>
         </section>
 
-        <p className="legal-updated">Last updated: July 31, 2026</p>
+        <p className="legal-updated">
+          {brand.copyright} · Version {brand.version}
+        </p>
       </div>
     </main>
   );

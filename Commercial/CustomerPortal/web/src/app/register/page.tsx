@@ -4,10 +4,11 @@ import { redirect } from "next/navigation";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 import { registerAccount } from "@/server/accounts/service";
+import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Register — THE GOLD MIND PROFESSIONAL",
-  description: "Create a verified Customer Portal account for THE GOLD MIND PROFESSIONAL.",
+  title: `Register — ${brand.productName}`,
+  description: `Create a verified Customer Portal account for ${brand.productName}.`,
 };
 
 export default async function RegisterPage({
@@ -22,7 +23,7 @@ export default async function RegisterPage({
     <EnterpriseShell>
       <div className="e-page-hero e-container">
         <ScrollReveal>
-          <p className="e-eyebrow">THE GOLD MIND PROFESSIONAL</p>
+          <p className="e-eyebrow">{brand.productName}</p>
           <h1 className="e-section-title">Create Account</h1>
           <p className="e-section-sub">
             Register with your email, confirm the verification link, then sign in.

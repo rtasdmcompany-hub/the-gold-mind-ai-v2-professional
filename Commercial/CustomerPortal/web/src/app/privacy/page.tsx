@@ -1,26 +1,30 @@
 import { LegalShell } from "@/components/enterprise/LegalShell";
+import { brand } from "@/lib/brand";
 
 export default function PrivacyPage() {
   return (
     <LegalShell title="Privacy Policy">
       <p>
         <strong>Status:</strong> Production draft — OWNER REVIEW REQUIRED before open commercial launch.
-        Effective date (draft): 31 July 2026. Publisher: THE GOLD MIND (“THE GOLD MIND”, “we”, “us”).
+        Effective date (draft): 31 July 2026. Publisher: {brand.companyName} (“{brand.brandName}”, “we”, “us”).
       </p>
 
       <h2>1. Scope</h2>
       <p>
-        This Privacy Policy describes how we process personal data when you visit the THE GOLD MIND PROFESSIONAL
+        This Privacy Policy describes how we process personal data when you visit the {brand.productName}{" "}
         website, create a Customer Portal account, purchase or activate a license, download software, or contact
         support. The MetaTrader 5 Trading Engine that runs on your machine is separate from this commercial portal
-        and does not send trade strategy source code to THE GOLD MIND.
+        and does not send trade strategy source code to {brand.companyName}.
       </p>
 
       <h2>2. Data We Collect</h2>
       <ul>
         <li>Account identity: name, email address, authentication credentials or OAuth identifiers</li>
         <li>License and device metadata: license identifiers, masked keys, device names, device fingerprint hashes</li>
-        <li>Billing references: plan, invoice/payment IDs, PSP customer references (card data is processed by Paddle — never stored by THE GOLD MIND)</li>
+        <li>
+          Billing references: plan, invoice/payment IDs, PSP customer references (card data is processed by Paddle —
+          never stored by {brand.companyName})
+        </li>
         <li>Support content: tickets, messages, and related attachments you submit</li>
         <li>Technical logs: IP address, user agent, session timestamps, security audit events</li>
       </ul>
@@ -49,7 +53,7 @@ export default function PrivacyPage() {
       <h2>6. Your Rights</h2>
       <p>
         Depending on applicable law, you may request access, correction, deletion, restriction, portability, or
-        objection. Contact <a href="mailto:privacy@thegoldmind.ai">privacy@thegoldmind.ai</a>.
+        objection. Contact <a href={`mailto:${brand.emails.privacy}`}>{brand.emails.privacy}</a>.
       </p>
 
       <h2>7. Security</h2>
@@ -60,8 +64,8 @@ export default function PrivacyPage() {
 
       <h2>8. Contact</h2>
       <p>
-        Privacy: <a href="mailto:privacy@thegoldmind.ai">privacy@thegoldmind.ai</a> · Legal:{" "}
-        <a href="mailto:legal@thegoldmind.ai">legal@thegoldmind.ai</a>
+        Privacy: <a href={`mailto:${brand.emails.privacy}`}>{brand.emails.privacy}</a> · Legal:{" "}
+        <a href={`mailto:${brand.emails.legal}`}>{brand.emails.legal}</a>
       </p>
     </LegalShell>
   );

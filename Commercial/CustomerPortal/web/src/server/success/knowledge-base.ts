@@ -1,3 +1,4 @@
+import { brand } from "@/lib/brand";
 /**
  * Knowledge Base articles — commercial support content only.
  * Never documents Core strategy internals.
@@ -48,7 +49,7 @@ export const KB_ARTICLES: KbArticle[] = [
     id: "kb_install_01",
     slug: "install-professional-windows",
     category: "installation",
-    title: "Install THE GOLD MIND Professional (Windows)",
+    title: `Install ${brand.productName} (Windows)`,
     summary: "Run the Professional installer and verify SHA-256 before first launch.",
     body: "Download the signed installer package from Portal → Downloads. Verify the SHA-256 checksum. Run Install-TheGoldMindProfessional.ps1 (or MSI when published). Confirm MT5 data folder path. Restart MetaTrader 5. The Core EA file is certified frozen — do not replace with unofficial builds.",
     tags: ["installer", "windows", "sha256"],
@@ -146,7 +147,7 @@ export const KB_ARTICLES: KbArticle[] = [
     category: "mt5_integration",
     title: "Attach the Professional EA in MetaTrader 5",
     summary: "Load the certified Expert on XAUUSD chart after install.",
-    body: "Open MT5 → Navigator → Experts → THE GOLD MIND Professional. Drag to chart. Enable Algo Trading. Inputs are commercial edition flags only — do not modify frozen core parameters unless documented for edition shells.",
+    body: `Open MT5 → Navigator → Experts → ${brand.productName}. Drag to chart. Enable Algo Trading. Inputs are commercial edition flags only — do not modify frozen core parameters unless documented for edition shells.`,
     tags: ["mt5", "ea"],
     views: 48,
     helpful: 20,

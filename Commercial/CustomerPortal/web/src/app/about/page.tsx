@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
+import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "About — THE GOLD MIND PROFESSIONAL",
-  description: "Mission, vision, technology, and global presence of THE GOLD MIND AI v2.0 PROFESSIONAL.",
+  title: `About — ${brand.productName}`,
+  description: `Mission, vision, technology, and global presence of ${brand.productFullName}.`,
 };
 
 export default function AboutPage() {
@@ -13,8 +14,8 @@ export default function AboutPage() {
     <EnterpriseShell>
       <div className="e-page-hero e-container">
         <ScrollReveal>
-          <p className="e-eyebrow">THE GOLD MIND</p>
-          <h1 className="e-section-title">About THE GOLD MIND</h1>
+          <p className="e-eyebrow">{brand.brandName}</p>
+          <h1 className="e-section-title">About {brand.brandName}</h1>
           <p className="e-section-sub">
             An international AI trading software company delivering institutional-grade automation on MetaTrader 5.
           </p>
@@ -29,7 +30,7 @@ export default function AboutPage() {
               Empower professional traders with certified AI infrastructure
             </h2>
             <p className="e-prose">
-              THE GOLD MIND delivers systematic, transparent, and professionally managed automated trading through a
+              {brand.brandName} delivers systematic, transparent, and professionally managed automated trading through a
               certified Core engine isolated from all commercial cloud services. Our mission is to provide enterprise
               traders with technology they can trust.
             </p>
@@ -128,7 +129,7 @@ export default function AboutPage() {
             <h2 className="e-section-title">International by design</h2>
             <p className="e-section-sub">
               Deployed on global edge infrastructure with multi-region readiness, i18n support, and regional compliance
-              configuration. Product of THE GOLD MIND.
+              configuration. Product of {brand.brandName}.
             </p>
             <Link href="/contact" className="e-btn e-btn-primary">
               Contact Us

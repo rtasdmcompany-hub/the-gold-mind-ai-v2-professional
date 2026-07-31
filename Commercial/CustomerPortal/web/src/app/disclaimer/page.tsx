@@ -1,4 +1,5 @@
 import { LegalShell } from "@/components/enterprise/LegalShell";
+import { brand } from "@/lib/brand";
 
 export default function DisclaimerPage() {
   return (
@@ -10,7 +11,7 @@ export default function DisclaimerPage() {
 
       <h2>1. No Investment Advice</h2>
       <p>
-        THE GOLD MIND PROFESSIONAL and related materials are software tools. They are not investment advice,
+        {brand.productName} and related materials are software tools. They are not investment advice,
         brokerage services, portfolio management, or a solicitation to buy or sell any financial instrument.
       </p>
 
@@ -22,7 +23,7 @@ export default function DisclaimerPage() {
 
       <h2>3. Independent Operation</h2>
       <p>
-        The MetaTrader 5 Trading Engine executes under your broker account and settings. THE GOLD MIND does not operate your
+        The MetaTrader 5 Trading Engine executes under your broker account and settings. {brand.companyName} does not operate your
         trading account, place discretionary human trades on your behalf, or control your broker relationship.
       </p>
 
@@ -34,8 +35,8 @@ export default function DisclaimerPage() {
 
       <h2>5. Contact</h2>
       <p>
-        <a href="mailto:legal@thegoldmind.ai">legal@thegoldmind.ai</a> ·{" "}
-        <a href="mailto:support@thegoldmind.ai">support@thegoldmind.ai</a>
+        <a href={`mailto:${brand.emails.legal}`}>{brand.emails.legal}</a> ·{" "}
+        <a href={`mailto:${brand.emails.support}`}>{brand.emails.support}</a>
       </p>
     </LegalShell>
   );

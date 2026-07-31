@@ -1,3 +1,4 @@
+import { brand } from "@/lib/brand";
 /**
  * Task 2 — MQL5 Market compliance review + forbidden-string scan.
  * Scans Core source READ-ONLY and Market package docs. Never modifies Core.
@@ -178,7 +179,7 @@ export async function runMql5ComplianceReview(): Promise<{
       requirement: "Correct copyright information",
       status: "pass",
       severity: "Medium",
-      detail: "Copyright 2026, THE GOLD MIND",
+      detail: `Copyright ${brand.copyrightYear}, ${brand.companyName}`,
       mitigation: "Keep copyright aligned in listing and #property copyright",
     },
   ];

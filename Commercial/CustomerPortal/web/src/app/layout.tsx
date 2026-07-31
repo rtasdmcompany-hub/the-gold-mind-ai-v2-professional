@@ -1,5 +1,6 @@
-import type { Metadata, Viewport } from "next";
+import type { Viewport } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
+import { brandRootMetadata } from "@/lib/brand-metadata";
 import "./globals.css";
 import "../styles/enterprise.css";
 
@@ -17,56 +18,7 @@ const sans = Inter({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://the-gold-mind-ai-v2-professional.vercel.app"),
-  title: {
-    default: "THE GOLD MIND AI v2.0 PROFESSIONAL",
-    template: "%s · THE GOLD MIND PROFESSIONAL",
-  },
-  description:
-    "THE GOLD MIND AI v2.0 PROFESSIONAL — Customer Portal, licensing, downloads, and certified automated trading software. Trading involves risk of loss.",
-  applicationName: "THE GOLD MIND AI v2.0 PROFESSIONAL",
-  authors: [{ name: "THE GOLD MIND PROFESSIONAL" }],
-  creator: "THE GOLD MIND PROFESSIONAL",
-  publisher: "THE GOLD MIND PROFESSIONAL",
-  keywords: [
-    "THE GOLD MIND",
-    "THE GOLD MIND PROFESSIONAL",
-    "MetaTrader 5",
-    "Expert Advisor",
-    "automated trading",
-    "Customer Portal",
-  ],
-  manifest: "/site.webmanifest",
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/brand/the-gold-mind-icon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/brand/the-gold-mind-icon-192.png", sizes: "192x192", type: "image/png" },
-    ],
-    apple: [{ url: "/brand/the-gold-mind-icon-180.png", sizes: "180x180", type: "image/png" }],
-  },
-  openGraph: {
-    title: "THE GOLD MIND AI v2.0 PROFESSIONAL",
-    description: "Official website and Customer Portal — licenses, downloads, and certified Core.",
-    type: "website",
-    siteName: "THE GOLD MIND AI v2.0 PROFESSIONAL",
-    images: [
-      {
-        url: "/brand/the-gold-mind-og-1200x630.png",
-        width: 1200,
-        height: 630,
-        alt: "THE GOLD MIND Automated Trading Software",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "THE GOLD MIND AI v2.0 PROFESSIONAL",
-    description: "Official website and Customer Portal for THE GOLD MIND.",
-    images: ["/brand/the-gold-mind-twitter-1200x600.png"],
-  },
-};
+export const metadata = brandRootMetadata();
 
 export const viewport: Viewport = {
   themeColor: "#050505",

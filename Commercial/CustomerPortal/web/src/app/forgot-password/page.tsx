@@ -4,10 +4,11 @@ import { redirect } from "next/navigation";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 import { requestPasswordReset } from "@/server/accounts/service";
+import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Forgot Password — THE GOLD MIND PROFESSIONAL",
-  description: "Request a password reset link for your THE GOLD MIND PROFESSIONAL Customer Portal account.",
+  title: `Forgot Password — ${brand.productName}`,
+  description: `Request a password reset link for your ${brand.productName} Customer Portal account.`,
 };
 
 export default async function ForgotPasswordPage({

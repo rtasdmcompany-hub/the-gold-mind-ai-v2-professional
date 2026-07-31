@@ -9,6 +9,7 @@ import {
   getParticipantByEmail,
 } from "@/server/launch/beta-store";
 import { actionAcceptBetaInvite, actionSelfEnrollmentStep } from "@/server/launch/actions";
+import { brand } from "@/lib/brand";
 
 export default async function BetaOnboardingPage() {
   const session = await auth();
@@ -23,7 +24,7 @@ export default async function BetaOnboardingPage() {
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">Beta Onboarding</h1>
         <p className="page-sub">
-          Invite-only enrollment for THE GOLD MIND Professional. Steps are self-attested until linked to installer
+          Invite-only enrollment for {brand.brandName} Professional. Steps are self-attested until linked to installer
           events. Trading engine remains certified and frozen.
         </p>
       </header>

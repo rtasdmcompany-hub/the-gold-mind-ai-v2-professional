@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { saveWebsiteLaunchRun } from "./store";
+import { brand } from "@/lib/brand";
 
 export interface OpsArtifact {
   id: string;
@@ -23,7 +24,7 @@ function ensureOpsDocs() {
   const files: Record<string, string> = {
     "GO_LIVE_CHECKLIST.md": `# GO_LIVE_CHECKLIST.md
 
-**Edition:** THE GOLD MIND PROFESSIONAL (Website)  
+**Edition:** ${brand.productName} (Website)  
 **Rule:** No public Stable if any Critical blocker remains.
 
 ## Pre-go-live
@@ -96,23 +97,23 @@ function ensureOpsDocs() {
   const templatesDir = path.join(dir, "LaunchTemplates");
   if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir, { recursive: true });
   const templates: Record<string, string> = {
-    "NOTIFY_GO_LIVE.txt": `Subject: THE GOLD MIND PROFESSIONAL is available
+    "NOTIFY_GO_LIVE.txt": `Subject: ${brand.productName} is available
 
 Hello,
 
-THE GOLD MIND PROFESSIONAL Website Edition is now available through the Customer Portal.
+${brand.productName} Website Edition is now available through the Customer Portal.
 
 Sign in, activate your license, and download the installer from Downloads.
 
 Trading involves risk of loss. Read the Risk disclosure before live use.
 
-— THE GOLD MIND PROFESSIONAL
+— ${brand.productName}
 `,
     "NOTIFY_MAINTENANCE.txt": `Subject: Scheduled maintenance — Customer Portal
 
 We will perform maintenance on {{window}}. Portal features may be briefly unavailable. Core EA on your MT5 terminal continues independently.
 
-— THE GOLD MIND
+— ${brand.brandName}
 `,
     "NOTIFY_INCIDENT.txt": `Subject: Service update — {{summary}}
 
@@ -121,7 +122,7 @@ We are investigating an issue affecting {{scope}}. Trading Core on MT5 is not mo
 Status: {{status}}
 Next update: {{eta}}
 
-— THE GOLD MIND
+— ${brand.brandName}
 `,
   };
   for (const [name, body] of Object.entries(templates)) {
@@ -156,7 +157,7 @@ export async function runLaunchOperationsPrep(): Promise<{
   if (!fs.existsSync(rn)) {
     fs.writeFileSync(
       rn,
-      `# THE GOLD MIND PROFESSIONAL 2.0.0 — Website Release Notes\n\n- Customer Portal production readiness pack (Phase 10 Sprint 8)\n- Marketing homepage, pricing, docs, contact\n- KB expanded for support gate\n- Core Trading Engine unchanged\n`,
+      `# ${brand.productName} 2.0.0 — Website Release Notes\n\n- Customer Portal production readiness pack (Phase 10 Sprint 8)\n- Marketing homepage, pricing, docs, contact\n- KB expanded for support gate\n- Core Trading Engine unchanged\n`,
       "utf8"
     );
   }

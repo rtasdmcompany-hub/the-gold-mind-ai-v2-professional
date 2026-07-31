@@ -13,6 +13,7 @@ import { isProductionRuntime } from "@/server/security/dev-bypass";
 import { refreshPartnerTier } from "./tiers";
 import { recordAttribution, recordReferralClick } from "./affiliate";
 import { createCommissionsFromAttribution } from "./commission";
+import { brand } from "@/lib/brand";
 
 function makeReferralCode(name: string): string {
   const base = name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8).toUpperCase() || "TGM";
@@ -267,7 +268,7 @@ export function ensureDemoPartner(): PartnerProfile {
   const app = submitPartnerApplication({
     email: "partner@goldmind.local",
     name: "Demo Partner",
-    company: "THE GOLD MIND Channel Demo",
+    company: `${brand.brandName} Channel Demo`,
     region: "EMEA",
     country: "AE",
     pitch: "Demo partner for Phase 11 Sprint 3 validation",

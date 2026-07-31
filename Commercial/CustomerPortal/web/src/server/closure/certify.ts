@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import { runHealthChecks } from "@/server/cloud/monitoring";
 import { getKbStats } from "@/server/success/knowledge-base";
+import { brand } from "@/lib/brand";
 import {
   CORE_CERT_SHA,
   countFilesRecursive,
@@ -151,7 +152,7 @@ export function writeLtsAndRoadmapDocs() {
     path.join(dir, "LTS_POLICY.md"),
     `# LTS_POLICY.md
 
-**Product:** THE GOLD MIND PROFESSIONAL / MARKET  
+**Product:** ${brand.productName} / MARKET  
 **Core rule:** Trading Engine remains frozen unless a separately certified Core program is opened.
 
 ## Versioning strategy

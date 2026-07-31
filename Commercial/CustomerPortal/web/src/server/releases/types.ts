@@ -9,7 +9,7 @@ export type ReleaseStatus = "draft" | "published" | "yanked" | "superseded";
 
 export interface ReleasePackage {
   id: string;
-  product: "THE GOLD MIND PROFESSIONAL";
+  product: string;
   version: string;
   buildNumber: string;
   channel: ReleaseChannel;

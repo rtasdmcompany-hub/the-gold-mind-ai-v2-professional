@@ -3,6 +3,7 @@
  */
 import fs from "fs";
 import path from "path";
+import { brand } from "@/lib/brand";
 import { commercialRoot } from "@/server/phase11/store";
 
 export function writeSdkSamples(): string {
@@ -15,7 +16,7 @@ export function writeSdkSamples(): string {
 
   fs.writeFileSync(
     path.join(root, "README.md"),
-    `# THE GOLD MIND Developer SDKs
+    `# ${brand.brandName} Developer SDKs
 
 Official integration samples for the Enterprise API Platform (\`/api/v1\`).
 
@@ -36,7 +37,7 @@ Official integration samples for the Enterprise API Platform (\`/api/v1\`).
 
   fs.writeFileSync(
     path.join(root, "javascript", "client.js"),
-    `/** THE GOLD MIND API — JavaScript sample (commercial only) */
+    `/** ${brand.brandName} API — JavaScript sample (commercial only) */
 async function tgmFetch(baseUrl, apiKey, path) {
   const res = await fetch(baseUrl + path, {
     headers: { Authorization: "Bearer " + apiKey, Accept: "application/json" },
@@ -52,7 +53,7 @@ module.exports = { tgmFetch };
 
   fs.writeFileSync(
     path.join(root, "typescript", "client.ts"),
-    `/** THE GOLD MIND API — TypeScript sample (commercial only) */
+    `/** ${brand.brandName} API — TypeScript sample (commercial only) */
 export async function tgmFetch<T>(baseUrl: string, apiKey: string, path: string): Promise<T> {
   const res = await fetch(\`\${baseUrl}\${path}\`, {
     headers: { Authorization: \`Bearer \${apiKey}\`, Accept: "application/json" },
@@ -67,9 +68,10 @@ export async function tgmFetch<T>(baseUrl: string, apiKey: string, path: string)
 
   fs.writeFileSync(
     path.join(root, "python", "client.py"),
-    `"""THE GOLD MIND API — Python sample (commercial only)."""
+    `"""${brand.brandName} API — Python sample (commercial only)."""
 import urllib.request
 import json
+import { brand } from "@/lib/brand";
 
 def tgm_fetch(base_url: str, api_key: str, path: str):
     req = urllib.request.Request(
@@ -84,7 +86,7 @@ def tgm_fetch(base_url: str, api_key: str, path: str):
 
   fs.writeFileSync(
     path.join(root, "csharp", "TgmClient.cs"),
-    `// THE GOLD MIND API — C# sample (commercial only)
+    `// ${brand.brandName} API — C# sample (commercial only)
 using System.Net.Http;
 using System.Net.Http.Headers;
 
@@ -107,7 +109,7 @@ public class TgmClient {
   fs.writeFileSync(
     path.join(root, "php", "client.php"),
     `<?php
-/** THE GOLD MIND API — PHP sample (commercial only) */
+/** ${brand.brandName} API — PHP sample (commercial only) */
 function tgm_fetch(string $baseUrl, string $apiKey, string $path): array {
   $ch = curl_init($baseUrl . $path);
   curl_setopt_array($ch, [
@@ -128,7 +130,7 @@ function tgm_fetch(string $baseUrl, string $apiKey, string $path): array {
   fs.writeFileSync(
     path.join(root, "rest-examples.sh"),
     `#!/usr/bin/env bash
-# THE GOLD MIND REST examples — commercial /api/v1 only
+# ${brand.brandName} REST examples — commercial /api/v1 only
 BASE="\${TGM_API_BASE:-https://api.example.com}"
 KEY="\${TGM_API_KEY:?set TGM_API_KEY}"
 
@@ -144,7 +146,7 @@ curl -s -H "Authorization: Bearer $KEY" "$BASE/api/v1/licenses"
     JSON.stringify(
       {
         info: {
-          name: "THE GOLD MIND API v1",
+          name: `${brand.brandName} API v1`,
           description: "Commercial APIs only — Core Trading Engine isolated",
           schema: "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         },

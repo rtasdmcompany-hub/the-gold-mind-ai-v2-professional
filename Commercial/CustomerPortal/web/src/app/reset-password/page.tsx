@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 import { resetPasswordWithToken } from "@/server/accounts/service";
+import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Reset Password — THE GOLD MIND PROFESSIONAL",
+  title: `Reset Password — ${brand.productName}`,
 };
 
 export default async function ResetPasswordPage({

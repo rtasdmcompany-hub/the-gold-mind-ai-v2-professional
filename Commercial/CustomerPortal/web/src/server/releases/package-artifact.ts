@@ -6,6 +6,7 @@ import path from "path";
 import { createHash } from "crypto";
 import type { ReleasePackage } from "./types";
 import { mutateReleases, readReleaseStore } from "./store";
+import { brand } from "@/lib/brand";
 import {
   isCommercialStablePackage,
   isSafePackageId,
@@ -136,7 +137,7 @@ export function buildCommercialPackageZip(pkg: ReleasePackage): Buffer {
   const launcher = Buffer.from(
     [
       "@echo off",
-      `echo THE GOLD MIND PROFESSIONAL commercial shell`,
+      `echo ${brand.productName} commercial shell`,
       `echo Version ${pkg.version} Build ${pkg.buildNumber} Channel ${pkg.channel}`,
       "echo Open MetaTrader 5 and attach the Professional EA from your licensed package.",
       "echo Core Trading Engine remains the sole execution authority.",
@@ -164,7 +165,7 @@ export function buildCommercialPackageZip(pkg: ReleasePackage): Buffer {
   );
   const readme = Buffer.from(
     [
-      "THE GOLD MIND PROFESSIONAL — Commercial Package",
+      `${brand.productName} — Commercial Package`,
       `Version: ${pkg.version} · Build: ${pkg.buildNumber} · Channel: ${pkg.channel}`,
       "",
       pkg.releaseNotes,

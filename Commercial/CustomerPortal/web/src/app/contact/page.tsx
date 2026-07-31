@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
+import { brand } from "@/lib/brand";
+import { brandPageMetadata } from "@/lib/brand-metadata";
 
-export const metadata: Metadata = {
-  title: "Contact — THE GOLD MIND PROFESSIONAL",
-  description: "Contact THE GOLD MIND for THE GOLD MIND PROFESSIONAL commercial inquiries.",
-};
+export const metadata: Metadata = brandPageMetadata({
+  title: "Contact",
+  description: `Contact ${brand.brandName} for ${brand.productName} commercial inquiries.`,
+});
 
 export default async function ContactPage({
   searchParams,
@@ -67,7 +69,7 @@ export default async function ContactPage({
             )}
           </ScrollReveal>
           <p style={{ marginTop: 24, fontSize: 13, color: "var(--e-text-dim)", textAlign: "center" }}>
-            Product: THE GOLD MIND · support@thegoldmind.ai · billing@thegoldmind.ai
+            Product: {brand.brandName} · {brand.emails.support} · {brand.emails.billing}
           </p>
         </div>
       </section>

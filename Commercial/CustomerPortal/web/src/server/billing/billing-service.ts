@@ -6,6 +6,7 @@ import { isSandboxCheckoutAllowed } from "./config";
 import type { CheckoutRequest, PlanCode, PaymentProviderId } from "./types";
 import { PLAN_CATALOG, formatMoney, hmacSha256, id, nowIso } from "./util";
 import type { NormalizedPaymentEvent } from "./types";
+import { brand } from "@/lib/brand";
 
 export async function startCheckout(req: CheckoutRequest) {
   const port = getPaymentPort(req.provider);
@@ -156,7 +157,7 @@ export function sendExpiryNotices(): number {
     deliverBillingEmail({
       to: sub.customerEmail,
       template: "subscription_expiry",
-      body: `Your THE GOLD MIND PROFESSIONAL (${sub.plan}) subscription period ended on ${end.slice(0, 10)}. Renew in the Customer Portal to restore Website Edition access. The Core Trading Engine is not controlled by this notice.`,
+      body: `Your ${brand.productName} (${sub.plan}) subscription period ended on ${end.slice(0, 10)}. Renew in the Customer Portal to restore Website Edition access. The Core Trading Engine is not controlled by this notice.`,
     });
     n++;
   }

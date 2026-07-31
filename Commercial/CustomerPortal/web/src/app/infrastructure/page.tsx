@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { InnerPage } from "@/components/enterprise/InnerPage";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
+import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Infrastructure — THE GOLD MIND PROFESSIONAL",
+  title: `Infrastructure — ${brand.productName}`,
   description: "Global cloud deployment, edge infrastructure, and operational resilience.",
 };
 

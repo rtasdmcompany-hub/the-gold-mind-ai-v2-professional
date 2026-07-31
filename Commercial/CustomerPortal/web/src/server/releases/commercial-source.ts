@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import type { ReleasePackage } from "./types";
 import { RELEASE_INTERNAL_FETCH_HEADER } from "./internal-fetch";
+import { brand } from "@/lib/brand";
 
 export const STABLE_PACKAGE_ID = "rel_100_stable";
 export const STABLE_VERSION = "1.0.0";
@@ -45,7 +46,7 @@ export function portalBaseUrl(): string {
   return (
     process.env.AUTH_URL ||
     process.env.NEXTAUTH_URL ||
-    "https://the-gold-mind-ai-v2-professional.vercel.app"
+    brand.website
   ).replace(/\/$/, "");
 }
 
@@ -133,7 +134,7 @@ export function configuredReleaseAssetUrl(packageFile = STABLE_PACKAGE_FILE): st
 
 export function stableReleaseNotes(): string {
   return [
-    "THE GOLD MIND PROFESSIONAL 1.0.0 (stable).",
+    `${brand.productName} 1.0.0 (stable).`,
     "Windows installer ZIP — extract, run Setup.exe, enter your existing license email and key.",
     "Mandatory license activation completes before the commercial shell is ready.",
     "Includes MT5 EA deploy, activation wizard, desktop shortcuts, SHA-256 checksums, and SBOM.",
@@ -149,7 +150,7 @@ export function buildStableReleasePackage(baseUrl = portalBaseUrl()): ReleasePac
   const version = seed?.version || STABLE_VERSION;
   return {
     id,
-    product: "THE GOLD MIND PROFESSIONAL",
+    product: brand.productName,
     version,
     buildNumber: seed?.buildNumber || STABLE_BUILD_NUMBER,
     channel: "stable",

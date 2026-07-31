@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { brand } from "@/lib/brand";
 
 export default function GlobalErrorBoundary({
   error,
@@ -16,7 +17,7 @@ export default function GlobalErrorBoundary({
 
   return (
     <div className="e-container" style={{ maxWidth: 560, padding: "96px 24px", textAlign: "center" }}>
-      <p className="e-eyebrow">THE GOLD MIND PROFESSIONAL</p>
+      <p className="e-eyebrow">{brand.productName}</p>
       <h1 className="e-section-title" style={{ fontSize: 32 }}>
         Something went wrong
       </h1>

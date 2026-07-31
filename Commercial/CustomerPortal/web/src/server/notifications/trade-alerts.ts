@@ -3,6 +3,7 @@ import { isTradeAlertsEnabled } from "@/server/accounts/service";
 import { packageLabel, sendTransactionalEmail } from "@/server/accounts/mailer";
 import { authenticateTradingCaller, type TradingCallerAuth } from "@/server/trading/auth";
 import { persistClosedTrade } from "@/server/trading/service";
+import { brand } from "@/lib/brand";
 
 export type TradeClosedPayload = {
   symbol?: string;
@@ -76,9 +77,9 @@ export async function handleTradeClosedNotification(input: {
     ? packageLabel(identity.licenseType)
     : undefined;
 
-  const subject = `Trade closed · ${symbol} ${outcome} ${profitStr} — THE GOLD MIND PROFESSIONAL`;
+  const subject = `Trade closed · ${symbol} ${outcome} ${profitStr} — ${brand.productName}`;
   const text = [
-    `Trade closed on your THE GOLD MIND PROFESSIONAL account.`,
+    `Trade closed on your ${brand.productName} account.`,
     ``,
     `Account: ${email}`,
     lic ? `Package: ${lic}` : "",
@@ -94,13 +95,13 @@ export async function handleTradeClosedNotification(input: {
     ``,
     `Turn off trade emails anytime: Customer Portal → Account Settings.`,
     ``,
-    `— THE GOLD MIND PROFESSIONAL`,
+    `— ${brand.productName}`,
   ]
     .filter(Boolean)
     .join("\n");
 
   const html = `
-    <p>A trade closed on your <strong>THE GOLD MIND PROFESSIONAL</strong> account.</p>
+    <p>A trade closed on your <strong>${brand.productName}</strong> account.</p>
     <ul>
       <li><strong>Account:</strong> ${escapeHtml(email)}</li>
       ${lic ? `<li><strong>Package:</strong> ${escapeHtml(lic)}</li>` : ""}

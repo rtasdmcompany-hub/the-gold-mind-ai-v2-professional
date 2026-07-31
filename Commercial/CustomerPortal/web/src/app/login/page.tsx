@@ -7,6 +7,7 @@ import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { FinancialParticles } from "@/components/enterprise/FinancialParticles";
 import { GoogleAutoStart } from "@/components/enterprise/GoogleAutoStart";
 import { GoogleSignInButton } from "@/components/enterprise/GoogleSignInButton";
+import { brand } from "@/lib/brand";
 
 export default async function LoginPage({
   searchParams,
@@ -44,7 +45,7 @@ export default async function LoginPage({
           <div className="e-login-card e-glass-card e-login-glass">
             <div className="e-login-brand">
               <BrandLogo variant="login" priority className="e-brand-logo e-brand-logo--login" />
-              <p className="e-login-eyebrow">THE GOLD MIND</p>
+              <p className="e-login-eyebrow">{brand.brandName}</p>
               <h1 className="e-login-title">Customer Portal</h1>
               <p className="e-login-sub">
                 Sign in with a verified account. New users must register and confirm email first.

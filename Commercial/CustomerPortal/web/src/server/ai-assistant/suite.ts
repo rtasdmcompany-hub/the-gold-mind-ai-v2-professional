@@ -25,6 +25,7 @@ import {
 import { buildAiAdminDashboard } from "./analytics";
 import { securityPolicySummary } from "./security";
 import { AI_CORE_ISOLATION, AI_TRADING_PROHIBITED } from "./types";
+import { brand } from "@/lib/brand";
 
 export interface AiOutputScores {
   aiReadinessScore: number;
@@ -82,7 +83,7 @@ export async function runFullPhase11Sprint7Suite() {
 
   const install = gatewayAsk({
     conversationId: main.id,
-    message: "How do I install THE GOLD MIND on MetaTrader 5?",
+    message: `How do I install ${brand.brandName} on MetaTrader 5?`,
   });
   const license = gatewayAsk({
     conversationId: main.id,

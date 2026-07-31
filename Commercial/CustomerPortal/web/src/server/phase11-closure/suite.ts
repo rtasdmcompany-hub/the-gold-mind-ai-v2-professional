@@ -23,6 +23,7 @@ import { buildExecutiveScores, decidePhase11Certification } from "./decision";
 import { getBusinessGrowthRoadmap, getLtsPolicy } from "./policies";
 import { PHASE11_CORE_ISOLATION } from "./types";
 import type { OutputScores } from "./types";
+import { brand } from "@/lib/brand";
 
 export async function runFullPhase11Sprint10Suite() {
   const core = verifyCoreSha();
@@ -326,7 +327,7 @@ Customer trust, platform stability, and long-term maintainability take precedenc
     path.join(dir, "PROJECT_MASTER_CERTIFICATION.md"),
     `# PROJECT_MASTER_CERTIFICATION.md
 
-**Product:** THE GOLD MIND AI v2.0 Professional  
+**Product:** ${brand.productFullName}  
 **Certification:** Phase 11 Global Commercial FinTech Platform  
 **Decision:** ${d.decision}  
 **Core SHA-256:** \`${CORE_CERT_SHA}\` · ${data.core.matches ? "VERIFIED MATCH" : "FAIL"}

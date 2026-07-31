@@ -7,11 +7,12 @@ import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 import { SoftwareShowcase } from "@/components/enterprise/SoftwareShowcase";
 import { TrustSection } from "@/components/enterprise/TrustSection";
 import { AiAssistantWidget } from "@/components/AiAssistantWidget";
+import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
   title: "Official Website",
   description:
-    "THE GOLD MIND AI v2.0 PROFESSIONAL — institutional-grade MetaTrader 5 Expert Advisor. Licensed, certified, and enterprise-ready.",
+    `${brand.productFullName} — institutional-grade MetaTrader 5 Expert Advisor. Licensed, certified, and enterprise-ready.`,
 };
 
 const FEATURES = [
@@ -54,7 +55,7 @@ export default function HomePage() {
         <HeroBackground />
         <div className="e-hero-grid">
           <ScrollReveal className="e-hero-content">
-            <p className="e-eyebrow">THE GOLD MIND AI · v2.0 Professional</p>
+            <p className="e-eyebrow">{brand.productFullName}</p>
             <h1 className="e-hero-title">Institutional AI Trading Software</h1>
             <p className="e-lead">
               Systematic MetaTrader 5 automation with certified Core integrity, enterprise licensing, and global
@@ -113,7 +114,7 @@ export default function HomePage() {
             <p className="e-eyebrow">Get Started</p>
             <h2 className="e-section-title">Begin your professional journey</h2>
             <p className="e-section-sub">
-              License THE GOLD MIND through the official Customer Portal. Trading involves substantial risk of loss.
+              License {brand.brandName} through the official Customer Portal. Trading involves substantial risk of loss.
             </p>
             <div className="e-btn-group" style={{ justifyContent: "center" }}>
               <Link href="/register" className="e-btn e-btn-primary">

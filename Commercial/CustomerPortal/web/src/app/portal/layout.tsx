@@ -9,6 +9,7 @@ import { isDevAdminBypass } from "@/server/security/dev-bypass";
 import { getParticipantByEmail } from "@/server/launch/beta-store";
 import { getPartnerByEmail } from "@/server/partners/portal";
 import { redirect } from "next/navigation";
+import { brand } from "@/lib/brand";
 
 export default async function PortalLayout({
   children,
@@ -35,7 +36,7 @@ export default async function PortalLayout({
       <div className="main">
         <div className="portal-site-bar">
           <Link href="/" className="portal-site-bar-brand">
-            THE GOLD MIND AI · Official Website
+            {brand.brandName} · Official Website
           </Link>
           <div className="portal-site-bar-links">
             <Link href="/">Home</Link>
@@ -58,7 +59,7 @@ export default async function PortalLayout({
             <BrandLogo variant="footer" href="/" />
           </div>
           <p className="footer-note">
-            THE GOLD MIND AI v2.0 PROFESSIONAL · Customer Portal · Commercial service only · Core Trading Engine is not
+            {brand.productFullName} · Customer Portal · Commercial service only · Core Trading Engine is not
             connected to this application.
           </p>
           <div className="portal-footer-links">

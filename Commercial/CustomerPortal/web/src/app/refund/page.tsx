@@ -1,4 +1,5 @@
 import { LegalShell } from "@/components/enterprise/LegalShell";
+import { brand } from "@/lib/brand";
 
 export default function RefundPage() {
   return (
@@ -15,13 +16,13 @@ export default function RefundPage() {
       <p>
         Refund eligibility depends on time since purchase and whether the license has been activated/downloaded.
         Unless mandatory consumer law requires otherwise, refund requests should be submitted within fourteen (14)
-        days of purchase to <a href="mailto:billing@thegoldmind.ai">billing@thegoldmind.ai</a> with your order or invoice
+        days of purchase to <a href={`mailto:${brand.emails.billing}`}>{brand.emails.billing}</a> with your order or invoice
         reference.
       </p>
 
       <h2>3. Lifetime Licenses</h2>
       <p>
-        Lifetime licenses are refundable only as required by applicable law or as expressly approved by THE GOLD MIND in
+        Lifetime licenses are refundable only as required by applicable law or as expressly approved by {brand.companyName} in
         writing for exceptional cases (e.g. verified duplicate charge).
       </p>
 

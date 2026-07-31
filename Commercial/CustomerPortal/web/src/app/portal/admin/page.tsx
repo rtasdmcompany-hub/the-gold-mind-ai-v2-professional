@@ -6,6 +6,7 @@ import { canAccessAdminConsole, hasPermission } from "@/server/admin/roles";
 import { getEnterpriseDashboardWithHealth } from "@/server/admin/ops";
 import { ensureDemoTickets } from "@/server/admin/support-store";
 import { ensureSeedData } from "@/server/licensing/seed";
+import { brand } from "@/lib/brand";
 
 export default async function AdminOperationsHub() {
   ensureSeedData();
@@ -21,7 +22,7 @@ export default async function AdminOperationsHub() {
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">Enterprise Operations Hub</h1>
         <p className="page-sub">
-          THE GOLD MIND commercial operations center — customers · licenses · revenue · support · health. Never touches Trading
+          {brand.brandName} commercial operations center — customers · licenses · revenue · support · health. Never touches Trading
           Engine.
         </p>
       </header>

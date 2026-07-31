@@ -14,6 +14,7 @@ import {
 } from "./certify";
 import { runFinalClosureDecision } from "./decision";
 import { runClosureScorecard } from "./scorecard";
+import { brand } from "@/lib/brand";
 import {
   CORE_CERT_SHA,
   commercialRoot,
@@ -198,7 +199,7 @@ ${data.decision.conditions
     path.join(dir, "ENTERPRISE_MASTER_REPORT.md"),
     `# ENTERPRISE_MASTER_REPORT.md
 
-**Product:** THE GOLD MIND AI v2.0 Professional  
+**Product:** ${brand.productFullName}  
 **Program:** Phases 1–10 complete · Phase 11 planning authorized  
 
 ## Architecture certified

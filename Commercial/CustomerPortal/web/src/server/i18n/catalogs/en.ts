@@ -6,8 +6,8 @@ import type { TranslationCatalog } from "../types";
 
 export const EN_CATALOG: TranslationCatalog = {
   // common
-  "common.appName": "THE GOLD MIND PROFESSIONAL",
-  "common.brand": "THE GOLD MIND",
+  "common.appName": "{productName}",
+  "common.brand": "{brandName}",
   "common.loading": "Loading…",
   "common.save": "Save",
   "common.cancel": "Cancel",
@@ -24,7 +24,7 @@ export const EN_CATALOG: TranslationCatalog = {
   "common.coreIsolation": "Core Trading Engine is not connected to this application.",
 
   // website
-  "website.hero.tagline": "Automated Trading Software",
+  "website.hero.tagline": "{tagline}",
   "website.hero.cta": "View pricing",
   "website.nav.home": "Home",
   "website.nav.pricing": "Pricing",
@@ -57,7 +57,7 @@ export const EN_CATALOG: TranslationCatalog = {
   "partner.apply": "Apply to become a partner",
 
   // installer / updater
-  "installer.welcome": "Welcome to THE GOLD MIND PROFESSIONAL Setup",
+  "installer.welcome": "Welcome to {productName} Setup",
   "installer.next": "Next",
   "installer.finish": "Finish",
   "updater.checking": "Checking for updates…",
@@ -65,10 +65,10 @@ export const EN_CATALOG: TranslationCatalog = {
   "updater.uptodate": "You are up to date",
 
   // emails
-  "emails.welcome.subject": "Welcome to THE GOLD MIND PROFESSIONAL",
+  "emails.welcome.subject": "Welcome to {productName}",
   "emails.license.subject": "Your license key",
   "emails.renewal.subject": "Subscription renewal reminder",
-  "emails.footer": "This message was sent by THE GOLD MIND commercial services.",
+  "emails.footer": "This message was sent by {brandName} commercial services.",
 
   // knowledge / support
   "knowledge.title": "Knowledge Base",
@@ -100,7 +100,7 @@ export const EN_CATALOG: TranslationCatalog = {
   "legal.accept": "Accept",
 
   // regional
-  "regional.support.contact": "partners@thegoldmind.ai · support@thegoldmind.ai",
+  "regional.support.contact": "{partnersEmail} · {supportEmail}",
   "regional.legal.notice": "Trading involves risk. Past performance does not guarantee future results.",
   "regional.measurement.metric": "Metric",
   "regional.measurement.imperial": "Imperial",

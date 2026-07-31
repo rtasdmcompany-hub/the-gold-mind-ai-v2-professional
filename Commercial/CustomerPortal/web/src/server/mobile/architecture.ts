@@ -5,11 +5,12 @@ import path from "path";
 import { commercialRoot } from "@/server/phase11/store";
 import { readMobileStore } from "./store";
 import { MOBILE_CORE_ISOLATION, MOBILE_TRADING_PROHIBITED } from "./types";
+import { brand } from "@/lib/brand";
 
 export function getMobileArchitecture() {
   const versions = readMobileStore().appVersions;
   return {
-    product: "THE GOLD MIND Mobile Companion",
+    product: `${brand.brandName} Mobile Companion`,
     purpose: "Customer management, licensing, notifications, business services",
     notATradingTerminal: true,
     tradingProhibited: MOBILE_TRADING_PROHIBITED,

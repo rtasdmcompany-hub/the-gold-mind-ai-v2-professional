@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { brand } from "@/lib/brand";
 
 type Variant = "header" | "nav" | "login" | "footer" | "hero";
 
@@ -8,31 +9,31 @@ const SRC: Record<Variant, { src: string; width: number; height: number; alt: st
     src: "/brand/the-gold-mind-logo-header.png",
     width: 280,
     height: 80,
-    alt: "THE GOLD MIND AI v2.0 PROFESSIONAL",
+    alt: brand.productFullName,
   },
   nav: {
     src: "/brand/the-gold-mind-logo-nav.png",
     width: 180,
     height: 72,
-    alt: "THE GOLD MIND",
+    alt: `${brand.brandName}`,
   },
   login: {
     src: "/brand/the-gold-mind-logo-login.png",
     width: 120,
     height: 120,
-    alt: "THE GOLD MIND Automated Trading Software",
+    alt: `${brand.brandName} Automated Trading Software`,
   },
   footer: {
     src: "/brand/the-gold-mind-logo-footer.png",
     width: 160,
     height: 48,
-    alt: "THE GOLD MIND",
+    alt: `${brand.brandName}`,
   },
   hero: {
     src: "/brand/the-gold-mind-logo-dark.png",
     width: 420,
     height: 420,
-    alt: "THE GOLD MIND Automated Trading Software",
+    alt: `${brand.brandName} Automated Trading Software`,
   },
 };
 

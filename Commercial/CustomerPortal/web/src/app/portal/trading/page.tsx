@@ -3,6 +3,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { getTradingDashboard } from "@/server/trading/service";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { brand } from "@/lib/brand";
 
 function fmtMoney(n: number | null | undefined, currency?: string): string {
   if (n == null || !Number.isFinite(n)) return "—";
@@ -27,7 +28,7 @@ export default async function TradingPage() {
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">Trading Account</h1>
         <p className="page-sub">
-          Live MT5 balance, equity, and trade history synced from THE GOLD MIND PROFESSIONAL. Email alerts are
+          Live MT5 balance, equity, and trade history synced from {brand.productName}. Email alerts are
           optional — this page stays available even when trade emails are off.
         </p>
       </header>

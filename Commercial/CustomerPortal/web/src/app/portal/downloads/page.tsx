@@ -6,6 +6,7 @@ import {
 import { readReleaseStore } from "@/server/releases/store";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { brand } from "@/lib/brand";
 
 function formatPackageSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
@@ -46,7 +47,7 @@ export default async function DownloadsPage() {
             Latest Stable Version
           </div>
           <div className="value" style={{ fontSize: 28, marginTop: 8 }}>
-            THE GOLD MIND PROFESSIONAL {latest.version}
+            {brand.productName} {latest.version}
           </div>
           <div className="meta" style={{ marginTop: 8 }}>
             Windows (64-bit) · Build {latest.buildNumber} · Released {latest.releasedAt.slice(0, 10)}

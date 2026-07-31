@@ -3,6 +3,7 @@
  */
 import type { KnowledgeCategory, KnowledgeDocument } from "./types";
 import { readAiStore, writeAiStore } from "./store";
+import { brand } from "@/lib/brand";
 
 const STOP = new Set([
   "a", "an", "the", "and", "or", "to", "of", "in", "on", "for", "is", "are", "be", "with", "your", "you", "how", "what", "do", "i", "can", "my",
@@ -38,7 +39,7 @@ function doc(
 export const SEED_KNOWLEDGE: KnowledgeDocument[] = [
   doc(
     "kb_install_mt5",
-    "Install THE GOLD MIND on MetaTrader 5",
+    `Install ${brand.brandName} on MetaTrader 5`,
     "installation",
     ["installer", "mt5", "setup"],
     "Download the Windows installer from the Customer Portal Downloads page. Run the installer, then copy the Expert Advisor into your MT5 Experts folder and restart MetaTrader 5. Activate your license from the portal before attaching the EA to a chart. The Mobile Companion and AI Assistant cannot install or trade for you."
@@ -118,7 +119,7 @@ export const SEED_KNOWLEDGE: KnowledgeDocument[] = [
     "Can the AI or Mobile app trade for me?",
     "faq",
     ["trading", "forbidden"],
-    "No. THE GOLD MIND AI Assistant and Mobile Companion are commercial support tools only. All trading remains exclusively inside the certified MT5 Professional Core Trading Engine. The assistant never generates buy/sell advice."
+    `No. ${brand.brandName} AI Assistant and Mobile Companion are commercial support tools only. All trading remains exclusively inside the certified MT5 Professional Core Trading Engine. The assistant never generates buy/sell advice.`
   ),
   doc(
     "kb_partner",

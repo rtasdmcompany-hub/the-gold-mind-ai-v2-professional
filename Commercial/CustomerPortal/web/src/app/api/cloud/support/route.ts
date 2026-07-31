@@ -1,6 +1,7 @@
 import { withApiGateway, apiSuccess, apiError, validateFields } from "@/server/cloud/gateway";
 import { writeAudit } from "@/server/cloud/audit";
 import { queueCommercialEmail } from "@/server/billing/email";
+import { brand } from "@/lib/brand";
 
 /**
  * Support Service — ticket intake for Website Edition.
@@ -26,8 +27,8 @@ export async function POST(req: Request) {
       if (err) return apiError("VALIDATION", err, 400, ctx.requestId);
       const supportInbox = (
         process.env.SUPPORT_INBOX_EMAIL ||
-        process.env.RESEND_FROM_EMAIL ||
-        ""
+        process.env.SUPPORT_EMAIL ||
+        brand.emails.support
       ).trim();
       if (!supportInbox) return apiError("SUPPORT_INBOX_UNCONFIGURED", "Support inbox is not configured.", 503, ctx.requestId);
       queueCommercialEmail({

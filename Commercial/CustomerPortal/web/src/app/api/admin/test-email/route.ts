@@ -1,5 +1,6 @@
 import { withApiGateway, apiSuccess, apiError } from "@/server/cloud/gateway";
 import { isResendConfigured, sendTransactionalEmail } from "@/server/accounts/mailer";
+import { brand } from "@/lib/brand";
 
 /**
  * POST /api/admin/test-email
@@ -36,15 +37,15 @@ export async function POST(req: Request) {
         );
       }
 
-      const subject = "Test email — THE GOLD MIND PROFESSIONAL";
+      const subject = `Test email — ${brand.productName}`;
       const text = [
-        "This is a Resend delivery test from THE GOLD MIND Customer Portal.",
+        `This is a Resend delivery test from ${brand.brandName} Customer Portal.`,
         `Recipient: ${to}`,
         `Time: ${new Date().toISOString()}`,
         "",
         "If you received this, outbound email is working.",
       ].join("\n");
-      const html = `<p>This is a <strong>Resend delivery test</strong> from THE GOLD MIND Customer Portal.</p>
+      const html = `<p>This is a <strong>Resend delivery test</strong> from ${brand.brandName} Customer Portal.</p>
 <p>Recipient: <code>${to}</code><br/>Time: ${new Date().toISOString()}</p>
 <p>If you received this, outbound email is working.</p>`;
 

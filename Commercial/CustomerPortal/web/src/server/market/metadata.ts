@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { commercialRoot, CORE_CERT_SHA, saveMarketRun } from "./store";
+import { brand } from "@/lib/brand";
 
 export interface StoreMetadata {
   productName: string;
@@ -37,7 +38,7 @@ export async function runStoreMetadata(): Promise<{
   }
 
   const metadata: StoreMetadata = {
-    productName: "THE GOLD MIND MARKET",
+    productName: `${brand.brandName} MARKET`,
     shortDescription:
       "Systematic MetaTrader 5 Expert Advisor with certified Core engine. Market-compliant activation. Trading involves risk of loss.",
     longDescriptionPath: "MarketEdition/Listing/PRODUCT_DESCRIPTION.md",

@@ -12,6 +12,7 @@ import {
   isDurableStoreConfigured,
 } from "@/server/cloud/cache";
 import { isProductionRuntime } from "@/server/security/dev-bypass";
+import { brand } from "@/lib/brand";
 
 export type Announcement = {
   id: string;
@@ -42,7 +43,7 @@ function seedItems(): Announcement[] {
   return [
     {
       id: "ann_100_stable",
-      title: "THE GOLD MIND PROFESSIONAL 1.0.0 available",
+      title: `${brand.productName} 1.0.0 available`,
       body: "Download the stable Windows installer ZIP from Portal → Downloads. Unzip, run Setup.exe, and enter your existing license key to complete installation. Core Trading Engine remains certified frozen.",
       date: "2026-07-28",
       pinned: true,

@@ -1,10 +1,12 @@
 "use client";
 
+import { brand } from "@/lib/brand";
+
 export function HeroDashboard() {
   return (
     <div className="e-dashboard" aria-hidden="true">
       <div className="e-dashboard-header">
-        <span className="e-dashboard-title">THE GOLD MIND · Live</span>
+        <span className="e-dashboard-title">{brand.brandName} · Live</span>
         <span style={{ fontSize: 10, color: "var(--e-text-dim)" }}>MT5 Professional</span>
       </div>
       <div className="e-dashboard-stats">

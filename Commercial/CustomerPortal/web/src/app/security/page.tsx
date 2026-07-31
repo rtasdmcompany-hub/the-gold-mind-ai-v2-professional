@@ -3,10 +3,11 @@ import Link from "next/link";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { InnerPage } from "@/components/enterprise/InnerPage";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
+import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Security — THE GOLD MIND PROFESSIONAL",
-  description: "Enterprise security, compliance, and data protection for THE GOLD MIND commercial platform.",
+  title: `Security — ${brand.productName}`,
+  description: `Enterprise security, compliance, and data protection for ${brand.brandName} commercial platform.`,
 };
 
 const CONTROLS = [

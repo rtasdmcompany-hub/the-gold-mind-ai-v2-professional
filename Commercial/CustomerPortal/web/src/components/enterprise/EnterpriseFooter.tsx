@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { brand } from "@/lib/brand";
 
 const FOOTER = {
   product: [
@@ -27,16 +28,25 @@ const FOOTER = {
 };
 
 export function EnterpriseFooter() {
+  const social = [
+    brand.social.x || brand.social.twitter
+      ? { href: brand.social.x || brand.social.twitter, label: "X" }
+      : null,
+    brand.social.linkedin ? { href: brand.social.linkedin, label: "LinkedIn" } : null,
+    brand.social.youtube ? { href: brand.social.youtube, label: "YouTube" } : null,
+    brand.social.facebook ? { href: brand.social.facebook, label: "Facebook" } : null,
+  ].filter(Boolean) as { href: string; label: string }[];
+
   return (
     <footer className="e-footer e-footer--compact">
       <div className="e-container">
         <div className="e-footer-grid e-footer-grid--compact">
           <div className="e-footer-brand">
-            <div className="e-footer-logos e-footer-logos--brand" aria-label="THE GOLD MIND brand">
+            <div className="e-footer-logos e-footer-logos--brand" aria-label={`${brand.brandName} brand`}>
               <div className="e-footer-logo-cell">
                 <Image
-                  src="/brand/footer-gold-mind.png"
-                  alt="THE GOLD MIND Automated Trading Software"
+                  src={brand.assets.footer}
+                  alt={`${brand.brandName} ${brand.tagline}`}
                   width={88}
                   height={88}
                   className="e-footer-logo-img"
@@ -44,8 +54,19 @@ export function EnterpriseFooter() {
               </div>
             </div>
             <p className="e-footer-desc">
-              THE GOLD MIND AI v2.0 PROFESSIONAL — institutional automated trading software for MetaTrader 5.
+              {brand.productFullName} — institutional automated trading software for MetaTrader 5.
             </p>
+            {social.length > 0 ? (
+              <ul className="e-footer-social" style={{ listStyle: "none", padding: 0, display: "flex", gap: 12, marginTop: 12 }}>
+                {social.map((s) => (
+                  <li key={s.href}>
+                    <a href={s.href} rel="noopener noreferrer" target="_blank">
+                      {s.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
           <div className="e-footer-col">
             <h4>Product</h4>
@@ -81,8 +102,8 @@ export function EnterpriseFooter() {
 
         <hr className="e-divider-glass" />
         <div className="e-footer-bottom">
-          <span>© {new Date().getFullYear()} THE GOLD MIND PROFESSIONAL</span>
-          <span className="e-footer-risk">Trading involves substantial risk of loss.</span>
+          <span>{brand.copyrightProduct}</span>
+          <span className="e-footer-risk">{brand.riskLine}</span>
         </div>
       </div>
     </footer>

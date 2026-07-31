@@ -2,6 +2,7 @@ import Link from "next/link";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 import { actionSubmitPartnerApplication } from "@/server/partners/actions";
+import { brand } from "@/lib/brand";
 
 export default function PartnerApplyPage() {
   return (
@@ -11,7 +12,7 @@ export default function PartnerApplyPage() {
           <p className="e-eyebrow">Partner Network</p>
           <h1 className="e-section-title">Partner Application</h1>
           <p className="e-section-sub">
-            Join the THE GOLD MIND Professional partner network · commercial channel only
+            Join the {brand.brandName} Professional partner network · commercial channel only
           </p>
         </ScrollReveal>
       </div>

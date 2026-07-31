@@ -1,6 +1,7 @@
 import { mutateBilling } from "./store";
 import { readBillingStore } from "./store";
 import { id, nowIso } from "./util";
+import { brand } from "@/lib/brand";
 
 export type EmailTemplate =
   | "purchase_confirmation"
@@ -15,16 +16,16 @@ export type EmailTemplate =
   | "support_reply";
 
 const SUBJECTS: Record<EmailTemplate, string> = {
-  purchase_confirmation: "Purchase confirmed — THE GOLD MIND PROFESSIONAL",
-  invoice: "Your invoice — THE GOLD MIND PROFESSIONAL",
-  receipt: "Payment receipt — THE GOLD MIND PROFESSIONAL",
-  license_delivery: "Your license key — THE GOLD MIND PROFESSIONAL",
-  renewal_reminder: "Renewal reminder — THE GOLD MIND PROFESSIONAL",
+  purchase_confirmation: `Purchase confirmed — ${brand.productName}`,
+  invoice: `Your invoice — ${brand.productName}`,
+  receipt: `Payment receipt — ${brand.productName}`,
+  license_delivery: `Your license key — ${brand.productName}`,
+  renewal_reminder: `Renewal reminder — ${brand.productName}`,
   payment_failure: "Payment failed — action needed",
   subscription_expiry: "Subscription expired",
   cancellation_confirmation: "Subscription cancelled",
-  support_ticket: "Support ticket received — THE GOLD MIND PROFESSIONAL",
-  support_reply: "Support reply — THE GOLD MIND PROFESSIONAL",
+  support_ticket: `Support ticket received — ${brand.productName}`,
+  support_reply: `Support reply — ${brand.productName}`,
 };
 
 export function commercialEmailSubject(template: EmailTemplate): string {

@@ -74,7 +74,7 @@ export const AR_CATALOG: TranslationCatalog = {
   "legal.risk.title": "إفصاح المخاطر",
   "legal.cookies.banner": "نستخدم ملفات تعريف الارتباط لتشغيل البوابة التجارية وتحسين تجربتك.",
   "legal.accept": "قبول",
-  "regional.support.contact": "partners@thegoldmind.ai · support@thegoldmind.ai",
+  "regional.support.contact": "{partnersEmail} · {supportEmail}",
   "regional.legal.notice": "التداول ينطوي على مخاطر. الأداء السابق لا يضمن النتائج المستقبلية.",
   "regional.measurement.metric": "متري",
   "regional.measurement.imperial": "إمبراطوري",

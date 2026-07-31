@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual, randomBytes } from "crypto";
 import type { PlanCode } from "./types";
+import { brand } from "@/lib/brand";
 
 export const PLAN_CATALOG: Record<
   PlanCode,
@@ -39,4 +40,4 @@ export function formatMoney(cents: number, currency = "USD"): string {
 }
 
 /** Website Edition only — Market never imports this module for checkout. */
-export const WEBSITE_EDITION_ONLY = "THE GOLD MIND PROFESSIONAL (Website)" as const;
+export const WEBSITE_EDITION_ONLY = `${brand.productName} (Website)` as const;

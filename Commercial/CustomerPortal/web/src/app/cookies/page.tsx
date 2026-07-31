@@ -1,4 +1,5 @@
 import { LegalShell } from "@/components/enterprise/LegalShell";
+import { brand } from "@/lib/brand";
 
 export default function CookiesPage() {
   return (
@@ -34,7 +35,7 @@ export default function CookiesPage() {
 
       <h2>5. Contact</h2>
       <p>
-        <a href="mailto:privacy@thegoldmind.ai">privacy@thegoldmind.ai</a>
+        <a href={`mailto:${brand.emails.privacy}`}>{brand.emails.privacy}</a>
       </p>
     </LegalShell>
   );

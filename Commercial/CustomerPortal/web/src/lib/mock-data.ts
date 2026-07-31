@@ -1,10 +1,11 @@
 import type { License, Device, DownloadItem, Invoice, Order, Ticket, Announcement, ActivityItem, Subscription, KbArticle } from "./types";
+import { brand } from "@/lib/brand";
 
 export const mockCustomer = {
   name: "Alex Rivera",
   email: "alex.rivera@example.com",
   role: "customer" as const,
-  edition: "THE GOLD MIND PROFESSIONAL",
+  edition: brand.productName,
   installedVersion: "2.0.0",
   latestVersion: "2.0.0",
   supportStatus: "Standard · First response ≤ 2 business days",
@@ -94,7 +95,7 @@ export const mockInvoices: Invoice[] = [
 ];
 
 export const mockOrders: Order[] = [
-  { id: "ord_7721", date: "2026-07-26", product: "THE GOLD MIND PROFESSIONAL — Yearly", status: "Completed" },
+  { id: "ord_7721", date: "2026-07-26", product: `${brand.productName} — Yearly`, status: "Completed" },
 ];
 
 export const mockTickets: Ticket[] = [
@@ -114,7 +115,7 @@ export const mockActivity: ActivityItem[] = [
 ];
 
 export const mockKb: KbArticle[] = [
-  { id: "kb_1", category: "Installation", title: "Install THE GOLD MIND PROFESSIONAL", slug: "install" },
+  { id: "kb_1", category: "Installation", title: `Install ${brand.productName}`, slug: "install" },
   { id: "kb_2", category: "Activation", title: "Activate your license (coming online)", slug: "activate" },
   { id: "kb_3", category: "Downloads", title: "Verify package checksum", slug: "checksum" },
   { id: "kb_4", category: "Security", title: "Portal sign-in with Google", slug: "google-oauth" },

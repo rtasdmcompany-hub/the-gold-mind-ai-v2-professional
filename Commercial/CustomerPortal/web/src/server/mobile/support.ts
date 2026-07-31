@@ -3,6 +3,7 @@
  */
 import { newMobileId, readMobileStore, writeMobileStore } from "./store";
 import type { DiagnosticReport, MobilePlatform, SupportTicketMobile } from "./types";
+import { brand } from "@/lib/brand";
 
 const KB = [
   { id: "kb1", title: "Getting started with the Customer Portal", tags: ["onboarding"] },
@@ -17,7 +18,7 @@ const FAQS = [
   {
     id: "faq1",
     q: "Can I trade from the mobile app?",
-    a: "No. THE GOLD MIND Mobile Companion is a business app only. All trading stays in certified MT5 Professional.",
+    a: `No. ${brand.brandName} Mobile Companion is a business app only. All trading stays in certified MT5 Professional.`,
   },
   {
     id: "faq2",

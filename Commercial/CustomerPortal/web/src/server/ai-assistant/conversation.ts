@@ -17,6 +17,7 @@ import {
 import { escalateConversation } from "./escalation";
 import type { AiRole, AiSurface, Conversation, ConversationMessage } from "./types";
 import { AI_CORE_ISOLATION } from "./types";
+import { brand } from "@/lib/brand";
 
 const LOW_CONFIDENCE = 0.18;
 
@@ -44,7 +45,7 @@ export function startConversation(input: {
         id: newAiId("msg"),
         role: "assistant",
         content:
-          "Hi — I’m the THE GOLD MIND Customer Assistant. I can help with installation, licensing, billing, portal navigation, updates, and troubleshooting. I cannot provide trading advice or access the Core Trading Engine.",
+          `Hi — I’m the ${brand.brandName} Customer Assistant. I can help with installation, licensing, billing, portal navigation, updates, and troubleshooting. I cannot provide trading advice or access the Core Trading Engine.`,
         at: now,
         confidence: 1,
       },

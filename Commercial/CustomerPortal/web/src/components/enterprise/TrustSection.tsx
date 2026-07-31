@@ -1,4 +1,5 @@
 import { ScrollReveal } from "./ScrollReveal";
+import { brand } from "@/lib/brand";
 
 const TRUST = [
   { icon: "◆", title: "Verified MT5 Technology", desc: "Certified Expert Advisor on MetaTrader 5 Professional platform." },
@@ -20,7 +21,7 @@ export function TrustSection() {
             <p className="e-eyebrow">Trust & Security</p>
             <h2 className="e-section-title">Built for institutional confidence</h2>
             <p className="e-section-sub">
-              Every layer of THE GOLD MIND ecosystem is engineered for transparency, security, and professional
+              Every layer of {brand.brandName} ecosystem is engineered for transparency, security, and professional
               operation.
             </p>
           </div>

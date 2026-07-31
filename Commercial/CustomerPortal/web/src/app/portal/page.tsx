@@ -12,6 +12,7 @@ import { getBillingSummary } from "@/server/billing/billing-service";
 import { ensureSupportStoreLoaded } from "@/server/admin/support-store";
 import { listSupportTickets } from "@/server/admin/support-store";
 import Link from "next/link";
+import { brand } from "@/lib/brand";
 
 export default async function DashboardPage() {
   await ensureSeedData();
@@ -78,7 +79,7 @@ export default async function DashboardPage() {
         <div className="card">
           <h3>Product Edition</h3>
           <div className="value" style={{ fontSize: 16 }}>
-            THE GOLD MIND PROFESSIONAL
+            {brand.productName}
           </div>
         </div>
         <div className="card">
