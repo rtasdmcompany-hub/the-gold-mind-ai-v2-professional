@@ -66,6 +66,11 @@ export default async function PortalLayout({
             <Link href="/">← Back to Official Website</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
+            <Link href="/eula">EULA</Link>
+            <Link href="/cookies">Cookies</Link>
+            <Link href="/refund">Refunds</Link>
+            <Link href="/disclaimer">Disclaimer</Link>
+            <Link href="/risk">Risk</Link>
             <Link href="/contact">Support</Link>
           </div>
         </footer>

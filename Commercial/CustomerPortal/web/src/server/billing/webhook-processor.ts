@@ -1,6 +1,6 @@
 import { createLicense, renewLicense } from "@/server/licensing/license-service";
 import type { LicenseType } from "@/server/licensing/types";
-import { queueCommercialEmail } from "./email";
+import { deliverBillingEmail } from "./mail-delivery";
 import { mutateBilling, readBillingStore } from "./store";
 import type { NormalizedPaymentEvent, PlanCode } from "./types";
 import { PLAN_CATALOG, formatMoney, id, nowIso } from "./util";
@@ -99,22 +99,22 @@ export function processNormalizedEvent(event: NormalizedPaymentEvent): {
         }
       });
 
-      queueCommercialEmail({
+      deliverBillingEmail({
         to: event.customerEmail,
         template: "purchase_confirmation",
         body: `Thank you for purchasing THE GOLD MIND PROFESSIONAL (${plan}). Amount ${formatMoney(amount)}.`,
       });
-      queueCommercialEmail({
+      deliverBillingEmail({
         to: event.customerEmail,
         template: "invoice",
         body: `Invoice for ${plan}: ${formatMoney(amount)}. License assigned: ${licenseId}.`,
       });
-      queueCommercialEmail({
+      deliverBillingEmail({
         to: event.customerEmail,
         template: "receipt",
         body: `Receipt ${event.providerTransactionId || event.providerEventId}: ${formatMoney(amount)} paid via ${event.provider}.`,
       });
-      queueCommercialEmail({
+      deliverBillingEmail({
         to: event.customerEmail,
         template: "license_delivery",
         body: `Your license key (store securely): ${plaintextKey}\nActivate in Customer Portal → My Licenses.`,
@@ -158,7 +158,7 @@ export function processNormalizedEvent(event: NormalizedPaymentEvent): {
         renewLicense(renewedLicense, `billing:${event.provider}`);
         licenseId = renewedLicense;
       }
-      queueCommercialEmail({
+      deliverBillingEmail({
         to: event.customerEmail,
         template: "receipt",
         body: `Renewal payment received. Your Professional subscription continues.`,
@@ -190,7 +190,7 @@ export function processNormalizedEvent(event: NormalizedPaymentEvent): {
           sub.updatedAt = nowIso();
         }
       });
-      queueCommercialEmail({
+      deliverBillingEmail({
         to: event.customerEmail,
         template: "payment_failure",
         body: `We could not process your payment for THE GOLD MIND PROFESSIONAL. Update billing in the Customer Portal. The Core Trading Engine is unaffected.`,
@@ -229,7 +229,7 @@ export function processNormalizedEvent(event: NormalizedPaymentEvent): {
           sub.updatedAt = nowIso();
         }
       });
-      queueCommercialEmail({
+      deliverBillingEmail({
         to: event.customerEmail,
         template: "cancellation_confirmation",
         body: `Your Professional subscription has been cancelled. Access continues until period end per policy.`,

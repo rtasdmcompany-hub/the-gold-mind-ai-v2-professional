@@ -27,6 +27,10 @@ const SUBJECTS: Record<EmailTemplate, string> = {
   support_reply: "Support reply — THE GOLD MIND PROFESSIONAL",
 };
 
+export function commercialEmailSubject(template: EmailTemplate): string {
+  return SUBJECTS[template];
+}
+
 export function queueCommercialEmail(input: {
   to: string;
   template: EmailTemplate;

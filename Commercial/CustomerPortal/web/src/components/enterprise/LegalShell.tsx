@@ -9,7 +9,7 @@ export function LegalShell({ title, children }: { title: string; children: React
           <p className="e-eyebrow">THE GOLD MIND PROFESSIONAL</p>
           <h1 className="e-section-title">{title}</h1>
           <p className="e-section-sub">
-            Draft for Controlled Launch — counsel / Owner sign-off required before open Stable (BC-LEGAL).
+            Production legal draft — OWNER REVIEW REQUIRED before open commercial launch.
           </p>
         </ScrollReveal>
       </div>

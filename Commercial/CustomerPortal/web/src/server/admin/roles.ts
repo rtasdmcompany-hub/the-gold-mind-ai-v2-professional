@@ -145,8 +145,9 @@ export const ROLE_PERMISSIONS: Record<string, AdminPermission[]> = {
 
 export function normalizeAdminRole(role?: string): AdminRole {
   if (!role) return "customer";
-  if (role === "admin") return "super_admin";
+  if (role === "admin" || role === "owner" || role === "administrator") return "super_admin";
   if (role === "support") return "support_agent";
+  if (role === "readonly" || role === "read_only" || role === "readonly_admin") return "auditor";
   return role as AdminRole;
 }
 
@@ -164,16 +165,29 @@ export function canAccessAdminConsole(role: string | undefined): boolean {
 }
 
 export const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Administrator",
-  admin: "Super Administrator",
+  super_admin: "Owner / Super Administrator",
+  admin: "Administrator",
+  owner: "Owner",
+  administrator: "Administrator",
   commercial_manager: "Commercial Manager",
-  support_agent: "Support Agent",
-  support: "Support Agent",
+  support_agent: "Support",
+  support: "Support",
   finance_manager: "Finance Manager",
   qa_manager: "QA Manager",
-  auditor: "Read-only Auditor",
+  auditor: "ReadOnly Admin",
+  readonly: "ReadOnly Admin",
+  read_only: "ReadOnly Admin",
+  readonly_admin: "ReadOnly Admin",
   customer: "Customer",
 };
+
+/** Production-facing admin roster titles used in docs and Owner onboarding. */
+export const PRODUCTION_ADMIN_TITLES = [
+  { title: "Owner", role: "super_admin", env: "PORTAL_SUPER_ADMIN_EMAILS" },
+  { title: "Administrator", role: "super_admin", env: "PORTAL_ADMIN_EMAILS" },
+  { title: "Support", role: "support_agent", env: "PORTAL_SUPPORT_EMAILS" },
+  { title: "ReadOnly Admin", role: "auditor", env: "PORTAL_AUDITOR_EMAILS" },
+] as const;
 
 export function getRolePermissionMatrix() {
   const roles = [

@@ -18,8 +18,10 @@ const FOOTER = {
   legal: [
     { href: "/privacy", label: "Privacy" },
     { href: "/terms", label: "Terms" },
+    { href: "/eula", label: "EULA" },
     { href: "/cookies", label: "Cookies" },
     { href: "/refund", label: "Refunds" },
+    { href: "/disclaimer", label: "Disclaimer" },
     { href: "/risk", label: "Risk Disclosure" },
   ],
 };

@@ -1,7 +1,7 @@
 import { getPaymentPort } from "./payment-port";
 import { processNormalizedEvent } from "./webhook-processor";
 import { mutateBilling, readBillingStore } from "./store";
-import { queueCommercialEmail } from "./email";
+import { deliverBillingEmail } from "./mail-delivery";
 import { isSandboxCheckoutAllowed } from "./config";
 import type { CheckoutRequest, PlanCode, PaymentProviderId } from "./types";
 import { PLAN_CATALOG, formatMoney, hmacSha256, id, nowIso } from "./util";
@@ -130,7 +130,7 @@ export function sendRenewalReminders(): number {
   for (const sub of data.subscriptions) {
     if (!sub.nextBillingDate || sub.status !== "active") continue;
     if (Date.parse(sub.nextBillingDate) <= soon) {
-      queueCommercialEmail({
+      deliverBillingEmail({
         to: sub.customerEmail,
         template: "renewal_reminder",
         body: `Your ${sub.plan} plan renews on ${sub.nextBillingDate.slice(0, 10)}. Manage billing in the Customer Portal.`,
@@ -153,7 +153,7 @@ export function sendExpiryNotices(): number {
     const ended = Date.parse(end) <= now;
     if (!ended) continue;
     if (sub.status !== "cancelled" && sub.status !== "expired" && sub.status !== "past_due") continue;
-    queueCommercialEmail({
+    deliverBillingEmail({
       to: sub.customerEmail,
       template: "subscription_expiry",
       body: `Your THE GOLD MIND PROFESSIONAL (${sub.plan}) subscription period ended on ${end.slice(0, 10)}. Renew in the Customer Portal to restore Website Edition access. The Core Trading Engine is not controlled by this notice.`,
