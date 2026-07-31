@@ -1,13 +1,14 @@
 "use client";
 
 import { brand } from "@/lib/brand";
+import { product } from "@/lib/product";
 
 export function HeroDashboard() {
   return (
     <div className="e-dashboard" aria-hidden="true">
       <div className="e-dashboard-header">
         <span className="e-dashboard-title">{brand.brandName} · Live</span>
-        <span style={{ fontSize: 10, color: "var(--e-text-dim)" }}>MT5 Professional</span>
+        <span style={{ fontSize: 10, color: "var(--e-text-dim)" }}>{product.mt5.platformLabel}</span>
       </div>
       <div className="e-dashboard-stats">
         <div className="e-stat">

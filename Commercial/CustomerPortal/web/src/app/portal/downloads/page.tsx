@@ -7,6 +7,7 @@ import { readReleaseStore } from "@/server/releases/store";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
+import { product } from "@/lib/product";
 
 function formatPackageSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
@@ -97,7 +98,7 @@ export default async function DownloadsPage() {
           <li>Download the ZIP above (signed-in session required in production).</li>
           <li>Extract the archive to a folder you control.</li>
           <li>
-            Run <span className="mono">Setup.exe</span> (also named TheGoldMindSetup.exe in some packages).
+            Run <span className="mono">{product.installer.name}</span> (also named TheGoldMindSetup.exe in some packages).
           </li>
           <li>Enter your existing license email and license key when prompted.</li>
           <li>Complete mandatory activation — the installer will not finish without a valid activation.</li>

@@ -12,11 +12,12 @@ import { ensureBillingStoreLoaded, flushBillingStore } from "@/server/billing/st
 import { isSandboxCheckoutAllowed } from "@/server/billing/config";
 import { resolveBaseUrl } from "@/server/billing/base-url";
 import type { PlanCode, PaymentProviderId } from "@/server/billing/types";
+import { product } from "@/lib/product";
 
 export async function actionStartCheckout(formData: FormData) {
   const s = await requireSession();
   await ensureBillingStoreLoaded();
-  const plan = String(formData.get("plan") || "monthly") as PlanCode;
+  const plan = String(formData.get("plan") || product.defaultLicenseType) as PlanCode;
   const rawProvider = String(formData.get("provider") || "").trim();
   const provider = (rawProvider || undefined) as PaymentProviderId | undefined;
   const base = resolveBaseUrl();
@@ -32,12 +33,12 @@ export async function actionStartCheckout(formData: FormData) {
     return checkout;
   } catch (e) {
     return {
-      provider: (provider || "paddle") as PaymentProviderId,
+      provider: (provider || product.paymentProvider) as PaymentProviderId,
       checkoutId: "",
       checkoutUrl: "",
       plan,
       amountCents: 0,
-      currency: "USD",
+      currency: product.defaultCurrency,
       error: e instanceof Error ? e.message : "CHECKOUT_FAILED",
     };
   }

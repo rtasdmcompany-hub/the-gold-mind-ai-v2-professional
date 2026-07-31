@@ -1,8 +1,8 @@
 END-USER LICENSE AGREEMENT (SUMMARY)
-THE GOLD MIND - THE GOLD MIND PROFESSIONAL
+THE GOLD MIND - THE GOLD MIND PROFESSIONAL (Professional)
 
 By installing you agree to the Terms published on the Customer Portal.
 Trading involves risk of loss. Past performance is not indicative of future results.
 The Core Trading Engine binary is licensed for authorized use only.
-Support: support@thegoldmind.ai
+Support: support@thegoldmind.ai · https://the-gold-mind-ai-v2-professional.vercel.app/contact
 Full legal text: Portal -> Terms / EULA / Risk Disclosure.

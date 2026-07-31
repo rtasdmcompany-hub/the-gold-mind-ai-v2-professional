@@ -2,12 +2,11 @@
 ; Commercial packaging only. Does NOT modify Core Trading Engine.
 ; Compile: ISCC.exe TheGoldMindProfessional.iss
 ;
-; Brand values come from brand-defines.iss (generated from portal src/lib/brand.ts).
+; Brand + product values: brand-defines.iss (from portal src/lib/brand.ts + src/lib/product.ts).
 ; Regenerate: cd Commercial/CustomerPortal/web && npx tsx scripts/export-brand.mjs
 
 #include "brand-defines.iss"
 
-#define MyAppExeName "TGM-Professional-Launcher.exe"
 ; AppId string kept for upgrade continuity (not customer-visible branding)
 #define MyAppId "RTAS.TheGoldMind.Professional.1"
 
@@ -18,8 +17,8 @@ AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}/contact
-AppUpdatesURL={#MyAppURL}/portal/downloads
+AppSupportURL={#MyAppSupportURL}
+AppUpdatesURL={#MyAppUpdateURL}
 AppCopyright={#MyAppCopyright}
 DefaultDirName={localappdata}\{#MyAppName}
 DefaultGroupName={#MyAppName}

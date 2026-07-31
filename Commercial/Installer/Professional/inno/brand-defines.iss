@@ -1,11 +1,26 @@
-; Auto-generated from src/lib/brand.ts — do not edit by hand.
+; Auto-generated from src/lib/brand.ts + src/lib/product.ts — do not edit by hand.
 ; Regenerate: npx tsx scripts/export-brand.mjs
 
 #define MyAppName "THE GOLD MIND PROFESSIONAL"
 #define MyAppVersion "1.0.0"
+#define MyAppBuild "26211"
 #define MyAppPublisher "THE GOLD MIND"
 #define MyAppURL "https://the-gold-mind-ai-v2-professional.vercel.app"
+#define MyAppSupportURL "https://the-gold-mind-ai-v2-professional.vercel.app/contact"
+#define MyAppDocsURL "https://the-gold-mind-ai-v2-professional.vercel.app/docs"
+#define MyAppUpdateURL "https://the-gold-mind-ai-v2-professional.vercel.app/portal/downloads"
+#define MyAppApiBaseURL "https://the-gold-mind-ai-v2-professional.vercel.app/api"
 #define MyAppSupportEmail "support@thegoldmind.ai"
 #define MyAppBillingEmail "billing@thegoldmind.ai"
 #define MyAppLicenseEmail "license@thegoldmind.ai"
 #define MyAppCopyright "© 2026 THE GOLD MIND. All rights reserved."
+#define MyAppExeName "TGM-Professional-Launcher.exe"
+#define MyAppInstallerName "Setup.exe"
+#define MyAppMt5Name "TheGoldMindAI_Professional"
+#define MyAppEdition "Professional"
+#define MyAppLicenseName "THE GOLD MIND PROFESSIONAL License"
+#define MyAppTrialDays "14"
+#define MyAppCurrency "USD"
+#define MyAppLanguage "en"
+#define MyAppTimezone "UTC"
+#define MyAppPaymentProvider "paddle"

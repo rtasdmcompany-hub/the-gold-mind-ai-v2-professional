@@ -4,6 +4,7 @@
  */
 import { isProductionRuntime } from "@/server/security/dev-bypass";
 import type { PaymentProviderId, PlanCode } from "./types";
+import { product } from "@/lib/product";
 
 export function isSandboxCheckoutAllowed(): boolean {
   if (process.env.PAYMENT_FORCE_SANDBOX === "true") return true;
@@ -81,7 +82,7 @@ export function resolveCheckoutProvider(preferred?: PaymentProviderId): {
   ok: boolean;
   error?: string;
 } {
-  const primary = (process.env.PAYMENT_PRIMARY_PROVIDER || "paddle") as PaymentProviderId;
+  const primary = (process.env.PAYMENT_PRIMARY_PROVIDER || product.paymentProvider) as PaymentProviderId;
   const id = preferred || primary;
 
   if (id === "sandbox") {

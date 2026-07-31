@@ -7,6 +7,7 @@ import { createHash } from "crypto";
 import type { ReleasePackage } from "./types";
 import { mutateReleases, readReleaseStore } from "./store";
 import { brand } from "@/lib/brand";
+import { product } from "@/lib/product";
 import {
   isCommercialStablePackage,
   isSafePackageId,
@@ -178,7 +179,7 @@ export function buildCommercialPackageZip(pkg: ReleasePackage): Buffer {
   );
 
   return buildZipArchive([
-    { name: "bin/TGM-Professional-Launcher.cmd", data: launcher },
+    { name: `bin/${product.executableName.replace(/\.exe$/i, ".cmd")}`, data: launcher },
     { name: "bin/VERSION.txt", data: versionTxt },
     { name: "config/package-manifest.json", data: manifest },
     { name: "README.txt", data: readme },
@@ -231,7 +232,7 @@ async function ensureCommercialStableArtifact(
 
 /**
  * Ensure on-disk artifact exists and package metadata (sha256, size) matches bytes.
- * Stable commercial releases serve the real installer ZIP (Setup.exe + payload).
+ * Stable commercial releases serve the real installer ZIP ({product.installer.name} + payload).
  */
 export async function ensurePackageArtifact(
   pkg: ReleasePackage

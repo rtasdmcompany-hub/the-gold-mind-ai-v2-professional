@@ -4,13 +4,14 @@ import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 import { PLAN_CATALOG, formatMoney } from "@/server/billing/util";
 import { brand } from "@/lib/brand";
+import { product } from "@/lib/product";
 
 export const metadata: Metadata = {
   title: `Pricing — ${brand.productName}`,
   description: `Enterprise pricing for ${brand.productFullName}. Trial, monthly, yearly, and lifetime plans.`,
 };
 
-const ORDER = ["trial", "monthly", "yearly", "lifetime"] as const;
+const ORDER = product.planOrder;
 
 const FEATURES = [
   "Certified Core EA (MT5)",

@@ -9,11 +9,12 @@ import { securityPolicySummary } from "./security";
 import type { AiRole, AiSurface } from "./types";
 import { AI_CORE_ISOLATION, AI_TRADING_PROHIBITED } from "./types";
 import { brand } from "@/lib/brand";
+import { product } from "@/lib/product";
 
 export function aiGatewayInfo() {
   return {
     name: `${brand.brandName} Enterprise AI Gateway`,
-    version: "1.0.0",
+    version: product.version,
     surfaces: [
       "website",
       "customer_portal",

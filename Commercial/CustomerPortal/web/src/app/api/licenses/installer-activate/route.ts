@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { activateLicense } from "@/server/licensing/license-service";
 import { ensureStoreLoaded, flushStoreVerified } from "@/server/licensing/store";
 import { assertDurableStoreForLicensing } from "@/server/cloud/cache";
+import { product } from "@/lib/product";
 
 /**
  * Desktop installer activation — no browser session required.
  * Validates license key + customer email + device fingerprint.
- * Must succeed for Setup.exe to finish (installer enforces this).
+ * Must succeed for {product.installer.name} to finish (installer enforces this).
  * Trial / monthly / yearly / lifetime — same activation standard.
  */
 export async function POST(req: Request) {

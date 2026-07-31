@@ -3,14 +3,15 @@
  * Brand tokens (`{productName}`, `{supportEmail}`, …) always resolve from `@/lib/brand`.
  */
 import { brandTokens } from "@/lib/brand";
+import { product } from "@/lib/product";
 import type { LocaleCode, RegionalSettings } from "./types";
 import { getLocalePack } from "./packs";
 
 export const DEFAULT_REGIONAL: RegionalSettings = {
-  language: "en",
-  timezone: "UTC",
+  language: product.defaultLanguage as LocaleCode,
+  timezone: product.timezone,
   dateFormat: "medium",
-  currency: "USD",
+  currency: product.defaultCurrency,
   measurement: "metric",
   legalNoticeKey: "regional.legal.notice",
   supportContactKey: "regional.support.contact",

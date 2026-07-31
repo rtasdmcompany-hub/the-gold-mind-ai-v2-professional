@@ -6,6 +6,7 @@ import {
 } from "@/server/releases/release-service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { product } from "@/lib/product";
 
 /**
  * Customer Updates — stable channel only.
@@ -68,7 +69,7 @@ export default async function UpdatesPage({
           </div>
           {check.updateAvailable && (
             <p className="meta" style={{ marginTop: 10 }}>
-              Download the ZIP, extract it, run Setup.exe, and complete mandatory license activation with your existing email and key.
+              Download the ZIP, extract it, run {product.installer.name}, and complete mandatory license activation with your existing email and key.
             </p>
           )}
           <p style={{ marginTop: 12 }}>

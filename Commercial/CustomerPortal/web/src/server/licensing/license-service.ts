@@ -26,6 +26,7 @@ import {
   sendLicenseActivatedEmail,
   sendLicenseCreatedEmail,
 } from "@/server/accounts/license-emails";
+import { product, productDurationDays } from "@/lib/product";
 
 function withoutMac(lic: LicenseRecord): Omit<LicenseRecord, "integrityMac"> {
   const { integrityMac, ...rest } = lic;
@@ -60,11 +61,9 @@ export function toPublicLicense(lic: LicenseRecord, seatsUsed: number): LicenseP
 }
 
 function expiresForType(type: LicenseType, from: Date = new Date()): string | null {
-  if (type === "lifetime") return null;
-  if (type === "trial") return addDays(from, 14);
-  if (type === "monthly") return addDays(from, 30);
-  if (type === "yearly") return addDays(from, 365);
-  return addDays(from, 30);
+  const days = productDurationDays(type);
+  if (days === null) return null;
+  return addDays(from, days);
 }
 
 function subStatusFromLicense(status: LicenseStatus): SubscriptionStatus {
@@ -113,7 +112,7 @@ export function createLicense(input: {
     keyLast4,
     type: input.type,
     status: "pending",
-    edition: "Professional",
+    edition: product.edition,
     seatsMax: seatsForType(input.type),
     createdAt,
     activatedAt: null,

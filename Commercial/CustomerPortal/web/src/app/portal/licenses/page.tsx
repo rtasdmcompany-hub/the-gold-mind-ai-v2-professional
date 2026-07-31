@@ -7,6 +7,7 @@ import { listLicensesForCustomer } from "@/server/licensing/license-service";
 import { isSelfServePaidLicenseAllowed } from "@/server/billing/config";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { product } from "@/lib/product";
 
 export default async function LicensesPage() {
   await ensureSeedData();
@@ -21,8 +22,8 @@ export default async function LicensesPage() {
         <h1 className="page-title">My Licenses</h1>
         <p className="page-sub">
           {allowPaidSelfServe
-            ? "Generate a key, then paste it into Setup.exe. Installation finishes only after portal activation succeeds."
-            : "Start a free trial key here, or purchase via Billing for paid keys. Paste the key into Setup.exe — installation finishes only after portal activation succeeds."}{" "}
+            ? `Generate a key, then paste it into ${product.installer.name}. Installation finishes only after portal activation succeeds.`
+            : `Start a free trial key here, or purchase via Billing for paid keys. Paste the key into ${product.installer.name} — installation finishes only after portal activation succeeds.`}{" "}
           <Link href="/portal/billing">Billing</Link>
         </p>
       </header>
@@ -48,7 +49,7 @@ export default async function LicensesPage() {
               <tr>
                 <td colSpan={7}>
                   No licenses yet — {allowPaidSelfServe ? "generate one above" : "start a trial above or checkout in Billing"}, then
-                  paste the key into Setup.exe.
+                  paste the key into {product.installer.name}.
                 </td>
               </tr>
             )}

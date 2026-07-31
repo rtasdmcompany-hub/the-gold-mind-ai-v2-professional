@@ -13,6 +13,7 @@ import { ensureSupportStoreLoaded } from "@/server/admin/support-store";
 import { listSupportTickets } from "@/server/admin/support-store";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
+import { product } from "@/lib/product";
 
 export default async function DashboardPage() {
   await ensureSeedData();
@@ -37,7 +38,7 @@ export default async function DashboardPage() {
         <h1 className="page-title">Dashboard</h1>
         <p className="page-sub">
           Live commercial status · grace {graceDays()} day(s) · Core Trading Engine isolated. Installer activation is
-          required — Dashboard shows Active only after Setup.exe (or portal) confirms your key.
+          required — Dashboard shows Active only after {product.installer.name} (or portal) confirms your key.
         </p>
       </header>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { product } from "@/lib/product";
 
 type ReadyState = {
   ready: boolean;
@@ -10,7 +11,7 @@ type ReadyState = {
 };
 
 /**
- * Shows whether the production license store can accept Setup.exe activations.
+ * Shows whether the production license store can accept {product.installer.name} activations.
  * Trial and lifetime share the same readiness gate.
  */
 export function LicenseStoreBanner() {
@@ -52,7 +53,7 @@ export function LicenseStoreBanner() {
       <div className="card" style={{ marginBottom: 16, borderColor: "var(--gm-gold-600)" }}>
         <h3 style={{ marginBottom: 6 }}>Install activation ready</h3>
         <p className="meta">
-          Generate a key below → run Setup.exe → paste the same email + key. Setup will not finish until
+          Generate a key below → run {product.installer.name} → paste the same email + key. Setup will not finish until
           this portal confirms <strong>Active</strong> (trial and lifetime, same rule). Store:{" "}
           {state.backend}.
         </p>

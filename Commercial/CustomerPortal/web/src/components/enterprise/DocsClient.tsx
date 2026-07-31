@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { brand } from "@/lib/brand";
+import { product } from "@/lib/product";
 
 const SECTIONS = [
   {
@@ -69,15 +70,15 @@ const CONTENT: Record<string, { title: string; body: string }> = {
   },
   installation: {
     title: "Installation Guide",
-    body: "Download the latest checksum-verified installer from Portal → Downloads. Run Setup.exe as administrator. The installer deploys the EA to your MT5 Experts directory. Verify SHA-256 checksum before installation. Do not modify Core files — the SHA is frozen.",
+    body: `Download the latest checksum-verified installer from Portal → Downloads. Run ${product.installer.name} as administrator. The installer deploys the EA to your MT5 Experts directory. Verify SHA-256 checksum before installation. Do not modify Core files — the SHA is frozen.`,
   },
   activation: {
     title: "License Activation",
-    body: "Before Setup finishes: sign in to the Customer Portal → My Licenses → generate a key (trial or paid) → copy email + key into Setup.exe. Installation will not complete until the portal confirms activation on this PC. Trial and lifetime keys use the same activation standard.",
+    body: `Before Setup finishes: sign in to the Customer Portal → My Licenses → generate a key (trial or paid) → copy email + key into ${product.installer.name}. Installation will not complete until the portal confirms activation on this PC. Trial and lifetime keys use the same activation standard.`,
   },
   "first-run": {
     title: "First Run Checklist",
-    body: "1. Create portal account and generate a license key. 2. Run Setup.exe and paste email + key (required). 3. Wait for License: ACTIVATED. 4. Attach EA to chart. 5. Confirm Active on Portal Dashboard / Devices.",
+    body: `1. Create portal account and generate a license key. 2. Run ${product.installer.name} and paste email + key (required). 3. Wait for License: ACTIVATED. 4. Attach EA to chart. 5. Confirm Active on Portal Dashboard / Devices.`,
   },
   portal: {
     title: "Customer Portal",

@@ -2,7 +2,7 @@
  * Resolve the portal's public base URL for checkout success/cancel and
  * sandbox redirect links. Production must never fall back to localhost.
  */
-import { brand } from "@/lib/brand";
+import { product } from "@/lib/product";
 export function resolveBaseUrl(): string {
   const explicit = (process.env.AUTH_URL || process.env.NEXTAUTH_URL || "").trim();
   if (explicit) return explicit.replace(/\/$/, "");
@@ -11,7 +11,7 @@ export function resolveBaseUrl(): string {
   if (vercelUrl) return `https://${vercelUrl.replace(/^https?:\/\//, "")}`;
 
   if (process.env.NODE_ENV === "production") {
-    return brand.website;
+    return product.urls.portal;
   }
   return "http://localhost:3000";
 }

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { actionActivateLicense, actionCreateLicense } from "@/server/licensing/actions";
 import type { LicenseType } from "@/server/licensing/types";
 import Link from "next/link";
+import { product } from "@/lib/product";
 
 type Props = {
   allowPaidSelfServe: boolean;
@@ -15,7 +16,7 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
   const [oneTimeKey, setOneTimeKey] = useState<string | null>(null);
 
   const types = (allowPaidSelfServe
-    ? (["trial", "monthly", "yearly", "lifetime"] as LicenseType[])
+    ? ([...product.planOrder] as LicenseType[])
     : (["trial"] as LicenseType[]));
 
   return (
@@ -24,7 +25,7 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
         <h3>1. Generate license key</h3>
         <p className="meta" style={{ marginBottom: 12 }}>
           {allowPaidSelfServe
-            ? "Create a trial or paid key here (dev / self-serve mode). Copy once, then paste into Setup.exe."
+            ? `Create a trial or paid key here (dev / self-serve mode). Copy once, then paste into ${product.installer.name}.`
             : "Create a free trial key here. Paid monthly/yearly/lifetime keys are issued after verified checkout in Billing (or by an admin)."}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -43,7 +44,7 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
                     return;
                   }
                   setOneTimeKey(r.plaintextKey);
-                  setMessage(`Created ${type} license ${r.license.id} — copy the key into Setup.exe`);
+                  setMessage(`Created ${type} license ${r.license.id} — copy the key into {product.installer.name}`);
                 })
               }
             >
@@ -66,7 +67,7 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
       <div className="card">
         <h3>2. Optional: activate in browser</h3>
         <p className="meta" style={{ marginBottom: 12 }}>
-          Preferred path is Setup.exe activation (binds your Windows PC). Use this only to re-check a key
+          Preferred path is {product.installer.name} activation (binds your Windows PC). Use this only to re-check a key
           in the portal.
         </p>
         <form

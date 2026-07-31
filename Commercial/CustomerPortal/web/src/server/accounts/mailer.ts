@@ -1,4 +1,5 @@
 import { brand } from "@/lib/brand";
+import { productPackageLabel } from "@/lib/product";
 import { queueCommercialEmail, updateCommercialEmailStatus } from "@/server/billing/email";
 import type { EmailTemplate } from "@/server/billing/email";
 
@@ -92,16 +93,5 @@ export function isResendConfigured(): boolean {
 }
 
 export function packageLabel(type: string): string {
-  switch (String(type).toLowerCase()) {
-    case "trial":
-      return "Trial (14 days)";
-    case "monthly":
-      return "Monthly";
-    case "yearly":
-      return "Yearly";
-    case "lifetime":
-      return "Lifetime";
-    default:
-      return type;
-  }
+  return productPackageLabel(type);
 }

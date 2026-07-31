@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, 
 import path from "path";
 import fs from "fs";
 import { commercialDataRoot } from "@/server/cloud/data-root";
+import { productGraceDays, productSeatsForType } from "@/lib/product";
 
 const ALGO = "aes-256-gcm";
 
@@ -86,23 +87,11 @@ export function storePath(): string {
 }
 
 export function graceDays(): number {
-  const n = Number(process.env.LICENSE_GRACE_DAYS || "7");
-  return Number.isFinite(n) && n >= 0 ? n : 7;
+  return productGraceDays();
 }
 
 export function seatsForType(type: string): number {
-  switch (type) {
-    case "trial":
-      return 1;
-    case "monthly":
-      return 2;
-    case "yearly":
-      return 3;
-    case "lifetime":
-      return 2;
-    default:
-      return 1;
-  }
+  return productSeatsForType(type);
 }
 
 export function addDays(iso: string | Date, days: number): string {

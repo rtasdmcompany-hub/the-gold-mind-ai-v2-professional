@@ -51,7 +51,7 @@ export interface LicenseRecord {
   keyLast4: string;
   type: LicenseType;
   status: LicenseStatus;
-  edition: "Professional";
+  edition: string;
   seatsMax: number;
   createdAt: string;
   activatedAt: string | null;

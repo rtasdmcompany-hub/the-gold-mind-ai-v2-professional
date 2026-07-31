@@ -1,5 +1,5 @@
 /**
- * Resolves the real commercial installer ZIP (Setup.exe + EA payload + scripts).
+ * Resolves the real commercial installer ZIP ({product.installer.name} + EA payload + scripts).
  * Prefer monorepo Commercial/Releases artifacts, then public/releases, then RELEASE_* env URLs.
  */
 import fs from "fs";
@@ -7,11 +7,12 @@ import path from "path";
 import type { ReleasePackage } from "./types";
 import { RELEASE_INTERNAL_FETCH_HEADER } from "./internal-fetch";
 import { brand } from "@/lib/brand";
+import { product } from "@/lib/product";
 
-export const STABLE_PACKAGE_ID = "rel_100_stable";
-export const STABLE_VERSION = "1.0.0";
-export const STABLE_BUILD_NUMBER = "26211";
-export const STABLE_PACKAGE_FILE = "TGM_PROFESSIONAL_1.0.0_stable.zip";
+export const STABLE_PACKAGE_ID = product.installer.stablePackageId;
+export const STABLE_VERSION = product.version;
+export const STABLE_BUILD_NUMBER = product.buildNumber;
+export const STABLE_PACKAGE_FILE = product.installer.zipName;
 /** Known SHA-256 of Commercial/Releases/1.0.0/TGM_PROFESSIONAL_1.0.0_stable.zip */
 export const STABLE_SHA256 =
   "e61120628ba0d43d9d0f84d931cb0cd863890fa95a0e997b04d13a951d83229a";
@@ -43,11 +44,7 @@ export function isCommercialStablePackage(pkg: Pick<ReleasePackage, "id" | "chan
 }
 
 export function portalBaseUrl(): string {
-  return (
-    process.env.AUTH_URL ||
-    process.env.NEXTAUTH_URL ||
-    brand.website
-  ).replace(/\/$/, "");
+  return product.urls.portal;
 }
 
 /** Optional overlay written by Build-CommercialRelease.ps1 → public/releases/latest-stable.json */
@@ -74,7 +71,7 @@ export function commercialZipCandidates(packageFile = STABLE_PACKAGE_FILE): stri
   const envDir = (process.env.RELEASE_SOURCE_DIR || "").trim();
   const cwd = process.cwd();
   const list: string[] = [];
-  const versionDir = packageFile.includes("1.0.0") ? "1.0.0" : packageFile.replace(/^TGM_PROFESSIONAL_/, "").replace(/_stable\.zip$/i, "").split("_")[0] || "1.0.0";
+  const versionDir = packageFile.includes(product.version) ? product.version : packageFile.replace(/^TGM_PROFESSIONAL_/, "").replace(/_stable\.zip$/i, "").split("_")[0] || product.version;
 
   if (envPath) list.push(path.resolve(envPath));
   if (envDir) {
@@ -134,8 +131,8 @@ export function configuredReleaseAssetUrl(packageFile = STABLE_PACKAGE_FILE): st
 
 export function stableReleaseNotes(): string {
   return [
-    `${brand.productName} 1.0.0 (stable).`,
-    "Windows installer ZIP — extract, run Setup.exe, enter your existing license email and key.",
+    `${brand.productName} ${product.version} (stable).`,
+    `"Windows installer ZIP — extract, run ${product.installer.name}, enter your existing license email and key."`,
     "Mandatory license activation completes before the commercial shell is ready.",
     "Includes MT5 EA deploy, activation wizard, desktop shortcuts, SHA-256 checksums, and SBOM.",
     "Core Trading Engine remains certified frozen.",

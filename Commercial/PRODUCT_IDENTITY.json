@@ -38,5 +38,13 @@
     "exportScript": "Commercial/CustomerPortal/web/scripts/export-brand.mjs",
     "generatedSnapshot": "Commercial/CustomerPortal/web/brand.generated.json",
     "report": "Commercial/Documentation/BRAND_CONFIGURATION_REPORT.md"
-  }
+  },
+  "productConfig": {
+    "source": "Commercial/CustomerPortal/web/src/lib/product.ts",
+    "exportScript": "Commercial/CustomerPortal/web/scripts/export-brand.mjs",
+    "generatedSnapshot": "Commercial/CustomerPortal/web/product.generated.json",
+    "report": "Commercial/Documentation/PRODUCT_CONFIGURATION_REPORT.md"
+  },
+  "buildNumber": "26211",
+  "edition": "Professional"
 }

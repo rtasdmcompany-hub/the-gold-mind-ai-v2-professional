@@ -1,3 +1,4 @@
+import { product } from "@/lib/product";
 /**
  * Enterprise cache — Upstash Redis REST when configured, memory fallback otherwise.
  * Used for: session hints · rate limiting · config · performance.
@@ -127,7 +128,7 @@ export function assertDurableStoreForLicensing(): void {
   }
 }
 
-/** Public readiness for Setup.exe /api/licenses/ready */
+/** Public readiness for {product.installer.name} /api/licenses/ready */
 export function licensingStoreReadiness(): {
   ready: boolean;
   durableConfigured: boolean;

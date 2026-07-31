@@ -1,0 +1,96 @@
+{
+  "applicationName": "THE GOLD MIND AI v2.0 PROFESSIONAL",
+  "edition": "Professional",
+  "version": "1.0.0",
+  "buildNumber": "26211",
+  "licenseName": "THE GOLD MIND PROFESSIONAL License",
+  "licenseTypes": [
+    "trial",
+    "monthly",
+    "yearly",
+    "lifetime"
+  ],
+  "trialDays": 14,
+  "graceDays": 7,
+  "plans": {
+    "trial": {
+      "code": "trial",
+      "label": "Professional Trial",
+      "licenseName": "Trial",
+      "amountCents": 0,
+      "currency": "USD",
+      "interval": "14d",
+      "seats": 1,
+      "durationDays": 14
+    },
+    "monthly": {
+      "code": "monthly",
+      "label": "Professional Monthly",
+      "licenseName": "Monthly",
+      "amountCents": 9900,
+      "currency": "USD",
+      "interval": "month",
+      "seats": 2,
+      "durationDays": 30
+    },
+    "yearly": {
+      "code": "yearly",
+      "label": "Professional Yearly",
+      "licenseName": "Yearly",
+      "amountCents": 89900,
+      "currency": "USD",
+      "interval": "year",
+      "seats": 3,
+      "durationDays": 365
+    },
+    "lifetime": {
+      "code": "lifetime",
+      "label": "Professional Lifetime",
+      "licenseName": "Lifetime",
+      "amountCents": 249900,
+      "currency": "USD",
+      "interval": "once",
+      "seats": 2,
+      "durationDays": null
+    }
+  },
+  "paymentProvider": "paddle",
+  "urls": {
+    "support": "https://the-gold-mind-ai-v2-professional.vercel.app/contact",
+    "documentation": "https://the-gold-mind-ai-v2-professional.vercel.app/docs",
+    "update": "https://the-gold-mind-ai-v2-professional.vercel.app/portal/downloads",
+    "apiBase": "https://the-gold-mind-ai-v2-professional.vercel.app/api",
+    "portal": "https://the-gold-mind-ai-v2-professional.vercel.app",
+    "pricing": "https://the-gold-mind-ai-v2-professional.vercel.app/pricing",
+    "downloads": "https://the-gold-mind-ai-v2-professional.vercel.app/portal/downloads"
+  },
+  "mt5": {
+    "productName": "TheGoldMindAI_Professional",
+    "expertFile": "TheGoldMindAI_Professional.ex5",
+    "sourceFile": "TheGoldMindAI_Professional.mq5",
+    "platformLabel": "MetaTrader 5 Professional"
+  },
+  "installer": {
+    "name": "Setup.exe",
+    "zipName": "TGM_PROFESSIONAL_1.0.0_stable.zip",
+    "executableName": "TGM-Professional-Launcher.exe",
+    "stablePackageId": "rel_100_stable"
+  },
+  "executableName": "TGM-Professional-Launcher.exe",
+  "defaultLanguage": "en",
+  "defaultCurrency": "USD",
+  "timezone": "UTC",
+  "featureFlags": {
+    "paddleCheckout": true,
+    "trialLicenses": true,
+    "lifetimeLicenses": true,
+    "autoUpdate": true,
+    "aiAssistant": true,
+    "mobileCompanion": true,
+    "partnerProgram": true,
+    "betaProgram": true,
+    "marketEdition": true,
+    "googleOAuth": true,
+    "emailDelivery": true
+  }
+}

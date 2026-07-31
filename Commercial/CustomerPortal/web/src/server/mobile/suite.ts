@@ -43,6 +43,7 @@ import {
 import { MOBILE_CORE_ISOLATION, MOBILE_TRADING_PROHIBITED } from "./types";
 import { readMobileStore } from "./store";
 import { brand } from "@/lib/brand";
+import { product } from "@/lib/product";
 
 export interface MobileOutputScores {
   mobilePlatformScore: number;
@@ -81,7 +82,7 @@ function writeCompanionScaffold() {
     JSON.stringify(
       {
         name: "tgm-mobile-companion",
-        version: "1.0.0",
+        version: product.version,
         private: true,
         description:
           `${brand.brandName} Mobile Companion — commercial management only (no trading / no Core)`,
@@ -109,7 +110,7 @@ function writeCompanionScaffold() {
         expo: {
           name: `${brand.brandName} Companion`,
           slug: "tgm-mobile-companion",
-          version: "1.0.0",
+          version: product.version,
           orientation: "portrait",
           ios: { bundleIdentifier: brand.mobile.bundleId, supportsTablet: true },
           android: { package: brand.mobile.bundleId },
@@ -239,7 +240,7 @@ export async function runFullPhase11Sprint6Suite() {
     deviceName: "Demo Pixel",
     model: "Pixel 8",
     osVersion: "14",
-    appVersion: "1.0.0",
+    appVersion: product.version,
     fingerprint: "demo-fp-android-001",
     pushToken: "fcm_demo_token",
   };
@@ -277,7 +278,7 @@ export async function runFullPhase11Sprint6Suite() {
   submitDiagnosticReport({
     email: DEMO_EMAIL,
     deviceId: auth.deviceId,
-    appVersion: "1.0.0",
+    appVersion: product.version,
     platform: "android",
     summary: "Companion boot OK · API latency nominal · trading surfaces absent",
   });

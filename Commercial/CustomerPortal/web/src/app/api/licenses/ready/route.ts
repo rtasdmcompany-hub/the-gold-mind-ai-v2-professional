@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { licensingStoreReadiness } from "@/server/cloud/cache";
+import { product } from "@/lib/product";
 
 /**
- * GET /api/licenses/ready — public. Setup.exe checks this before activating.
+ * GET /api/licenses/ready — public. {product.installer.name} checks this before activating.
  * Trial and lifetime share the same rule: durable store must be ready in production.
  */
 export async function GET() {
