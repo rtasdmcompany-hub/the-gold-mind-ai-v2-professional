@@ -1,22 +1,25 @@
-# FINAL GO-LIVE CHECKLIST
+# GO_LIVE_CHECKLIST.md
 
 **Product:** THE GOLD MIND PROFESSIONAL 1.0.0  
 **Updated:** 2026-07-31  
+**Release freeze:** ACTIVE · Release Maintenance mode
 
 ---
 
 ## A. Internal engineering (complete)
 
-- [x] Trading Engine frozen
-- [x] Certified release artifacts hash-aligned
-- [x] Portal production build PASS
-- [x] Licensing/payment fail-closed automated tests PASS
+- [x] Trading Engine frozen (MQ5/EX5 hashes certified)
+- [x] Core cert constants aligned to frozen MQ5
+- [x] Certified release artifacts hash-aligned (ZIP / Setup)
+- [x] Portal production build PASS (`4Xs3---i8WWGDhpEgF2Qk`)
+- [x] Licensing/payment fail-closed tests PASS
 - [x] Release download catalog validation 25/25 PASS
-- [x] Billing emails wired to Resend delivery path (activates when keys exist)
-- [x] Admin system docs + production admin list template
-- [x] Legal drafts published (Privacy, Terms, EULA, Refund, Cookies, Disclaimer, Risk)
-- [x] Legal links in website + portal footers + sitemap
-- [x] `.env.production` template generated (gitignored) + `.env.production.example` published
+- [x] Brand configuration centralized (`src/lib/brand.ts`)
+- [x] Product configuration centralized (`src/lib/product.ts`)
+- [x] Billing emails wired to Resend path
+- [x] Admin system docs + legal drafts linked
+- [x] Final audit / build / test / deployment reports published
+- [x] Release branch pushed to GitHub
 
 ---
 
@@ -24,19 +27,28 @@
 
 See [`OWNER_ACTION_REQUIRED.md`](./OWNER_ACTION_REQUIRED.md):
 
+- [ ] Promote latest release branch to **Vercel Production** (merge PR #1 → `main` or dashboard redeploy)
+- [ ] Confirm Production commit SHA == GitHub HEAD
 - [ ] Code signing certificate + signed Setup republish
-- [ ] Production domain DNS + AUTH_URL / NEXTAUTH_URL
-- [ ] Paste production secrets (Auth, Upstash, Admin emails, Resend+SPF/DKIM, Paddle live+webhook, Google OAuth)
+- [ ] Verify/add `thegoldmind.ai` on Resend (SPF/DKIM) + branded From
+- [ ] Paste any remaining Production secrets (Paddle live, admin roster, AUTH URLs if custom domain)
+- [ ] Google OAuth redirect allowlist confirmation
 - [ ] Legal counsel approval of published drafts
 - [ ] Clean Windows install + MT5 attach smoke
 - [ ] One live Paddle checkout dry-run after live approval
 
 ---
 
-## C. Launch day
+## C. Launch day (after B)
 
-- [ ] Deploy portal with production env
-- [ ] Publish GitHub Release from `Commercial/Releases/1.0.0/github-assets/`
-- [ ] Verify login, license activation, authenticated download
-- [ ] Verify transactional email (welcome / license) with Resend
+- [ ] Production health green / ready
+- [ ] Login · license activation · authenticated download
+- [ ] Transactional email from Gold Mind From address
 - [ ] Monitor first activations and support tickets
+- [ ] Owner live trading feedback loop starts
+
+---
+
+## Stop
+
+No new features until Owner authorizes exit from Release Maintenance.

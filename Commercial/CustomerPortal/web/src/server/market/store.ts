@@ -135,5 +135,5 @@ export function workspaceRoot(): string {
 }
 
 export const CORE_CERT_SHA =
-  "75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce";
+  "9fd202466a0894577f12721610b4a9a80f6f8d02bb9fd908aed3d3e88654d49a";
 export const CORE_REL_PATH = path.join("Experts", "TheGoldMindAI_Professional.mq5");
