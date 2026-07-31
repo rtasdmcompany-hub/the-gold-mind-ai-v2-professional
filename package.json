@@ -1,0 +1,14 @@
+{
+  "name": "the-gold-mind-ai-v2-professional",
+  "private": true,
+  "description": "Monorepo root shim — Vercel builds the Customer Portal from Commercial/CustomerPortal/web",
+  "scripts": {
+    "build": "npm --prefix Commercial/CustomerPortal/web run build",
+    "dev": "npm --prefix Commercial/CustomerPortal/web run dev",
+    "start": "npm --prefix Commercial/CustomerPortal/web run start",
+    "lint": "npm --prefix Commercial/CustomerPortal/web run lint"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

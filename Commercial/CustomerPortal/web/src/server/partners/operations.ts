@@ -9,6 +9,7 @@ import type {
   PartnerStatus,
 } from "./types";
 import { mutatePartnerStore, newId, readPartnerStore } from "./store";
+import { isProductionRuntime } from "@/server/security/dev-bypass";
 import { refreshPartnerTier } from "./tiers";
 import { recordAttribution, recordReferralClick } from "./affiliate";
 import { createCommissionsFromAttribution } from "./commission";
@@ -254,6 +255,12 @@ export function resolveDispute(disputeId: string, actor: string, resolution: str
 }
 
 export function ensureDemoPartner(): PartnerProfile {
+  if (isProductionRuntime() && process.env.PORTAL_ALLOW_DEMO_SEED !== "true") {
+    const store = readPartnerStore();
+    const existing = store.partners.find((p) => p.email === "partner@goldmind.local") || store.partners[0];
+    if (existing) return existing;
+    throw new Error("PARTNER_DEMO_SEED_DISABLED");
+  }
   const store = readPartnerStore();
   const existing = store.partners.find((p) => p.email === "partner@goldmind.local");
   if (existing) return existing;

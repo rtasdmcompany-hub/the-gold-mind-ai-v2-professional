@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FinancialParticles } from "./FinancialParticles";
 
 export function HeroBackground() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -11,8 +10,7 @@ export function HeroBackground() {
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mq.matches) return;
-
-    const timer = window.setTimeout(() => setShouldLoadVideo(true), 120);
+    const timer = window.setTimeout(() => setShouldLoadVideo(true), 40);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -28,7 +26,6 @@ export function HeroBackground() {
   return (
     <div className="e-hero-bg" aria-hidden="true">
       <div className="e-hero-cinematic-base" />
-      <FinancialParticles density={56} />
       {shouldLoadVideo && (
         <video
           ref={videoRef}
@@ -36,18 +33,18 @@ export function HeroBackground() {
           muted
           loop
           playsInline
-          preload="none"
-          poster="/brand/the-gold-mind-og-1200x630.png"
+          autoPlay
+          preload="auto"
+          poster="/brand/the-gold-mind-square.png"
           onPlaying={() => setVideoReady(true)}
           onError={() => setVideoReady(false)}
         >
-          <source src="/media/hero-institutional.webm" type="video/webm" />
           <source src="/media/hero-institutional.mp4" type="video/mp4" />
+          <source src="/media/hero-institutional.webm" type="video/webm" />
         </video>
       )}
-      <div className="e-hero-overlay" />
-      <div className="e-hero-glass" />
-      <div className="e-hero-mesh" />
+      <div className="e-hero-overlay e-hero-overlay--video" />
+      <div className="e-hero-glass e-hero-glass--light" />
     </div>
   );
 }

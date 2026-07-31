@@ -47,7 +47,7 @@ public:
    int WebhookDelivered(void) const { return m_webhook_ok; }
    string WebhookStatus(void) const
      {
-      return StringFormat("Delivered=%d | Last=%s | Architecture Only",
+      return StringFormat("Delivered=%d | Last=%s | Professional",
                           m_webhook_ok,
                           StringLen(m_last_webhook) > 0 ? m_last_webhook : "none");
      }

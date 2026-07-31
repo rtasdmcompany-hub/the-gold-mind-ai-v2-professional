@@ -9,8 +9,7 @@ import { LAUNCH_ENVIRONMENTS } from "@/server/launch/environments";
 export default async function ExecutiveLaunchDashboardPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.launch.read") && actor !== "admin@goldmind.local") {
+  if (!hasPermission(role, "admin.launch.read")) {
     redirect("/portal/admin");
   }
 

@@ -1,0 +1,10 @@
+﻿THE GOLD MIND PROFESSIONAL — First Run
+
+1. Open THE GOLD MIND PROFESSIONAL from the Start Menu.
+2. Click Activate License and enter your portal email + license key.
+3. Click Deploy EA to MetaTrader 5.
+4. Open official MetaTrader 5 (MetaQuotes).
+5. In Navigator open The Gold Mind Professional and attach TheGoldMindAI_Professional to a chart.
+6. Enable AutoTrading.
+
+Customer Portal: https://the-gold-mind-ai-v2-professional.vercel.app

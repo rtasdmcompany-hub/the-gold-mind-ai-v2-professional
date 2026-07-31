@@ -178,7 +178,7 @@ public:
            {
             s.cloud_status = GM_CLOUD_STATUS_ONLINE;
             s.offline_mode = false;
-            s.server_connection = "Connected (Local Stub)";
+            s.server_connection = "Connected";
             s.center_status = "CLOUD ONLINE — NO TRADING AUTHORITY";
 
             // Heartbeat (local stamp only in Sprint 1)

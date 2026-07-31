@@ -49,7 +49,7 @@ const FAQ = [
   },
   {
     q: "Where do I download the installer?",
-    a: "Authenticated customers can download signed installers from Portal → Downloads. Each package includes SHA-256 checksums and release notes.",
+    a: "Authenticated customers can download checksum-verified installers from Portal → Downloads. Each package includes SHA-256 checksums and release notes.",
   },
   {
     q: "Is the Trading Engine modified by the portal?",
@@ -57,7 +57,7 @@ const FAQ = [
   },
   {
     q: "What payment methods are supported?",
-    a: "Paddle and PayPal integration when production credentials are configured. Sandbox mode available for RC testing.",
+    a: "Paddle is the supported checkout provider once configured for your account plan.",
   },
 ];
 
@@ -68,19 +68,19 @@ const CONTENT: Record<string, { title: string; body: string }> = {
   },
   installation: {
     title: "Installation Guide",
-    body: "Download the latest signed installer from Portal → Downloads. Run Setup.exe as administrator. The installer deploys the EA to your MT5 Experts directory. Verify SHA-256 checksum before installation. Do not modify Core files — the SHA is frozen.",
+    body: "Download the latest checksum-verified installer from Portal → Downloads. Run Setup.exe as administrator. The installer deploys the EA to your MT5 Experts directory. Verify SHA-256 checksum before installation. Do not modify Core files — the SHA is frozen.",
   },
   activation: {
     title: "License Activation",
-    body: "After installation, sign in to the Customer Portal with your licensed email. Navigate to Licenses → Activate. Enter your license key and confirm device binding. Online validation occurs on each MT5 session start.",
+    body: "Before Setup finishes: sign in to the Customer Portal → My Licenses → generate a key (trial or paid) → copy email + key into Setup.exe. Installation will not complete until the portal confirms activation on this PC. Trial and lifetime keys use the same activation standard.",
   },
   "first-run": {
     title: "First Run Checklist",
-    body: "1. Install MT5 Professional. 2. Install THE GOLD MIND EA via signed installer. 3. Activate license in portal. 4. Attach EA to chart. 5. Verify license status in portal devices page. 6. Review risk disclosure before live trading.",
+    body: "1. Create portal account and generate a license key. 2. Run Setup.exe and paste email + key (required). 3. Wait for License: ACTIVATED. 4. Attach EA to chart. 5. Confirm Active on Portal Dashboard / Devices.",
   },
   portal: {
     title: "Customer Portal",
-    body: "The portal provides dashboard, license management, downloads, billing, support tickets, and knowledge base access. Sign in via Google OAuth (when configured) or demo credentials for RC testing.",
+    body: "The portal provides dashboard, license management, downloads, billing, support tickets, and knowledge base access. Sign in via Google OAuth (when configured) or your verified email and password.",
   },
   downloads: {
     title: "Downloads & Updates",
@@ -92,7 +92,7 @@ const CONTENT: Record<string, { title: string; body: string }> = {
   },
   billing: {
     title: "Billing & Subscriptions",
-    body: "Portal → Billing shows current plan, invoices, and checkout. Subscription renewals are processed via configured payment provider. Sandbox checkout available for testing.",
+    body: "Portal → Billing shows current plan, invoices, and checkout. Subscription renewals are processed via the configured payment provider.",
   },
 };
 

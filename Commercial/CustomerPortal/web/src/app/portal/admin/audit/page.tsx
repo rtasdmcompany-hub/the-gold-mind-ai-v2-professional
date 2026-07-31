@@ -31,7 +31,7 @@ export default async function AdminAuditCenterPage({
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
   const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.audit.read") && actor !== "admin@goldmind.local") redirect("/portal");
+  if (!hasPermission(role, "admin.audit.read")) redirect("/portal");
 
   const sp = await searchParams;
   const action = (sp.action || "") as AuditAction | "";
@@ -41,7 +41,7 @@ export default async function AdminAuditCenterPage({
     user: user || undefined,
   });
 
-  const canExport = hasPermission(role, "admin.audit.export") || actor === "admin@goldmind.local";
+  const canExport = hasPermission(role, "admin.audit.export");
   if (sp.export === "1" && canExport) {
     writeAudit({
       user: actor,

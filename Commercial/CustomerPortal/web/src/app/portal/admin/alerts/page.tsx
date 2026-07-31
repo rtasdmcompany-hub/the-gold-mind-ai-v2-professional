@@ -13,14 +13,14 @@ export default async function AlertsPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
   const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.observability.read") && actor !== "admin@goldmind.local") {
+  if (!hasPermission(role, "admin.observability.read")) {
     redirect("/portal/admin");
   }
 
   const rules = listAlertRules();
   const alerts = listAlerts();
   const summary = getAlertSummary();
-  const canWrite = hasPermission(role, "admin.observability.write") || actor === "admin@goldmind.local";
+  const canWrite = hasPermission(role, "admin.observability.write");
 
   return (
     <>

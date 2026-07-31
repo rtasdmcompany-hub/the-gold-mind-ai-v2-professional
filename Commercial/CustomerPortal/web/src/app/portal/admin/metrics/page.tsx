@@ -7,14 +7,13 @@ import { actionRecordMetric } from "@/server/launch/actions";
 export default async function AdminMetricsPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.launch.read") && actor !== "admin@goldmind.local") {
+  if (!hasPermission(role, "admin.launch.read")) {
     redirect("/portal/admin");
   }
 
   ensureDemoMetrics();
   const m = getProductionMetrics();
-  const canWrite = hasPermission(role, "admin.launch.write") || actor === "admin@goldmind.local";
+  const canWrite = hasPermission(role, "admin.launch.write");
 
   return (
     <>

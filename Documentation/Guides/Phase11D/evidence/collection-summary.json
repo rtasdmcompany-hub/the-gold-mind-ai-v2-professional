@@ -1,0 +1,19 @@
+{
+  "collectedAt": "2026-07-30T16:20:00+05:00",
+  "terminalData": "C:\\Users\\Dell\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075",
+  "artifacts": {
+    "reportOn": true,
+    "reportOff": true,
+    "learn": true,
+    "testerOnLog": true,
+    "testerOffLog": true,
+    "comparison": true,
+    "compileLog": true
+  },
+  "ex5": {
+    "size": 234428,
+    "sha256": "099838E4119B5267BC5728ED13825C5C7B181D9ECE26BB4FDD4B3700794F3FCF"
+  },
+  "certified": true,
+  "decision": "AI PRODUCTION CERTIFIED"
+}

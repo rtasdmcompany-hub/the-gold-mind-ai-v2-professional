@@ -159,6 +159,30 @@
 #define GM_PHASE7_ECOSYSTEM_FROZEN           1
 #define GM_PHASE7_FREEZE_LABEL               "PHASE7_TRADING_ECOSYSTEM_FROZEN"
 
+#define GM_PHASE11B_EXECUTION_AUTHORITY_ACTIVE 1
+#define GM_PHASE11B_SPRINT_LABEL               "PHASE11B_AI_EXECUTION_SUPERVISOR"
+#define GM_PHASE11B_FREEZE_LABEL               "PHASE11B_PRE_ACTIVATION_AUTHORITY_ONLY"
+
+#define GM_PHASE11E_DYNAMIC_EXECUTION_ACTIVE   1
+#define GM_PHASE11E_SPRINT_LABEL               "PHASE11E_DYNAMIC_PRE_ACTIVATION_ENGINE"
+#define GM_PHASE11E_FREEZE_LABEL               "PHASE11E_AI_EVOLUTION_ONLY_ENGINE_UNTOUCHED"
+
+string GmPhase11BBanner(void)
+  {
+   return StringFormat("THE GOLD MIND AI | %s | %s | Build %d | Trading Engine MASTER | AI PRE-ACTIVATION ONLY",
+                       GM_PHASE11B_SPRINT_LABEL,
+                       GM_PHASE11B_FREEZE_LABEL,
+                       GM_VERSION_BUILD);
+  }
+
+string GmPhase11EBanner(void)
+  {
+   return StringFormat("THE GOLD MIND AI | %s | %s | Build %d | Trading Engine MASTER | DYNAMIC PRE-ACTIVATION ONLY",
+                       GM_PHASE11E_SPRINT_LABEL,
+                       GM_PHASE11E_FREEZE_LABEL,
+                       GM_VERSION_BUILD);
+  }
+
 string GmArchitectureFreezeBanner(void)
   {
    return StringFormat("%s | %s | Build %d | Core Architecture FROZEN",

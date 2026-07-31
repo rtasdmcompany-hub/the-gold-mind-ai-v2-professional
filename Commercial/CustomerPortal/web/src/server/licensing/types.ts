@@ -35,6 +35,7 @@ export type AuditAction =
   | "device.renamed"
   | "device.deactivated"
   | "device.transfer_requested"
+  | "device.transfer_completed"
   | "subscription.updated"
   | "tamper.detected"
   | "admin.lookup";

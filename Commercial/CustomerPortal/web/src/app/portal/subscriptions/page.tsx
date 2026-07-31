@@ -1,9 +1,11 @@
 import { auth } from "@/auth";
 import { StatusBadge } from "@/components/StatusBadge";
+import { SubscriptionActions } from "@/components/SubscriptionActions";
 import { ensureSeedData } from "@/server/licensing/seed";
 import { listSubscriptionsForCustomer } from "@/server/licensing/subscription-service";
-import { actionCancelSubscription, actionRenewLicense } from "@/server/licensing/actions";
 import { getBillingSummary, PLAN_CATALOG } from "@/server/billing/billing-service";
+import { ensureBillingStoreLoaded } from "@/server/billing/store";
+import { isFreeRenewAllowed } from "@/server/billing/config";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -12,12 +14,14 @@ import Link from "next/link";
  * Website Edition only; independent of MQL5 Market billing.
  */
 export default async function SubscriptionsPage() {
-  ensureSeedData();
+  await ensureSeedData();
+  await ensureBillingStoreLoaded();
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
   const email = session.user.email;
   const subs = listSubscriptionsForCustomer(email);
   const billing = getBillingSummary(email);
+  const freeRenew = isFreeRenewAllowed();
 
   return (
     <>
@@ -26,6 +30,7 @@ export default async function SubscriptionsPage() {
         <p className="page-sub">
           License entitlement + Website Edition billing status · renewal · expiration · grace.{" "}
           <Link href="/portal/billing">Billing Center</Link>
+          {!freeRenew && " · Renewals require paid checkout (no free local extend in production)."}
         </p>
       </header>
 
@@ -93,20 +98,7 @@ export default async function SubscriptionsPage() {
               Cancelled: {sub.cancelledAt?.slice(0, 10) || "—"} · Renewed: {sub.renewedAt?.slice(0, 10) || "—"} ·
               Pending change: {sub.pendingPlanChange || "—"}
             </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <form action={actionRenewLicense}>
-                <input type="hidden" name="licenseId" value={sub.licenseId} />
-                <button type="submit" className="btn btn-primary">
-                  Renew
-                </button>
-              </form>
-              <form action={actionCancelSubscription}>
-                <input type="hidden" name="licenseId" value={sub.licenseId} />
-                <button type="submit" className="btn">
-                  Cancel
-                </button>
-              </form>
-            </div>
+            <SubscriptionActions licenseId={sub.licenseId} freeRenewAllowed={freeRenew} />
           </div>
         ))}
       </div>

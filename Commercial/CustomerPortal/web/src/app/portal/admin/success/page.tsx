@@ -8,11 +8,9 @@ import { getSuccessExecutiveDashboard } from "@/server/success/cs-dashboard";
 export default async function SuccessExecutivePage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
   if (
     !hasPermission(role, "admin.launch.read") &&
-    !hasPermission(role, "admin.support.read") &&
-    actor !== "admin@goldmind.local"
+    !hasPermission(role, "admin.support.read")
   ) {
     redirect("/portal/admin");
   }

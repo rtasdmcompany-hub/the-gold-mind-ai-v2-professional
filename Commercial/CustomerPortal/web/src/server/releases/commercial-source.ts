@@ -1,52 +1,109 @@
 /**
- * Resolves the real commercial installer ZIP (Setup.exe + notes/checksums).
- * Prefer monorepo Commercial/Releases artifacts, then RELEASE_* env URLs/paths.
+ * Resolves the real commercial installer ZIP (Setup.exe + EA payload + scripts).
+ * Prefer monorepo Commercial/Releases artifacts, then public/releases, then RELEASE_* env URLs.
  */
 import fs from "fs";
 import path from "path";
+import type { ReleasePackage } from "./types";
+import { RELEASE_INTERNAL_FETCH_HEADER } from "./internal-fetch";
 
 export const STABLE_PACKAGE_ID = "rel_100_stable";
 export const STABLE_VERSION = "1.0.0";
+export const STABLE_BUILD_NUMBER = "26211";
 export const STABLE_PACKAGE_FILE = "TGM_PROFESSIONAL_1.0.0_stable.zip";
 /** Known SHA-256 of Commercial/Releases/1.0.0/TGM_PROFESSIONAL_1.0.0_stable.zip */
 export const STABLE_SHA256 =
-  "2d9885f5c1b53995917af3e1677b49441393eabe0b6d7cf2cf758fbac4d364ad";
-export const STABLE_SIZE_BYTES = 4_550_465;
+  "e61120628ba0d43d9d0f84d931cb0cd863890fa95a0e997b04d13a951d83229a";
+export const STABLE_SIZE_BYTES = 863_565;
+export const STABLE_RELEASED_AT = "2026-07-30T20:26:30.4594198Z";
 
 const FAKE_SEED_IDS = new Set(["rel_200_stable", "rel_201_rc", "rel_dev_nightly"]);
+
+/** Package ids accepted by download API — blocks path traversal / arbitrary reads. */
+export const SAFE_PACKAGE_ID = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
+
+export function isSafePackageId(id: string): boolean {
+  return SAFE_PACKAGE_ID.test(id);
+}
 
 export function isLegacySyntheticPackageId(id: string): boolean {
   return FAKE_SEED_IDS.has(id);
 }
 
+export function isCommercialStablePackage(pkg: Pick<ReleasePackage, "id" | "channel" | "version" | "packageFile">): boolean {
+  if (pkg.channel !== "stable") return false;
+  if (isLegacySyntheticPackageId(pkg.id)) return false;
+  if (pkg.id === STABLE_PACKAGE_ID) return true;
+  if (pkg.version === STABLE_VERSION) return true;
+  if (pkg.packageFile === STABLE_PACKAGE_FILE) return true;
+  // Future stable builds published via Build-CommercialRelease portal seed
+  if (pkg.packageFile?.startsWith("TGM_PROFESSIONAL_") && pkg.packageFile.endsWith(".zip")) return true;
+  return false;
+}
+
+export function portalBaseUrl(): string {
+  return (
+    process.env.AUTH_URL ||
+    process.env.NEXTAUTH_URL ||
+    "https://the-gold-mind-ai-v2-professional.vercel.app"
+  ).replace(/\/$/, "");
+}
+
+/** Optional overlay written by Build-CommercialRelease.ps1 → public/releases/latest-stable.json */
+export function readPortalStableSeed(): Partial<ReleasePackage> | null {
+  const candidates = [
+    path.join(process.cwd(), "public", "releases", "latest-stable.json"),
+    path.resolve(process.cwd(), "..", "..", "CustomerPortal", "web", "public", "releases", "latest-stable.json"),
+  ];
+  for (const p of candidates) {
+    try {
+      if (!fs.existsSync(p)) continue;
+      const raw = JSON.parse(fs.readFileSync(p, "utf8")) as Partial<ReleasePackage>;
+      if (raw && typeof raw.version === "string" && typeof raw.sha256 === "string") return raw;
+    } catch {
+      /* continue */
+    }
+  }
+  return null;
+}
+
 /** Candidate absolute paths for the stable ZIP on disk (dev / non-serverless). */
-export function commercialZipCandidates(): string[] {
+export function commercialZipCandidates(packageFile = STABLE_PACKAGE_FILE): string[] {
   const envPath = (process.env.RELEASE_SOURCE_ZIP || "").trim();
   const envDir = (process.env.RELEASE_SOURCE_DIR || "").trim();
   const cwd = process.cwd();
   const list: string[] = [];
+  const versionDir = packageFile.includes("1.0.0") ? "1.0.0" : packageFile.replace(/^TGM_PROFESSIONAL_/, "").replace(/_stable\.zip$/i, "").split("_")[0] || "1.0.0";
 
   if (envPath) list.push(path.resolve(envPath));
   if (envDir) {
-    list.push(path.join(path.resolve(envDir), STABLE_PACKAGE_FILE));
-    list.push(path.join(path.resolve(envDir), "github-assets", STABLE_PACKAGE_FILE));
+    list.push(path.join(path.resolve(envDir), packageFile));
+    list.push(path.join(path.resolve(envDir), "github-assets", packageFile));
   }
 
-  // CustomerPortal/web → ../../Releases/1.0.0
-  const fromWeb = path.resolve(cwd, "..", "..", "Releases", "1.0.0");
-  list.push(path.join(fromWeb, STABLE_PACKAGE_FILE));
-  list.push(path.join(fromWeb, "github-assets", STABLE_PACKAGE_FILE));
+  // Bundled static asset (CustomerPortal/web/public/releases)
+  list.push(path.join(cwd, "public", "releases", packageFile));
+
+  // CustomerPortal/web → ../../Releases/<version>
+  const fromWeb = path.resolve(cwd, "..", "..", "Releases", versionDir);
+  list.push(path.join(fromWeb, packageFile));
+  list.push(path.join(fromWeb, "github-assets", packageFile));
 
   // Repo root (if cwd is monorepo root)
-  const fromRoot = path.resolve(cwd, "Commercial", "Releases", "1.0.0");
-  list.push(path.join(fromRoot, STABLE_PACKAGE_FILE));
-  list.push(path.join(fromRoot, "github-assets", STABLE_PACKAGE_FILE));
+  const fromRoot = path.resolve(cwd, "Commercial", "Releases", versionDir);
+  list.push(path.join(fromRoot, packageFile));
+  list.push(path.join(fromRoot, "github-assets", packageFile));
+
+  // Always include known 1.0.0 path as fallback for current production package
+  if (packageFile !== STABLE_PACKAGE_FILE) {
+    list.push(path.join(cwd, "public", "releases", STABLE_PACKAGE_FILE));
+  }
 
   return list;
 }
 
-export function findLocalCommercialZip(): string | null {
-  for (const p of commercialZipCandidates()) {
+export function findLocalCommercialZip(packageFile = STABLE_PACKAGE_FILE): string | null {
+  for (const p of commercialZipCandidates(packageFile)) {
     try {
       if (fs.existsSync(p) && fs.statSync(p).isFile() && fs.statSync(p).size > 1024) {
         return p;
@@ -60,9 +117,9 @@ export function findLocalCommercialZip(): string | null {
 
 /**
  * Public HTTPS URL for the stable ZIP (GitHub Release, Vercel Blob, CDN).
- * Required on Vercel when the monorepo ZIP is not bundled into the deploy.
+ * Required on Vercel when the monorepo ZIP is not readable from the serverless FS.
  */
-export function configuredReleaseAssetUrl(): string | null {
+export function configuredReleaseAssetUrl(packageFile = STABLE_PACKAGE_FILE): string | null {
   const url = (
     process.env.RELEASE_STABLE_ZIP_URL ||
     process.env.RELEASE_ASSET_URL ||
@@ -71,19 +128,90 @@ export function configuredReleaseAssetUrl(): string | null {
   if (url && /^https:\/\//i.test(url)) return url;
 
   // Bundled public asset (works on Vercel without private GitHub release auth)
-  const base = (
-    process.env.AUTH_URL ||
-    process.env.NEXTAUTH_URL ||
-    "https://the-gold-mind-ai-v2-professional.vercel.app"
-  ).replace(/\/$/, "");
-  return `${base}/releases/${STABLE_PACKAGE_FILE}`;
+  return `${portalBaseUrl()}/releases/${packageFile}`;
 }
 
 export function stableReleaseNotes(): string {
   return [
-    "THE GOLD MIND PROFESSIONAL 1.0.0 (stable)",
-    "Windows installer ZIP — unzip, run Setup.exe / TheGoldMindSetup.exe, enter your existing license key.",
-    "Includes MT5 EA deploy, license activation wizard, desktop shortcuts, SHA-256 checksums, and SBOM.",
+    "THE GOLD MIND PROFESSIONAL 1.0.0 (stable).",
+    "Windows installer ZIP — extract, run Setup.exe, enter your existing license email and key.",
+    "Mandatory license activation completes before the commercial shell is ready.",
+    "Includes MT5 EA deploy, activation wizard, desktop shortcuts, SHA-256 checksums, and SBOM.",
     "Core Trading Engine remains certified frozen.",
   ].join(" ");
+}
+
+/** Canonical published stable package metadata for the portal catalog. */
+export function buildStableReleasePackage(baseUrl = portalBaseUrl()): ReleasePackage {
+  const seed = readPortalStableSeed();
+  const packageFile = seed?.packageFile || STABLE_PACKAGE_FILE;
+  const id = (seed?.id && typeof seed.id === "string" ? seed.id : STABLE_PACKAGE_ID) as string;
+  const version = seed?.version || STABLE_VERSION;
+  return {
+    id,
+    product: "THE GOLD MIND PROFESSIONAL",
+    version,
+    buildNumber: seed?.buildNumber || STABLE_BUILD_NUMBER,
+    channel: "stable",
+    status: "published",
+    releasedAt: seed?.releasedAt || STABLE_RELEASED_AT,
+    packageFile,
+    // Customer/API-facing download path is the authenticated download route only.
+    // /releases/* static assets are never advertised as a download URL.
+    packageUrl: `${baseUrl}/api/releases/download/${id}`,
+    packageSizeBytes: typeof seed?.packageSizeBytes === "number" ? seed.packageSizeBytes : STABLE_SIZE_BYTES,
+    sha256: seed?.sha256 || STABLE_SHA256,
+    signatureRequired: seed?.signatureRequired === true,
+    signatureSubject: seed?.signatureSubject || "Code signing pending",
+    signatureStatus: (seed?.signatureStatus as ReleasePackage["signatureStatus"]) || "pending_code_sign",
+    releaseNotes: seed?.releaseNotes || stableReleaseNotes(),
+    compatibility: {
+      os: seed?.compatibility?.os || ["Windows 10", "Windows 11"],
+      mt5: seed?.compatibility?.mt5 || "build 3800+",
+      coreTag: seed?.compatibility?.coreTag || version,
+      coreFrozen: seed?.compatibility?.coreFrozen !== false,
+    },
+    downloadCount: 0,
+    updateSuccessCount: 0,
+    updateFailCount: 0,
+    rollbackEvents: 0,
+  };
+}
+
+/**
+ * Load commercial ZIP bytes: local disk first, then HTTPS asset URL (cached by caller).
+ */
+export async function loadCommercialZipBytes(
+  packageFile = STABLE_PACKAGE_FILE
+): Promise<{ buffer: Buffer; source: string } | null> {
+  const local = findLocalCommercialZip(packageFile);
+  if (local) {
+    return { buffer: fs.readFileSync(local), source: local };
+  }
+
+  const url = configuredReleaseAssetUrl(packageFile);
+  if (!url) return null;
+
+  try {
+    // /releases/* is not a public customer download surface — this same-origin
+    // fallback fetch (used when local disk is unavailable, e.g. serverless) is
+    // authorized only via this internal shared-secret header, never exposed to
+    // browsers/customers.
+    const internalSecret = (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "").trim();
+    const res = await fetch(url, {
+      redirect: "follow",
+      headers: {
+        Accept: "application/zip,application/octet-stream,*/*",
+        ...(internalSecret ? { [RELEASE_INTERNAL_FETCH_HEADER]: internalSecret } : {}),
+      },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const ab = await res.arrayBuffer();
+    const buffer = Buffer.from(ab);
+    if (buffer.length < 1024 || buffer[0] !== 0x50 || buffer[1] !== 0x4b) return null;
+    return { buffer, source: url };
+  } catch {
+    return null;
+  }
 }

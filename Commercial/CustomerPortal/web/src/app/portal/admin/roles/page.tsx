@@ -5,8 +5,7 @@ import { getRolePermissionMatrix, hasPermission, ROLE_LABELS } from "@/server/ad
 export default async function AdminRolesPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.roles.manage") && actor !== "admin@goldmind.local") redirect("/portal");
+  if (!hasPermission(role, "admin.roles.manage")) redirect("/portal");
 
   const matrix = getRolePermissionMatrix();
   const allPerms = Array.from(new Set(matrix.flatMap((m) => m.permissions))).sort();

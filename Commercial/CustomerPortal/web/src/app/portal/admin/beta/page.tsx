@@ -29,8 +29,7 @@ export default async function AdminBetaPage({
 }) {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.launch.read") && actor !== "admin@goldmind.local") {
+  if (!hasPermission(role, "admin.launch.read")) {
     redirect("/portal/admin");
   }
 
@@ -44,7 +43,7 @@ export default async function AdminBetaPage({
   const summary = getBetaSummary();
   const funnel = getEnrollmentFunnel();
   const groups = listCanonicalBetaGroups();
-  const canWrite = hasPermission(role, "admin.launch.write") || actor === "admin@goldmind.local";
+  const canWrite = hasPermission(role, "admin.launch.write");
 
   return (
     <>

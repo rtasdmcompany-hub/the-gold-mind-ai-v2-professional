@@ -7,11 +7,9 @@ import { getProductionStabilization } from "@/server/success/production-stabiliz
 export default async function StabilizationPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
   if (
     !hasPermission(role, "admin.observability.read") &&
-    !hasPermission(role, "admin.launch.read") &&
-    actor !== "admin@goldmind.local"
+    !hasPermission(role, "admin.launch.read")
   ) {
     redirect("/portal/admin");
   }

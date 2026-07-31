@@ -13,8 +13,7 @@ export default async function AdminLicensesPage({
   ensureSeedData();
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.licenses.read") && actor !== "admin@goldmind.local") redirect("/portal");
+  if (!hasPermission(role, "admin.licenses.read")) redirect("/portal");
 
   const sp = await searchParams;
   const view = getLicenseAdminView(sp.q);

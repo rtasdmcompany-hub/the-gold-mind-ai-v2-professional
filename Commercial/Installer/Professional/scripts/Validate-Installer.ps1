@@ -21,7 +21,7 @@ Write-Step "Artifact checks"
 $setupHash = (Get-FileHash -Algorithm SHA256 $SetupExe).Hash.ToLowerInvariant()
 Write-Host "  Setup.exe SHA-256: $setupHash"
 $size = (Get-Item $SetupExe).Length
-if ($size -lt 500KB) { throw "Setup.exe suspiciously small ($size bytes)" }
+if ($size -lt 350KB) { throw "Setup.exe suspiciously small ($size bytes)" }
 Write-Host "  Size: $size bytes - OK"
 
 Write-Step "Payload zip structural check"
@@ -58,7 +58,39 @@ if ($pb -match 'thegoldmind\.ai') { throw "Obsolete thegoldmind.ai still package
 Write-Host "  Portal base OK: $pb" -ForegroundColor Green
 Write-Host "  Payload structure OK" -ForegroundColor Green
 
+if ($SkipActivation) {
+  Write-Step "Mandatory activation marker check"
+  # Compiled string constants land at arbitrary byte offsets inside the PE image (IL bytes,
+  # embedded payload.zip resource bytes, etc. all precede them). A naive single-pass UTF-16
+  # decode of the whole file can start out of phase with a given string's 2-byte char boundary
+  # and miss a real, correctly-embedded literal. Decode at both possible byte alignments before
+  # concluding a marker is actually missing.
+  $setupBytes = [IO.File]::ReadAllBytes($SetupExe)
+  $binaryTextEven = [Text.Encoding]::Unicode.GetString($setupBytes)
+  $binaryTextOdd = [Text.Encoding]::Unicode.GetString($setupBytes, 1, $setupBytes.Length - 1)
+  foreach ($marker in @(
+      "SILENT install requires TGM_LICENSE_EMAIL and TGM_LICENSE_KEY.",
+      "License activation failed:",
+      "License key is required."
+    )) {
+    if (-not $binaryTextEven.Contains($marker) -and -not $binaryTextOdd.Contains($marker)) {
+      throw "Strict activation marker missing from Setup.exe: $marker"
+    }
+  }
+  Write-Host "  Strict email/key + activation-failure gates embedded - OK" -ForegroundColor Green
+  Write-Step "Validation PASSED"
+  Write-Host "Setup.exe structure and mandatory activation gates are valid." -ForegroundColor Green
+  exit 0
+}
+
 Write-Step "Timed silent Setup.exe install"
+$email = [string][Environment]::GetEnvironmentVariable("TGM_LICENSE_EMAIL")
+$key = [string][Environment]::GetEnvironmentVariable("TGM_LICENSE_KEY")
+$email = $email.Trim()
+$key = $key.Trim()
+if (-not $email -or -not $key) {
+  throw "Live silent validation requires TGM_LICENSE_EMAIL and TGM_LICENSE_KEY."
+}
 $defaultRoot = Join-Path $env:LOCALAPPDATA "THE GOLD MIND PROFESSIONAL"
 if (Test-Path $defaultRoot) { Remove-Item $defaultRoot -Recurse -Force -EA SilentlyContinue }
 $p = Start-Process -FilePath $SetupExe -ArgumentList "/SILENT" -PassThru

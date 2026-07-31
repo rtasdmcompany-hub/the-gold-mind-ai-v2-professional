@@ -1,4 +1,4 @@
-# THE GOLD MIND PROFESSIONAL — Installation Wizard (commercial shell)
+﻿# THE GOLD MIND PROFESSIONAL â€” Installation Wizard (commercial shell)
 # Independent of Core Trading Engine / Strategy / Risk / Recovery / Execution / Magic.
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File .\Install-TheGoldMindProfessional.ps1
@@ -27,7 +27,7 @@ function Write-Banner {
   Write-Host "  Professional Installation Wizard" -ForegroundColor Yellow
   Write-Host "  $Publisher" -ForegroundColor DarkYellow
   Write-Host "========================================================"
-  Write-Host "  Commercial shell only — Core Trading Engine untouched."
+  Write-Host "  Commercial shell only â€” Core Trading Engine untouched."
   Write-Host ""
 }
 
@@ -37,7 +37,7 @@ function Write-Step([string]$msg) {
 }
 
 function Test-SystemRequirements {
-  Write-Step "Step 1 · System requirement validation"
+  Write-Step "Step 1 Â· System requirement validation"
   $os = [System.Environment]::OSVersion.Version
   if ($os.Major -lt 10) { throw "Windows 10 or later required." }
   $arch = [Environment]::Is64BitOperatingSystem
@@ -46,11 +46,11 @@ function Test-SystemRequirements {
   if ($ramGB -lt 4) { Write-Warning "Recommended RAM is 4 GB+. Detected: ${ramGB} GB" }
   $freeGB = [math]::Round((Get-PSDrive -Name ($InstallRoot.Substring(0, 1))).Free / 1GB, 1)
   if ($freeGB -lt 0.5) { Write-Warning "Low disk space on install drive: ${freeGB} GB free" }
-  Write-Host "  OS: Windows $($os.Major).$($os.Minor) · RAM: ${ramGB} GB · Free: ${freeGB} GB · OK"
+  Write-Host "  OS: Windows $($os.Major).$($os.Minor) Â· RAM: ${ramGB} GB Â· Free: ${freeGB} GB Â· OK"
 }
 
 function Find-MetaTrader5 {
-  Write-Step "Step 2 · MT5 detection"
+  Write-Step "Step 2 Â· MT5 detection"
   $candidates = @(
     "$env:ProgramFiles\MetaTrader 5",
     "${env:ProgramFiles(x86)}\MetaTrader 5",
@@ -81,7 +81,7 @@ function Find-MetaTrader5 {
 }
 
 function New-ProductFolders([string]$root) {
-  Write-Step "Step 3 · Configuration / Log / Backup folders"
+  Write-Step "Step 3 Â· Configuration / Log / Backup folders"
   $dirs = @(
     $root,
     (Join-Path $root "bin"),
@@ -100,7 +100,7 @@ function New-ProductFolders([string]$root) {
 }
 
 function Install-PackageFiles([string]$root, [string]$mt5Json) {
-  Write-Step "Step 4 · Installing commercial package files"
+  Write-Step "Step 4 Â· Installing commercial package files"
   $manifestName = switch ($Channel) {
     "rc" { "manifest.rc.json" }
     "development" { "manifest.development.json" }
@@ -115,12 +115,18 @@ function Install-PackageFiles([string]$root, [string]$mt5Json) {
   }
   Copy-Item -Force $readmeSrc (Join-Path $root "README.txt") -ErrorAction SilentlyContinue
 
-  # Application icon placeholder (shortcut may reference when .ico supplied)
-  $iconNote = Join-Path $root "icons\README_ICONS.txt"
-  @"
+  # Application icon for Desktop / Start Menu shortcuts
+  $iconSrc = Join-Path $ScriptDir "..\inno\payload\icons\tgm-professional.ico"
+  $iconDir = Join-Path $root "icons"
+  New-Item -ItemType Directory -Force -Path $iconDir | Out-Null
+  if (Test-Path $iconSrc) {
+    Copy-Item -Force $iconSrc (Join-Path $iconDir "tgm-professional.ico")
+  } else {
+    @"
 Place branded .ico files here for Desktop / Start Menu shortcuts.
-Recommended: tgm-professional.ico (256x256 multi-resolution).
-"@ | Set-Content -Path $iconNote -Encoding UTF8
+Recommended: tgm-professional.ico (multi-resolution).
+"@ | Set-Content -Path (Join-Path $iconDir "README_ICONS.txt") -Encoding UTF8
+  }
 
   $versionJson = @{
     product = $ProductName
@@ -129,7 +135,7 @@ Recommended: tgm-professional.ico (256x256 multi-resolution).
     channel = $Channel
     installedAt = (Get-Date).ToUniversalTime().ToString("o")
     installRoot = $root
-    coreNote = "Core Trading Engine is certified and separate — installer does not alter strategy/risk/execution/magic."
+    coreNote = "Core Trading Engine is certified and separate â€” installer does not alter strategy/risk/execution/magic."
   } | ConvertTo-Json
   Set-Content -Path (Join-Path $root "config\version.json") -Value $versionJson -Encoding UTF8
   Set-Content -Path (Join-Path $root "config\mt5-detection.json") -Value $mt5Json -Encoding UTF8
@@ -155,14 +161,14 @@ pause
 
 function New-Shortcuts([string]$launcher, [string]$root) {
   if ($SkipShortcuts) { return }
-  Write-Step "Step 5 · Desktop and Start Menu shortcuts"
+  Write-Step "Step 5 Â· Desktop and Start Menu shortcuts"
   $wsh = New-Object -ComObject WScript.Shell
   $iconPath = Join-Path $root "icons\tgm-professional.ico"
   $desktop = Join-Path $wsh.SpecialFolders.Item("Desktop") "$ProductName.lnk"
   $sc = $wsh.CreateShortcut($desktop)
   $sc.TargetPath = $launcher
   $sc.WorkingDirectory = Split-Path $launcher
-  $sc.Description = "$ProductName — Commercial Shell"
+  $sc.Description = "$ProductName â€” Commercial Shell"
   if (Test-Path $iconPath) { $sc.IconLocation = "$iconPath,0" }
   $sc.Save()
   Write-Host "  Desktop: $desktop"
@@ -189,7 +195,7 @@ function New-Shortcuts([string]$launcher, [string]$root) {
 }
 
 function Register-Uninstall([string]$root) {
-  Write-Step "Step 6 · Safe uninstall registration"
+  Write-Step "Step 6 Â· Safe uninstall registration"
   $key = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\TheGoldMindProfessional"
   New-Item -Path $key -Force | Out-Null
   $props = @{
@@ -199,8 +205,8 @@ function Register-Uninstall([string]$root) {
     InstallLocation = $root
     InstallDate     = (Get-Date -Format yyyyMMdd)
     EstimatedSize   = 8192
-    HelpLink        = "https://goldmind.local/portal/support"
-    URLInfoAbout    = "https://goldmind.local"
+    HelpLink        = "https://the-gold-mind-ai-v2-professional.vercel.app/portal/support"
+    URLInfoAbout    = "https://the-gold-mind-ai-v2-professional.vercel.app"
   }
   foreach ($k in $props.Keys) {
     New-ItemProperty -Path $key -Name $k -Value $props[$k] -PropertyType String -Force | Out-Null
@@ -215,11 +221,28 @@ function Register-Uninstall([string]$root) {
 # --- Wizard ---
 if (-not $Silent) {
   Write-Banner
-  Write-Host "Channel: $Channel · Version: $Version · Build: $BuildNumber"
+  Write-Host "Channel: $Channel Â· Version: $Version Â· Build: $BuildNumber"
   $custom = Read-Host "Install path [$InstallRoot]"
   if ($custom) { $InstallRoot = $custom }
-  $ch = Read-Host "Release channel [stable|rc|development] ($Channel)"
-  if ($ch -match '^(stable|rc|development)$') { $Channel = $ch }
+  $ch = Read-Host "Release channel [stable] ($Channel)"
+  if ($ch$ch -match '^(stable)) { $Channel = $ch }
+}
+
+Test-SystemRequirements
+$mt5Json = Find-MetaTrader5
+New-ProductFolders -root $InstallRoot
+$launcher = Install-PackageFiles -root $InstallRoot -mt5Json $mt5Json
+New-Shortcuts -launcher $launcher -root $InstallRoot
+Register-Uninstall -root $InstallRoot
+
+Write-Step "Installation complete"
+Write-Host "  Installed to : $InstallRoot"
+Write-Host "  Channel      : $Channel"
+Write-Host "  Version      : $Version ($BuildNumber)"
+Write-Host "  Next: Activate license in Customer Portal, then attach EA in MT5."
+Write-Host "  Updates: Update-TheGoldMindProfessional.ps1 -Apply"
+if (-not $Silent) { Read-Host "Press Enter to exit" }
+) { $Channel = $ch }
 }
 
 Test-SystemRequirements

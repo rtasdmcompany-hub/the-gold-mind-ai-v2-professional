@@ -10,14 +10,13 @@ import type { CloudCheck } from "@/server/performance/cloud-performance";
 export default async function CloudPerformancePage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.observability.read") && actor !== "admin@goldmind.local") {
+  if (!hasPermission(role, "admin.observability.read")) {
     redirect("/portal/admin");
   }
   await ensureSprint5Evidence();
   const run = latestPerfRun("cloud");
   const payload = run?.payload as { checks: CloudCheck[]; score: number } | undefined;
-  const canWrite = hasPermission(role, "admin.observability.write") || actor === "admin@goldmind.local";
+  const canWrite = hasPermission(role, "admin.observability.write");
 
   return (
     <>

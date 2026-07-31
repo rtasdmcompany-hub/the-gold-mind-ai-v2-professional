@@ -73,7 +73,7 @@ export const DE_CATALOG: TranslationCatalog = {
   "legal.risk.title": "Risikohinweis",
   "legal.cookies.banner": "Wir verwenden Cookies, um das kommerzielle Portal zu betreiben und Ihre Erfahrung zu verbessern.",
   "legal.accept": "Akzeptieren",
-  "regional.support.contact": "partners@thegoldmind.local · support@thegoldmind.local",
+  "regional.support.contact": "partners@rtas.group · support@rtas.group",
   "regional.legal.notice": "Handel birgt Risiken. Vergangene Ergebnisse garantieren keine zukünftigen Erfolge.",
   "regional.measurement.metric": "Metrisch",
   "regional.measurement.imperial": "Imperial",

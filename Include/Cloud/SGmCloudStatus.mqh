@@ -38,7 +38,7 @@ struct SGmCloudStatus
       stamped_at = 0;
       cloud_status = GM_CLOUD_STATUS_IDLE;
       license_tier = GM_LICENSE_PROFESSIONAL;
-      license_status = "Architecture Only";
+      license_status = "Professional";
       server_endpoint = "";
       server_connection = "Disconnected";
       offline_mode = true;

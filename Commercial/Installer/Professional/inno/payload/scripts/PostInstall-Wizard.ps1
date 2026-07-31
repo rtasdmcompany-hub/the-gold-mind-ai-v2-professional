@@ -1,4 +1,4 @@
-# Post-install wizard: MT5 deploy + license activation prompts.
+# Post-install: deploy EA (if not done) and open MT5 — license handled in Setup wizard.
 param(
   [Parameter(Mandatory = $true)]
   [string]$InstallRoot,
@@ -9,27 +9,18 @@ param(
 $ErrorActionPreference = "Continue"
 $scripts = Join-Path $InstallRoot "scripts"
 
-Write-Host "THE GOLD MIND PROFESSIONAL - Post-Install"
-Write-Host "Install root: $InstallRoot"
-
 if ($DeployEA -eq "Yes") {
   try {
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts "Deploy-EA-To-MT5.ps1") -InstallRoot $InstallRoot
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts "Deploy-EA-To-MT5.ps1") -InstallRoot $InstallRoot -Silent
   } catch {
     Write-Warning "EA deploy deferred: $_"
-    Write-Host "Run later: $scripts\Deploy-EA-To-MT5.ps1"
   }
 }
 
-Write-Host ""
-Write-Host "License activation"
-Write-Host "  You can activate now or later from Start Menu -> Activate License"
-$doAct = Read-Host "Activate license now? [Y/n]"
-if ($doAct -eq "" -or $doAct -match '^[Yy]') {
-  $google = Read-Host "Use Google login in browser first? [y/N]"
-  $gSwitch = @()
-  if ($google -match '^[Yy]') { $gSwitch = @("-GoogleLogin") }
-  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts "Activate-License.ps1") -InstallRoot $InstallRoot @gSwitch
+try {
+  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts "Launch-Mt5-AfterInstall.ps1") -InstallRoot $InstallRoot
+} catch {
+  Write-Warning "Could not launch MT5: $_"
 }
 
 Write-Host "Post-install finished."

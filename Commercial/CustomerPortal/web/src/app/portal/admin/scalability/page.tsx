@@ -10,14 +10,13 @@ import type { ScalabilityPoint } from "@/server/performance/scalability";
 export default async function ScalabilityPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.observability.read") && actor !== "admin@goldmind.local") {
+  if (!hasPermission(role, "admin.observability.read")) {
     redirect("/portal/admin");
   }
   await ensureSprint5Evidence();
   const run = latestPerfRun("scalability");
   const payload = run?.payload as { points: ScalabilityPoint[]; score: number; cacheBackend: string } | undefined;
-  const canWrite = hasPermission(role, "admin.observability.write") || actor === "admin@goldmind.local";
+  const canWrite = hasPermission(role, "admin.observability.write");
 
   return (
     <>

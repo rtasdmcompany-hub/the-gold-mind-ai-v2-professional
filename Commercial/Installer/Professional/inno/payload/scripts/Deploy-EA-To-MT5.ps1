@@ -10,9 +10,40 @@ param(
 $ErrorActionPreference = "Stop"
 $Product = "THE GOLD MIND PROFESSIONAL"
 $EaSource = Join-Path $InstallRoot "ea\TheGoldMindAI_Professional.ex5"
-$DestRelative = "MQL5\Experts\The Gold Mind\TheGoldMindAI_Professional.ex5"
+$EaFolder = "The Gold Mind Professional"
+$DestRelative = "MQL5\Experts\$EaFolder\TheGoldMindAI_Professional.ex5"
 
 function Write-Step($m) { Write-Host ""; Write-Host "==> $m" -ForegroundColor Yellow }
+
+$BrokerMarkers = @(
+  "exness", "ftmo", "xm global", "xm.com", "ic markets", "icmarkets",
+  "pepperstone", "roboforex", "fxpro", "tickmill"
+)
+
+function Test-BrokerPath([string]$Path) {
+  if (-not $Path) { return $false }
+  $lower = $Path.ToLowerInvariant()
+  foreach ($m in $BrokerMarkers) { if ($lower.Contains($m)) { return $true } }
+  return $false
+}
+
+function Test-MetaQuotesOfficialExe([string]$Exe) {
+  if (-not $Exe -or -not (Test-Path $Exe)) { return $false }
+  if (Test-BrokerPath $Exe) { return $false }
+  try {
+    $vi = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($Exe)
+    $blob = ("{0} {1} {2}" -f $vi.CompanyName, $vi.ProductName, $vi.FileDescription).ToLowerInvariant()
+    foreach ($m in $BrokerMarkers) { if ($blob.Contains($m)) { return $false } }
+    return $blob.Contains("metaquotes")
+  } catch { return $false }
+}
+
+function Test-OfficialMt5InstallDir([string]$InstallDir) {
+  if (-not $InstallDir) { return $false }
+  $exe = Join-Path $InstallDir "terminal64.exe"
+  if (-not (Test-Path $exe)) { $exe = Join-Path $InstallDir "terminal.exe" }
+  return (Test-MetaQuotesOfficialExe $exe)
+}
 
 function Get-Mt5Terminals {
   $roots = @(
@@ -25,9 +56,16 @@ function Get-Mt5Terminals {
     Get-ChildItem $root -Directory -ErrorAction SilentlyContinue | ForEach-Object {
       $experts = Join-Path $_.FullName "MQL5\Experts"
       $origin = Join-Path $_.FullName "origin.txt"
-      $label = $_.Name
+      $originPath = $null
       if (Test-Path $origin) {
-        try { $label = (Get-Content $origin -Raw).Trim() } catch { }
+        try { $originPath = (Get-Content $origin -Raw).Trim().Trim('"') } catch { }
+      }
+      $isOfficial = Test-OfficialMt5InstallDir $originPath
+      $label = if ($originPath) { $originPath } else { $_.Name }
+      if ($isOfficial) {
+        $label = "Official MetaTrader 5 (MetaQuotes) — recommended"
+      } elseif ($originPath) {
+        $label = "Broker terminal (skip): $label"
       }
       $list += [pscustomobject]@{
         Id          = $_.Name
@@ -35,28 +73,30 @@ function Get-Mt5Terminals {
         ExpertsPath = $experts
         Label       = $label
         HasExperts  = (Test-Path $experts)
+        IsOfficial  = $isOfficial
       }
     }
   }
   foreach ($pf in @("${env:ProgramFiles}\MetaTrader 5", "${env:ProgramFiles(x86)}\MetaTrader 5")) {
-    if (Test-Path $pf) {
-      $list += [pscustomobject]@{
-        Id          = "INSTALL_$([guid]::NewGuid().ToString('N').Substring(0,8))"
-        Path        = $pf
-        ExpertsPath = (Join-Path $pf "MQL5\Experts")
-        Label       = "Program Files: $pf"
-        HasExperts  = (Test-Path (Join-Path $pf "MQL5\Experts"))
-      }
+    if (-not (Test-Path $pf)) { continue }
+    if (-not (Test-OfficialMt5InstallDir $pf)) { continue }
+    $list += [pscustomobject]@{
+      Id          = "INSTALL_OFFICIAL_$pf"
+      Path        = $pf
+      ExpertsPath = (Join-Path $pf "MQL5\Experts")
+      Label       = "Official MetaTrader 5 (MetaQuotes) — recommended"
+      HasExperts  = (Test-Path (Join-Path $pf "MQL5\Experts"))
+      IsOfficial  = $true
     }
   }
-  return $list | Sort-Object -Property Path -Unique
+  return $list | Sort-Object -Property @{ Expression = { -not $_.IsOfficial }; Ascending = $true }, Path
 }
 
 function Deploy-Ea([string]$terminalPath) {
   if (-not (Test-Path $EaSource)) {
     throw "EA binary not found: $EaSource"
   }
-  $destDir = Join-Path $terminalPath "MQL5\Experts\The Gold Mind"
+  $destDir = Join-Path $terminalPath "MQL5\Experts\$EaFolder"
   New-Item -ItemType Directory -Force -Path $destDir | Out-Null
   $dest = Join-Path $destDir "TheGoldMindAI_Professional.ex5"
   Copy-Item -Force $EaSource $dest
@@ -101,8 +141,12 @@ if ($TerminalId) {
   $selected = $terminals | Where-Object { $_.Id -eq $TerminalId } | Select-Object -First 1
   if (-not $selected) { throw "TerminalId not found: $TerminalId" }
 } elseif ($Silent -and $terminals.Count -ge 1) {
-  $selected = $terminals | Where-Object { $_.Path -match 'MetaQuotes\\Terminal' -and $_.HasExperts } | Select-Object -First 1
-  if (-not $selected) { $selected = $terminals[0] }
+  $selected = $terminals | Where-Object { $_.IsOfficial } | Select-Object -First 1
+  if (-not $selected) {
+    Write-Warning "Official MetaQuotes MetaTrader 5 not found. Broker terminals will not be used."
+    Write-Host "Install from https://www.metatrader5.com/en/download then re-run Deploy-EA-To-MT5.ps1"
+    exit 2
+  }
 } else {
   $choice = Read-Host "Select terminal number (1-$($terminals.Count))"
   $idx = [int]$choice - 1
@@ -113,8 +157,8 @@ if ($TerminalId) {
 Write-Step "Deploying TheGoldMindAI_Professional.ex5"
 $destPath = Deploy-Ea -terminalPath $selected.Path
 Write-Host "  Installed: $destPath" -ForegroundColor Green
-Write-Host "  Open MT5 -> Navigator -> Expert Advisors -> The Gold Mind"
-Write-Host "  Attach TheGoldMindAI_Professional to a chart."
+Write-Host "  Open MT5 -> Navigator -> Expert Advisors -> $EaFolder"
+Write-Host "  Double-click TheGoldMindAI_Professional to apply."
 
 $stateDir = Join-Path $InstallRoot "config"
 New-Item -ItemType Directory -Force -Path $stateDir | Out-Null

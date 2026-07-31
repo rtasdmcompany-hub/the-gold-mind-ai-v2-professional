@@ -10,9 +10,8 @@ import { hasPermission } from "@/server/admin/roles";
 
 export default async function AdminCloudPage() {
   const session = await auth();
-  const email = session?.user?.email?.toLowerCase() || "";
   const role = (session?.user as { role?: string } | undefined)?.role;
-  if (!hasPermission(role, "admin.cloud.read") && email !== "admin@goldmind.local") redirect("/portal");
+  if (!hasPermission(role, "admin.cloud.read")) redirect("/portal");
 
   const health = await runHealthChecks(true);
   const services = listCloudServices();

@@ -14,7 +14,9 @@ export default function PrivacyPage() {
       </p>
       <h2>Contact</h2>
       <p>
-        Contact: legal@rtas.local (placeholder). Full counsel-approved text will replace this draft before public Stable.
+        Questions about this Privacy Policy or your data can be directed to{" "}
+        <a href="mailto:privacy@rtas.group">privacy@rtas.group</a> or{" "}
+        <a href="mailto:legal@rtas.group">legal@rtas.group</a>.
       </p>
     </LegalShell>
   );

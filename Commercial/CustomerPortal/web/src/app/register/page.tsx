@@ -13,14 +13,7 @@ export const metadata: Metadata = {
 export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    error?: string;
-    sent?: string;
-    email?: string;
-    verify?: string;
-    emailed?: string;
-    mailError?: string;
-  }>;
+  searchParams: Promise<{ error?: string; sent?: string; email?: string; verify?: string }>;
 }) {
   const sp = await searchParams;
   const openSignup = process.env.PORTAL_OPEN_SIGNUP !== "false";
@@ -32,7 +25,7 @@ export default async function RegisterPage({
           <p className="e-eyebrow">THE GOLD MIND PROFESSIONAL</p>
           <h1 className="e-section-title">Create Account</h1>
           <p className="e-section-sub">
-            Register with your email. Confirm via the verification link before password sign-in.
+            Register with your email, confirm the verification link, then sign in.
           </p>
         </ScrollReveal>
       </div>
@@ -49,24 +42,10 @@ export default async function RegisterPage({
             ) : sp.sent === "1" ? (
               <div className="e-glass-card">
                 <h2 style={{ marginTop: 0 }}>Confirm your email</h2>
-                {sp.emailed === "1" ? (
-                  <p>
-                    A confirmation email was sent to <strong>{sp.email || "your email"}</strong>. Open the link to
-                    verify, then sign in. Check spam/promotions if you do not see it within a few minutes.
-                  </p>
-                ) : (
-                  <>
-                    <p className="e-login-error" role="alert">
-                      Account created for <strong>{sp.email || "your email"}</strong>, but the confirmation email
-                      could not be delivered.
-                      {sp.mailError ? ` ${sp.mailError}` : " Outbound email (Resend) is not configured or failed."}
-                    </p>
-                    <p>
-                      Use the verification link below to confirm your account, then sign in. Ask the site owner to
-                      set <code>RESEND_API_KEY</code> and <code>RESEND_FROM_EMAIL</code> for automatic delivery.
-                    </p>
-                  </>
-                )}
+                <p>
+                  We prepared a confirmation for <strong>{sp.email || "your email"}</strong>. Open the verification
+                  link to activate your account, then sign in.
+                </p>
                 {sp.verify ? (
                   <p style={{ fontSize: 13, wordBreak: "break-all" }}>
                     Verification link:{" "}
@@ -76,7 +55,7 @@ export default async function RegisterPage({
                   </p>
                 ) : (
                   <p style={{ fontSize: 13, color: "var(--e-text-muted)" }}>
-                    After confirmation, use <Link href="/login">Sign in</Link>.
+                    Check your inbox (and spam). After confirmation, use <Link href="/login">Sign in</Link>.
                   </p>
                 )}
                 <p style={{ fontSize: 13, marginBottom: 0 }}>
@@ -96,15 +75,8 @@ export default async function RegisterPage({
                   if (!result.ok) {
                     redirect(`/register?error=${encodeURIComponent(result.error)}`);
                   }
-                  const q = new URLSearchParams({
-                    sent: "1",
-                    email: result.email,
-                    emailed: result.emailSent ? "1" : "0",
-                  });
+                  const q = new URLSearchParams({ sent: "1", email: result.email });
                   if (result.verifyUrl) q.set("verify", result.verifyUrl);
-                  if (!result.emailSent && result.mailError) {
-                    q.set("mailError", result.mailError.slice(0, 240));
-                  }
                   redirect(`/register?${q.toString()}`);
                 }}
               >
@@ -133,7 +105,7 @@ export default async function RegisterPage({
                   />
                 </div>
                 <p style={{ fontSize: 13, color: "var(--e-text-muted)" }}>
-                  Confirmation email is required before password sign-in. Google Sign-In creates a verified account.
+                  You must confirm your email before you can sign in. Google Sign-In also creates a verified account.
                 </p>
                 <button type="submit" className="e-btn e-btn-primary">
                   Create Account

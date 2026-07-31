@@ -1,0 +1,14 @@
+﻿[
+    {
+        "exitCode":  0,
+        "name":  "AI_ON",
+        "reportExists":  true,
+        "report":  "C:\\Users\\Dell\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\Phase11D_AI_ON.htm"
+    },
+    {
+        "exitCode":  0,
+        "name":  "AI_OFF",
+        "reportExists":  true,
+        "report":  "C:\\Users\\Dell\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\Phase11D_AI_OFF.htm"
+    }
+]

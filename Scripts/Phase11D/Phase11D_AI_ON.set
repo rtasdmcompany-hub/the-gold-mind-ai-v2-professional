@@ -1,0 +1,9 @@
+; Phase11D AI ON
+P11B_Enable_Supervisor=true
+P11B_Max_Lot_Increase_Pct=20.0
+P11B_Max_Lot_Reduction_Pct=50.0
+P11B_Max_Freeze_Minutes=30
+P11B_Emergency_Cancel=true
+P11B_News_Protection=true
+P11B_Broker_Protection=true
+P11B_Weekend_Protection=true

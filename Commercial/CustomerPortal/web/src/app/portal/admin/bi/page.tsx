@@ -10,8 +10,7 @@ export default async function AdminBiPage() {
   ensureDemoTickets();
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.bi.read") && actor !== "admin@goldmind.local") redirect("/portal");
+  if (!hasPermission(role, "admin.bi.read")) redirect("/portal");
 
   const bi = getBusinessIntelligence();
 

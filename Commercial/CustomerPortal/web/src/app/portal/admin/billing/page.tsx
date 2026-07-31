@@ -7,9 +7,9 @@ import { hasPermission } from "@/server/admin/roles";
 
 export default async function AdminBillingPage() {
   const session = await auth();
-  const email = session?.user?.email?.toLowerCase() || "";
   const role = (session?.user as { role?: string } | undefined)?.role;
-  if (!hasPermission(role, "admin.billing.read") && email !== "admin@goldmind.local") redirect("/portal");
+  if (!hasPermission(role, "admin.billing.read")) redirect("/portal");
+  const canWrite = hasPermission(role, "admin.billing.write");
 
   const dash = getAdminBillingDashboard();
 
@@ -35,18 +35,20 @@ export default async function AdminBillingPage() {
         </div>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-        <form action={actionRunRenewalReminders}>
-          <button type="submit" className="btn">
-            Queue renewal reminder emails
-          </button>
-        </form>
-        <form action={actionRunExpiryNotices}>
-          <button type="submit" className="btn">
-            Queue expiry notice emails
-          </button>
-        </form>
-      </div>
+      {canWrite && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          <form action={actionRunRenewalReminders}>
+            <button type="submit" className="btn">
+              Queue renewal reminder emails
+            </button>
+          </form>
+          <form action={actionRunExpiryNotices}>
+            <button type="submit" className="btn">
+              Queue expiry notice emails
+            </button>
+          </form>
+        </div>
+      )}
 
       <h2 style={{ fontSize: 16 }}>Recent Transactions</h2>
       <div className="table-wrap" style={{ marginBottom: 20 }}>

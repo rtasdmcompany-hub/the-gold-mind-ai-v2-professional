@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "@/auth.config";
 import { applySecurityHeaders, checkCsrf, enforceHttps } from "@/server/cloud/security-headers";
+import { RELEASE_INTERNAL_FETCH_HEADER } from "@/server/releases/internal-fetch";
 
 /**
  * Edge middleware — session gate only (no Node crypto / accounts store).
@@ -11,6 +12,21 @@ const { auth } = NextAuth({
   ...authConfig,
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
 });
+
+/**
+ * /releases/* static assets (installer ZIP, catalog seed) are NOT a public customer
+ * download surface — the only supported customer path is the authenticated
+ * /api/releases/download/[id] route. The only exception is the server's own
+ * same-origin fetch fallback (release-service reading the bundled ZIP when local
+ * disk is unavailable in a serverless runtime), gated by a shared secret header
+ * that customers/browsers never have.
+ */
+function isInternalReleaseAssetFetch(req: { headers: Headers }, path: string): boolean {
+  if (!path.startsWith("/releases/")) return false;
+  const secret = (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "").trim();
+  if (!secret) return false;
+  return req.headers.get(RELEASE_INTERNAL_FETCH_HEADER) === secret;
+}
 
 export default auth((req) => {
   const httpsRedirect = enforceHttps(req);
@@ -29,6 +45,8 @@ export default auth((req) => {
     path === "/login" ||
     path === "/register" ||
     path === "/verify-email" ||
+    path === "/forgot-password" ||
+    path === "/reset-password" ||
     path === "/pricing" ||
     path === "/docs" ||
     path === "/contact" ||
@@ -50,8 +68,10 @@ export default auth((req) => {
     path.startsWith("/api/releases/report") ||
     path === "/api/licenses/installer-activate" ||
     path === "/api/licenses/ready" ||
-    path === "/api/trading/sync" ||
     path === "/api/notifications/trade-closed" ||
+    path === "/api/trading/sync" ||
+    path === "/api/partners/click" ||
+    isInternalReleaseAssetFetch(req, path) ||
     path.startsWith("/brand/") ||
     path.startsWith("/media/") ||
     path === "/favicon.ico" ||

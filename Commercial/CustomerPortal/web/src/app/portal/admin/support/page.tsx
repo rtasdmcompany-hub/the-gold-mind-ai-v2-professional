@@ -16,7 +16,7 @@ export default async function AdminSupportConsolePage({
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
   const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.support.read") && actor !== "admin@goldmind.local") redirect("/portal");
+  if (!hasPermission(role, "admin.support.read")) redirect("/portal");
 
   ensureDemoTickets();
   const sp = await searchParams;
@@ -24,7 +24,7 @@ export default async function AdminSupportConsolePage({
     status: sp.status as "open" | "pending" | "resolved" | "closed" | undefined,
     q: sp.q,
   });
-  const canWrite = hasPermission(role, "admin.support.write") || actor === "admin@goldmind.local";
+  const canWrite = hasPermission(role, "admin.support.write");
 
   return (
     <>

@@ -8,8 +8,7 @@ import { listAudit } from "@/server/cloud/audit";
 export default async function AdminSecurityPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.security.manage") && actor !== "admin@goldmind.local") redirect("/portal");
+  if (!hasPermission(role, "admin.security.manage")) redirect("/portal");
 
   const policy = getAdminSecurityPolicy();
   const secEvents = listAudit(20).filter((e) => e.meta?.security === "1" || e.detail?.includes("confirm"));

@@ -7,6 +7,12 @@ import { readReleaseStore } from "@/server/releases/store";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
+function formatPackageSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
 /**
  * Customer Download Center — LATEST STABLE ONLY.
  * RC / development / nightly are Admin Console exclusives.
@@ -28,7 +34,7 @@ export default async function DownloadsPage() {
       <header style={{ marginBottom: 24 }}>
         <h1 className="page-title">Download Center</h1>
         <p className="page-sub">
-          Latest stable Windows ZIP · unzip and run Setup.exe with your license key · verified checksum
+          Latest stable Windows installer · verified checksum · commercial release only
         </p>
       </header>
 
@@ -51,16 +57,12 @@ export default async function DownloadsPage() {
 
           <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
             <a className="btn btn-primary" href={`/api/releases/download/${latest.id}`}>
-              Download ZIP ({(latest.packageSizeBytes / (1024 * 1024)).toFixed(1)} MB)
+              Download Installer ZIP
             </a>
             <Link className="btn" href="/portal/updates">
               Check for updates
             </Link>
           </div>
-          <p className="meta" style={{ marginTop: 12, lineHeight: 1.5 }}>
-            After download: unzip → run <strong>Setup.exe</strong> (or TheGoldMindSetup.exe) → enter your existing
-            license key → finish installation. MT5 EA deploy and activation are handled by the installer.
-          </p>
 
           <div className="grid grid-2" style={{ marginTop: 20, gap: 12 }}>
             <div>
@@ -81,12 +83,26 @@ export default async function DownloadsPage() {
                 {latest.signatureSubject ? ` · ${latest.signatureSubject}` : ""}
               </div>
               <div className="meta" style={{ marginTop: 6 }}>
-                Package size: {(latest.packageSizeBytes / (1024 * 1024)).toFixed(2)} MB · {latest.packageFile}
+                Package size: {formatPackageSize(latest.packageSizeBytes)}
               </div>
             </div>
           </div>
         </div>
       )}
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <h3>Install steps</h3>
+        <ol style={{ margin: "8px 0 0", paddingLeft: 20, lineHeight: 1.7 }}>
+          <li>Download the ZIP above (signed-in session required in production).</li>
+          <li>Extract the archive to a folder you control.</li>
+          <li>
+            Run <span className="mono">Setup.exe</span> (also named TheGoldMindSetup.exe in some packages).
+          </li>
+          <li>Enter your existing license email and license key when prompted.</li>
+          <li>Complete mandatory activation — the installer will not finish without a valid activation.</li>
+          <li>Confirm the EA appears in MetaTrader 5 under Navigator → The Gold Mind.</li>
+        </ol>
+      </div>
 
       <div className="grid grid-2" style={{ marginBottom: 20 }}>
         <div className="card">
@@ -94,14 +110,14 @@ export default async function DownloadsPage() {
           <div className="value" style={{ fontSize: 18 }}>
             {installed || "Not reported"}
           </div>
-          <div className="meta">Reported by the commercial updater after install</div>
+          <div className="meta">Reported by the commercial updater after a successful install/update</div>
         </div>
         <div className="card">
           <h3>Release Channel</h3>
           <div className="value" style={{ fontSize: 18 }}>
             Stable
           </div>
-          <div className="meta">Customer releases are stable-only. RC and development builds are admin-restricted.</div>
+          <div className="meta">Stable channel only.</div>
         </div>
       </div>
 

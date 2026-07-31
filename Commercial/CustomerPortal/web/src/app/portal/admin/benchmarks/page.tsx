@@ -10,14 +10,13 @@ import type { BenchmarkResult } from "@/server/performance/benchmarks";
 export default async function BenchmarksPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.observability.read") && actor !== "admin@goldmind.local") {
+  if (!hasPermission(role, "admin.observability.read")) {
     redirect("/portal/admin");
   }
   await ensureSprint5Evidence();
   const run = latestPerfRun("benchmark");
   const payload = run?.payload as { results: BenchmarkResult[]; score: number; at: string } | undefined;
-  const canWrite = hasPermission(role, "admin.observability.write") || actor === "admin@goldmind.local";
+  const canWrite = hasPermission(role, "admin.observability.write");
 
   return (
     <>

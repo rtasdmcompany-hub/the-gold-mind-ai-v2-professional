@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { writeAudit } from "@/server/cloud/audit";
+import { isProductionRuntime } from "@/server/security/dev-bypass";
 import { decryptJson, encryptJson, launchDataDir, newId } from "./store-crypto";
 
 export type MetricEventType =
@@ -143,6 +144,7 @@ export function getProductionMetrics() {
 }
 
 export function ensureDemoMetrics(): void {
+  if (isProductionRuntime() && process.env.PORTAL_ALLOW_DEMO_SEED !== "true") return;
   const store = read();
   if (store.events.length > 0) return;
   const samples: Array<{ type: MetricEventType; email?: string; sessionMinutes?: number }> = [

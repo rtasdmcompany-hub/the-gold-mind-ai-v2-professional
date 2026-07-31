@@ -5,6 +5,8 @@ import { PortalUserBar } from "@/components/PortalUserBar";
 import { BrandLogo, RtasGroupBadge } from "@/components/BrandLogo";
 import { canAccessAdminConsole } from "@/server/admin/roles";
 import { isDevAdminBypass } from "@/server/security/dev-bypass";
+import { getParticipantByEmail } from "@/server/launch/beta-store";
+import { getPartnerByEmail } from "@/server/partners/portal";
 import { redirect } from "next/navigation";
 
 export default async function PortalLayout({
@@ -12,14 +14,23 @@ export default async function PortalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  let session: Awaited<ReturnType<typeof auth>> = null;
+  try {
+    session = await auth();
+  } catch {
+    redirect("/login");
+  }
   if (!session?.user) redirect("/login");
   const role = (session.user as { role?: string }).role;
   const showAdmin = canAccessAdminConsole(role) || isDevAdminBypass(session.user.email);
+  // Beta Onboarding stays out of the default customer nav — only invited/enrolled participants see it.
+  const showBeta = !!(session.user.email && getParticipantByEmail(session.user.email));
+  // Partner Portal stays out of the default customer nav — only enrolled partners see it.
+  const showPartner = !!(session.user.email && getPartnerByEmail(session.user.email.toLowerCase()));
 
   return (
     <div className="shell portal-shell">
-      <PortalNav showAdmin={!!showAdmin} />
+      <PortalNav showAdmin={!!showAdmin} showBeta={showBeta} showPartner={showPartner} />
       <div className="main">
         <div className="portal-site-bar">
           <Link href="/" className="portal-site-bar-brand">

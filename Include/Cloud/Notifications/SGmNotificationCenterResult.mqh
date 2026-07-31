@@ -50,7 +50,7 @@ struct SGmNotificationCenterResult
       trading_notifications = cloud_notifications = ai_notifications = "";
       recovery_notifications = "";
       delivery_status = "Idle";
-      api_connection_status = "Architecture Only";
+      api_connection_status = "Professional";
       notification_feed = "";
       mobile_api_catalog = "";
       rule_summary = "";

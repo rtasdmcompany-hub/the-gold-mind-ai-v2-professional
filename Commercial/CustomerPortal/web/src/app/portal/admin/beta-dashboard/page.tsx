@@ -8,8 +8,7 @@ import { getExecutiveBetaDashboard } from "@/server/launch/beta-dashboard";
 export default async function ExecutiveBetaDashboardPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.launch.read") && actor !== "admin@goldmind.local") {
+  if (!hasPermission(role, "admin.launch.read")) {
     redirect("/portal/admin");
   }
 

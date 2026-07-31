@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { RELEASE_INTERNAL_FETCH_HEADER } from "@/server/releases/internal-fetch";
 
 /**
  * Edge-safe Auth.js config (middleware only).
@@ -30,6 +31,8 @@ export const authConfig = {
         path === "/login" ||
         path === "/register" ||
         path === "/verify-email" ||
+        path === "/forgot-password" ||
+        path === "/reset-password" ||
         path === "/pricing" ||
         path === "/docs" ||
         path === "/contact" ||
@@ -51,8 +54,13 @@ export const authConfig = {
         path.startsWith("/api/releases/report") ||
         path === "/api/licenses/installer-activate" ||
         path === "/api/licenses/ready" ||
-        path === "/api/trading/sync" ||
         path === "/api/notifications/trade-closed" ||
+        path === "/api/trading/sync" ||
+        path === "/api/partners/click" ||
+        (path.startsWith("/releases/") &&
+          !!(process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "").trim() &&
+          request.headers.get(RELEASE_INTERNAL_FETCH_HEADER) ===
+            (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "").trim()) ||
         path.startsWith("/brand/") ||
         path.startsWith("/media/") ||
         path === "/favicon.ico" ||

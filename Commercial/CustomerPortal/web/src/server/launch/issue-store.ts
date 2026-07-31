@@ -6,6 +6,7 @@
 import fs from "fs";
 import path from "path";
 import { writeAudit } from "@/server/cloud/audit";
+import { isProductionRuntime } from "@/server/security/dev-bypass";
 import { decryptJson, encryptJson, launchDataDir, newId } from "./store-crypto";
 
 export type IssuePriority = "P0" | "P1" | "P2" | "P3";
@@ -265,6 +266,7 @@ export function updateIssue(
 }
 
 export function ensureDemoIssues(): void {
+  if (isProductionRuntime() && process.env.PORTAL_ALLOW_DEMO_SEED !== "true") return;
   const store = read();
   if (store.issues.length > 0) {
     store.issues = store.issues.map((i) => normalize(i));

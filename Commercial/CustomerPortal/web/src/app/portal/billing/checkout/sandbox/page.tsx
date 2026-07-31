@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { completeSandboxCheckout } from "@/server/billing/billing-service";
+import { isSandboxCheckoutAllowed } from "@/server/billing/config";
 import type { PlanCode } from "@/server/billing/types";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +12,7 @@ export default async function SandboxCheckoutPage({
 }) {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
+  if (!isSandboxCheckoutAllowed()) redirect("/portal/billing");
   const sp = await searchParams;
   const plan = (sp.plan || "monthly") as PlanCode;
 

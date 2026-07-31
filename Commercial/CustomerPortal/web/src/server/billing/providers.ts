@@ -1,8 +1,9 @@
 import type { CheckoutRequest, CheckoutSession, NormalizedPaymentEvent, PaymentPort, PlanCode } from "./types";
 import { PLAN_CATALOG, hmacSha256, id, nowIso, safeEqual } from "./util";
+import { resolveBaseUrl } from "./base-url";
 
 function baseUrl(): string {
-  return process.env.NEXTAUTH_URL || "http://localhost:3000";
+  return resolveBaseUrl();
 }
 
 /** Sandbox provider — local/MVP checkout without live PSP credentials. */
@@ -45,12 +46,12 @@ export const paddlePort: PaymentPort = {
     const plan = PLAN_CATALOG[req.plan];
     const vendor = process.env.PADDLE_VENDOR_ID;
     const checkoutId = id("chk_paddle");
-    // Production would call Paddle API; MVP returns hosted-style URL template
-    const checkoutUrl = vendor
-      ? `https://buy.paddle.com/checkout/${process.env.PADDLE_PRICE_ID || "price"}?email=${encodeURIComponent(req.customerEmail)}&passthrough=${checkoutId}`
-      : `${baseUrl()}/portal/billing/checkout/sandbox?checkoutId=${checkoutId}&plan=${req.plan}&email=${encodeURIComponent(req.customerEmail)}&provider=paddle`;
+    if (!vendor) {
+      throw new Error("PADDLE_UNCONFIGURED: Set PADDLE_VENDOR_ID (and PADDLE_WEBHOOK_SECRET) for live checkout.");
+    }
+    const checkoutUrl = `https://buy.paddle.com/checkout/${process.env.PADDLE_PRICE_ID || "price"}?email=${encodeURIComponent(req.customerEmail)}&passthrough=${checkoutId}`;
     return {
-      provider: vendor ? "paddle" : "sandbox",
+      provider: "paddle",
       checkoutId,
       checkoutUrl,
       plan: req.plan,
@@ -58,9 +59,13 @@ export const paddlePort: PaymentPort = {
       currency: plan.currency,
     };
   },
-  async cancelSubscription() {
-    // Wire to Paddle subscription cancel API when credentials present
-    return { ok: true };
+  async cancelSubscription(providerRef: string) {
+    if (!process.env.PADDLE_VENDOR_ID || !process.env.PADDLE_API_KEY) {
+      return { ok: false };
+    }
+    // Live Paddle cancel API wiring uses PADDLE_API_KEY when ops connects it.
+    void providerRef;
+    return { ok: false };
   },
   async verifyWebhook(headers: Headers, rawBody: string) {
     const secret = process.env.PADDLE_WEBHOOK_SECRET;
@@ -83,11 +88,12 @@ export const paypalPort: PaymentPort = {
     const plan = PLAN_CATALOG[req.plan];
     const checkoutId = id("chk_paypal");
     const clientId = process.env.PAYPAL_CLIENT_ID;
-    const checkoutUrl = clientId
-      ? `https://www.paypal.com/checkoutnow?token=${checkoutId}`
-      : `${baseUrl()}/portal/billing/checkout/sandbox?checkoutId=${checkoutId}&plan=${req.plan}&email=${encodeURIComponent(req.customerEmail)}&provider=paypal`;
+    if (!clientId) {
+      throw new Error("PAYPAL_UNCONFIGURED: Set PAYPAL_CLIENT_ID (and webhook secret) for live checkout.");
+    }
+    const checkoutUrl = `https://www.paypal.com/checkoutnow?token=${checkoutId}`;
     return {
-      provider: clientId ? "paypal" : "sandbox",
+      provider: "paypal",
       checkoutId,
       checkoutUrl,
       plan: req.plan,
@@ -95,8 +101,12 @@ export const paypalPort: PaymentPort = {
       currency: plan.currency,
     };
   },
-  async cancelSubscription() {
-    return { ok: true };
+  async cancelSubscription(providerRef: string) {
+    if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
+      return { ok: false };
+    }
+    void providerRef;
+    return { ok: false };
   },
   async verifyWebhook(headers: Headers, rawBody: string) {
     const secret = process.env.PAYPAL_WEBHOOK_ID || process.env.PAYPAL_WEBHOOK_SECRET;
@@ -112,20 +122,19 @@ export const paypalPort: PaymentPort = {
   },
 };
 
-/** Future provider — fail-closed without STRIPE_WEBHOOK_SECRET; HMAC verify when set. */
+/** Stripe — fail-closed until STRIPE_SECRET_KEY + webhook secret are set. */
 export const stripePort: PaymentPort = {
   id: "stripe",
   async createCheckout(req) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error("STRIPE_UNCONFIGURED: Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET for live checkout.");
+    }
     const plan = PLAN_CATALOG[req.plan];
     const checkoutId = id("chk_stripe");
-    return {
-      provider: "stripe",
-      checkoutId,
-      checkoutUrl: `${baseUrl()}/portal/billing?stripe=future&plan=${req.plan}`,
-      plan: req.plan,
-      amountCents: plan.amountCents,
-      currency: plan.currency,
-    };
+    // Hosted Checkout Session URL is created by Stripe API when fully wired; refuse fake success URL.
+    throw new Error(
+      `STRIPE_CHECKOUT_NOT_WIRED: Credentials present but Checkout Session API not connected yet (plan=${req.plan}, chk=${checkoutId}, amount=${plan.amountCents}).`
+    );
   },
   async cancelSubscription() {
     return { ok: false };

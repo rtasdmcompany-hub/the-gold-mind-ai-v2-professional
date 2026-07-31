@@ -2,26 +2,26 @@
     "product":  "THE GOLD MIND PROFESSIONAL",
     "version":  "1.0.0",
     "channel":  "stable",
-    "releasedAt":  "2026-07-27T15:48:20.7920201Z",
+    "releasedAt":  "2026-07-30T20:26:29.7525726Z",
     "core":  {
                  "mq5":  "Experts/TheGoldMindAI_Professional.mq5",
-                 "ex5Sha256":  "7883b4155aabb088e07f9f9563b413b7b63de7188d610021fb4fdca603e8c619",
+                 "ex5Sha256":  "890e22254ef44f86e82bc3700cd2b0dd0eaddf57c3ce91ff0f801b999c347535",
                  "frozen":  true,
-                 "mq5Sha256":  "75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce"
+                 "mq5Sha256":  "9fd202466a0894577f12721610b4a9a80f6f8d02bb9fd908aed3d3e88654d49a"
              },
     "artifacts":  {
                       "setupExe":  {
-                                       "sha256":  "5981f411970ed94d6f84b5099ab13e2671f29f1dad7db61c8f1614b93d42e776",
+                                       "sha256":  "f48f3698a5401a66869481c7cb615505067fd4f64699b87f484db6afdfd29b07",
                                        "file":  "installer/Setup.exe"
                                    },
                       "checksums":  "SHA256SUMS.txt",
                       "sbom":  "SBOM.json",
                       "professionalZip":  {
-                                              "sha256":  "42ee8b10912854706dd5fee9c3e54bf8325e26e17819dacb2de9946447af34a1",
+                                              "sha256":  "e61120628ba0d43d9d0f84d931cb0cd863890fa95a0e997b04d13a951d83229a",
                                               "file":  "TGM_PROFESSIONAL_1.0.0_stable.zip"
                                           },
                       "theGoldMindSetupExe":  {
-                                                  "sha256":  "5981f411970ed94d6f84b5099ab13e2671f29f1dad7db61c8f1614b93d42e776",
+                                                  "sha256":  "f48f3698a5401a66869481c7cb615505067fd4f64699b87f484db6afdfd29b07",
                                                   "file":  "installer/TheGoldMindSetup.exe"
                                               }
                   },

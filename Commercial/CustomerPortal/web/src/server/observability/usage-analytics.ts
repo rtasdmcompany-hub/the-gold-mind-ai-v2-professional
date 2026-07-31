@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { decryptJson, encryptJson, hashIdentity, newId, obsDataDir, sanitizeTelemetryDetail } from "./store-crypto";
+import { isProductionRuntime } from "@/server/security/dev-bypass";
 
 export interface UsageEvent {
   id: string;
@@ -139,6 +140,7 @@ export function getUsageAnalytics() {
 }
 
 export function ensureDemoUsage(): void {
+  if (isProductionRuntime() && process.env.PORTAL_ALLOW_DEMO_SEED !== "true") return;
   const store = read();
   if (store.events.length > 0) return;
   const users = ["a1", "b2", "c3", "d4", "e5"].map((x) => hashIdentity(`user${x}@example.com`));

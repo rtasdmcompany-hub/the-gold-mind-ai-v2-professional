@@ -6,9 +6,8 @@ import { hasPermission } from "@/server/admin/roles";
 
 export default async function AdminReleasesPage() {
   const session = await auth();
-  const email = session?.user?.email?.toLowerCase() || "";
   const role = (session?.user as { role?: string } | undefined)?.role;
-  if (!hasPermission(role, "admin.releases.read") && email !== "admin@goldmind.local") redirect("/portal");
+  if (!hasPermission(role, "admin.releases.read")) redirect("/portal");
 
   const dash = getAdminReleaseDashboard();
 

@@ -31,13 +31,14 @@ function resolveRole(email: string, explicit?: string): CloudRole {
     if (explicit === "customer") return "customer";
   }
   const e = email.toLowerCase();
-  if (envList("PORTAL_SUPER_ADMIN_EMAILS", "admin@goldmind.local").includes(e)) return "super_admin";
-  if (envList("PORTAL_ADMIN_EMAILS", "admin@goldmind.local").includes(e)) return "super_admin";
+  // No fallback default: an empty/unset env var means no email-based admin elevation.
+  if (envList("PORTAL_SUPER_ADMIN_EMAILS").includes(e)) return "super_admin";
+  if (envList("PORTAL_ADMIN_EMAILS").includes(e)) return "super_admin";
   if (envList("PORTAL_COMMERCIAL_MANAGER_EMAILS").includes(e)) return "commercial_manager";
-  if (envList("PORTAL_FINANCE_EMAILS", "finance@goldmind.local").includes(e)) return "finance_manager";
-  if (envList("PORTAL_QA_EMAILS", "qa@goldmind.local").includes(e)) return "qa_manager";
-  if (envList("PORTAL_AUDITOR_EMAILS", "auditor@goldmind.local").includes(e)) return "auditor";
-  if (envList("PORTAL_SUPPORT_EMAILS", "support@goldmind.local").includes(e)) return "support_agent";
+  if (envList("PORTAL_FINANCE_EMAILS").includes(e)) return "finance_manager";
+  if (envList("PORTAL_QA_EMAILS").includes(e)) return "qa_manager";
+  if (envList("PORTAL_AUDITOR_EMAILS").includes(e)) return "auditor";
+  if (envList("PORTAL_SUPPORT_EMAILS").includes(e)) return "support_agent";
   return "customer";
 }
 

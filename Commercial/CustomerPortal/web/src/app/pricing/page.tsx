@@ -15,7 +15,7 @@ const FEATURES = [
   "Certified Core EA (MT5)",
   "Customer Portal access",
   "License activation & device binding",
-  "Signed installer downloads",
+  "Checksum-verified installer downloads",
   "Update center & release notes",
   "Support ticket intake",
   "Knowledge base access",
@@ -118,7 +118,7 @@ export default function PricingPage() {
             </div>
           </ScrollReveal>
           <p style={{ textAlign: "center", marginTop: 32, fontSize: 13, color: "var(--e-text-dim)" }}>
-            Live checkout uses PaymentPort when production PSP credentials are configured. Sandbox available for RC.
+            Checkout is processed securely through our configured payment provider.
           </p>
         </div>
       </section>

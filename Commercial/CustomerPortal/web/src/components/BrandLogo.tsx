@@ -6,8 +6,8 @@ type Variant = "header" | "nav" | "login" | "footer" | "hero";
 const SRC: Record<Variant, { src: string; width: number; height: number; alt: string }> = {
   header: {
     src: "/brand/the-gold-mind-logo-header.png",
-    width: 220,
-    height: 64,
+    width: 280,
+    height: 80,
     alt: "THE GOLD MIND AI v2.0 PROFESSIONAL",
   },
   nav: {

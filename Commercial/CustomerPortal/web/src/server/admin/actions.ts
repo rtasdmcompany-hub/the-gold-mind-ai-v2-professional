@@ -2,12 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { requirePermission, requireSession } from "@/server/licensing/session";
-import { createSupportTicket, updateSupportTicket, ensureDemoTickets } from "@/server/admin/support-store";
+import { updateSupportTicket, ensureDemoTickets } from "@/server/admin/support-store";
 import { issueSensitiveConfirmToken, consumeSensitiveConfirmToken, logAdminSecurityEvent } from "@/server/admin/security";
 import { writeAudit } from "@/server/cloud/audit";
 
 export async function actionCreateAdminSupportTicket(formData: FormData): Promise<void> {
   await requirePermission("admin.support.write");
+  const { ensureSupportStoreLoaded, flushSupportStore, createSupportTicket, ensureDemoTickets } = await import(
+    "@/server/admin/support-store"
+  );
+  await ensureSupportStoreLoaded();
   ensureDemoTickets();
   const email = String(formData.get("customerEmail") || "").trim().toLowerCase();
   const subject = String(formData.get("subject") || "").trim();
@@ -15,6 +19,7 @@ export async function actionCreateAdminSupportTicket(formData: FormData): Promis
   const priority = (String(formData.get("priority") || "normal") as "low" | "normal" | "high" | "urgent");
   if (!email || !subject || !body) return;
   createSupportTicket({ customerEmail: email, subject, body, priority });
+  await flushSupportStore();
   revalidatePath("/portal/admin/support");
 }
 
@@ -64,10 +69,15 @@ export async function actionConfirmSensitive(formData: FormData): Promise<void> 
 /** Customer-facing ticket create also lands in support store */
 export async function actionSubmitSupportTicket(formData: FormData): Promise<void> {
   const s = await requireSession();
+  const { ensureSupportStoreLoaded, flushSupportStore, createSupportTicket } = await import(
+    "@/server/admin/support-store"
+  );
+  await ensureSupportStoreLoaded();
   const subject = String(formData.get("subject") || "").trim();
   const body = String(formData.get("body") || "").trim();
-  if (!subject || !body) return;
+  if (subject.length < 3 || body.length < 10) return;
   createSupportTicket({ customerEmail: s.email, subject, body, priority: "normal" });
+  await flushSupportStore();
   writeAudit({
     user: s.email,
     action: "support_action",

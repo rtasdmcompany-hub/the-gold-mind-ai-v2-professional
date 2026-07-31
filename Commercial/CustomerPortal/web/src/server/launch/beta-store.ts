@@ -5,6 +5,7 @@
 import fs from "fs";
 import path from "path";
 import { writeAudit } from "@/server/cloud/audit";
+import { isProductionRuntime } from "@/server/security/dev-bypass";
 import { decryptJson, encryptJson, launchDataDir, newId } from "./store-crypto";
 
 export type BetaGroup =
@@ -400,6 +401,7 @@ export function getEnrollmentFunnel() {
 }
 
 export function ensureDemoBetaParticipants(): void {
+  if (isProductionRuntime() && process.env.PORTAL_ALLOW_DEMO_SEED !== "true") return;
   const store = read();
   if (store.participants.length > 0) {
     // migrate groups in place

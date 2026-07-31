@@ -117,9 +117,21 @@ public:
            {
             m_renderer.ToggleCollapse();
             if(m_logger != NULL)
-               m_logger.Info(m_renderer.Collapsed() ? "Panel Hidden (collapsed)"
-                                                    : "Panel Shown (expanded)",
+               m_logger.Info(m_renderer.Collapsed() ? "Panel minimized" : "Panel expanded",
                              "Dashboard");
+            return true;
+           }
+         if(sparam == Obj("BTN_MAX"))
+           {
+            if(m_settings.view_mode == GM_VIEW_COMPACT)
+               m_settings.view_mode = GM_VIEW_STANDARD;
+            else
+               m_settings.view_mode = GM_VIEW_COMPACT;
+            if(m_logger != NULL)
+               m_logger.Info(m_settings.view_mode == GM_VIEW_COMPACT ? "Compact view"
+                                                                     : "Standard view",
+                             "Dashboard");
+            PushSettings();
             return true;
            }
          if(sparam == Obj("BTN_LOCK"))

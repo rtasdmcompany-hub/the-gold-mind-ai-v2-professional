@@ -5,7 +5,6 @@ import { StatusBadge } from "@/components/StatusBadge";
 import {
   ENROLLMENT_STEPS,
   ENROLLMENT_STEP_LABELS,
-  ensureDemoBetaParticipants,
   enrollmentCompletionPct,
   getParticipantByEmail,
 } from "@/server/launch/beta-store";
@@ -16,7 +15,7 @@ export default async function BetaOnboardingPage() {
   if (!session?.user?.email) redirect("/login");
   const email = session.user.email.toLowerCase();
 
-  ensureDemoBetaParticipants();
+  // Do not seed demo beta cohort on the customer path — invite-only.
   const participant = getParticipantByEmail(email);
 
   return (
@@ -24,14 +23,18 @@ export default async function BetaOnboardingPage() {
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">Beta Onboarding</h1>
         <p className="page-sub">
-          Invite-only enrollment for THE GOLD MIND Professional. Trading engine remains certified and frozen.
+          Invite-only enrollment for THE GOLD MIND Professional. Steps are self-attested until linked to installer
+          events. Trading engine remains certified and frozen.
         </p>
       </header>
 
       {!participant && (
         <form action={actionAcceptBetaInvite} className="card">
           <h3>Accept invitation</h3>
-          <p className="meta">Enter the invite code from your invitation email. It must match this account.</p>
+          <p className="meta">
+            Enter the invite code from your invitation email. It must match this account. If you do not have an invite,
+            this page stays empty — no demo cohort is invented.
+          </p>
           <div className="field">
             <label htmlFor="inviteCode">Invite code</label>
             <input id="inviteCode" name="inviteCode" required placeholder="GM-XXXXXXXX" />

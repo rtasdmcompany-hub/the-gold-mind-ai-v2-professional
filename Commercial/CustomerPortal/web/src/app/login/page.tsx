@@ -12,7 +12,13 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ callbackUrl?: string; error?: string; provider?: string; return?: string }>;
 }) {
-  const session = await auth();
+  // Stale cookies or transient auth config issues must not crash the login screen.
+  let session: Awaited<ReturnType<typeof auth>> = null;
+  try {
+    session = await auth();
+  } catch {
+    session = null;
+  }
   if (session?.user) redirect("/portal");
 
   const sp = await searchParams;
@@ -40,7 +46,7 @@ export default async function LoginPage({
               <p className="e-login-eyebrow">RTAS GROUP OF COMPANIES</p>
               <h1 className="e-login-title">Customer Portal</h1>
               <p className="e-login-sub">
-                Sign in only after email confirmation. New users: register → confirm link → sign in.
+                Sign in with a verified account. New users must register and confirm email first.
               </p>
             </div>
 
@@ -98,6 +104,10 @@ export default async function LoginPage({
                   Sign In
                 </button>
               </form>
+
+              <p className="e-login-oauth-note" style={{ textAlign: "center" }}>
+                <Link href="/forgot-password">Forgot password?</Link>
+              </p>
 
               <p className="e-login-oauth-note" style={{ textAlign: "center" }}>
                 No account yet? <Link href="/register">Create account</Link>

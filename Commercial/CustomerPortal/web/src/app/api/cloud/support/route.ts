@@ -24,8 +24,14 @@ export async function POST(req: Request) {
       const body = (await req.json()) as Record<string, unknown>;
       const err = validateFields(body, ["subject", "body"]);
       if (err) return apiError("VALIDATION", err, 400, ctx.requestId);
+      const supportInbox = (
+        process.env.SUPPORT_INBOX_EMAIL ||
+        process.env.RESEND_FROM_EMAIL ||
+        ""
+      ).trim();
+      if (!supportInbox) return apiError("SUPPORT_INBOX_UNCONFIGURED", "Support inbox is not configured.", 503, ctx.requestId);
       queueCommercialEmail({
-        to: "support@goldmind.local",
+        to: supportInbox,
         template: "support_ticket",
         subject: String(body.subject),
         body: `From: ${ctx.email}\n\n${String(body.body)}`,

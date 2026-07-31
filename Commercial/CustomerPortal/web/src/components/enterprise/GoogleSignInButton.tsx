@@ -34,10 +34,9 @@ export function GoogleSignInButton({
 }) {
   if (!configured) {
     return (
-      <button type="button" className="e-btn-google e-btn-google--disabled" disabled>
-        <GoogleIcon />
-        Continue with Google
-      </button>
+      <p className="e-login-oauth-note" style={{ textAlign: "center" }}>
+        Google sign-in is not available right now — use email and password below.
+      </p>
     );
   }
 

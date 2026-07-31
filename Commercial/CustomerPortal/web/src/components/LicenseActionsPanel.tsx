@@ -3,22 +3,32 @@
 import { useState, useTransition } from "react";
 import { actionActivateLicense, actionCreateLicense } from "@/server/licensing/actions";
 import type { LicenseType } from "@/server/licensing/types";
+import Link from "next/link";
 
-export function LicenseActionsPanel() {
+type Props = {
+  allowPaidSelfServe: boolean;
+};
+
+export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [oneTimeKey, setOneTimeKey] = useState<string | null>(null);
+
+  const types = (allowPaidSelfServe
+    ? (["trial", "monthly", "yearly", "lifetime"] as LicenseType[])
+    : (["trial"] as LicenseType[]));
 
   return (
     <div className="grid grid-2" style={{ marginBottom: 20 }}>
       <div className="card">
         <h3>1. Generate license key</h3>
         <p className="meta" style={{ marginBottom: 12 }}>
-          Create your key here (trial, monthly, yearly, or lifetime). Copy it once, then paste the same
-          email + key into Setup.exe. Installation will not finish until the portal activates that key.
+          {allowPaidSelfServe
+            ? "Create a trial or paid key here (dev / self-serve mode). Copy once, then paste into Setup.exe."
+            : "Create a free trial key here. Paid monthly/yearly/lifetime keys are issued after verified checkout in Billing (or by an admin)."}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {(["trial", "monthly", "yearly", "lifetime"] as LicenseType[]).map((type) => (
+          {types.map((type) => (
             <button
               key={type}
               type="button"
@@ -27,6 +37,11 @@ export function LicenseActionsPanel() {
               onClick={() =>
                 start(async () => {
                   const r = await actionCreateLicense(type);
+                  if (!r.ok) {
+                    setMessage(r.error);
+                    setOneTimeKey(null);
+                    return;
+                  }
                   setOneTimeKey(r.plaintextKey);
                   setMessage(`Created ${type} license ${r.license.id} — copy the key into Setup.exe`);
                 })
@@ -35,6 +50,11 @@ export function LicenseActionsPanel() {
               New {type}
             </button>
           ))}
+          {!allowPaidSelfServe && (
+            <Link href="/portal/billing" className="btn">
+              Buy paid plan
+            </Link>
+          )}
         </div>
         {oneTimeKey && (
           <p className="mono" style={{ marginTop: 12, color: "var(--gm-gold-300)" }}>
@@ -71,7 +91,7 @@ export function LicenseActionsPanel() {
             <label htmlFor="deviceName">Device name</label>
             <input id="deviceName" name="deviceName" defaultValue="Portal Workstation" />
           </div>
-          <input type="hidden" name="deviceFingerprint" value="portal-browser-fingerprint-mvp" />
+          <input type="hidden" name="deviceFingerprint" value="portal-browser-fingerprint" />
           <button type="submit" className="btn btn-primary" disabled={pending}>
             Activate in portal
           </button>

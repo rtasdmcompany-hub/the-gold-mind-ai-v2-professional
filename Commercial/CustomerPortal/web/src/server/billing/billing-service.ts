@@ -1,7 +1,8 @@
 import { getPaymentPort } from "./payment-port";
 import { processNormalizedEvent } from "./webhook-processor";
-import { readBillingStore } from "./store";
+import { mutateBilling, readBillingStore } from "./store";
 import { queueCommercialEmail } from "./email";
+import { isSandboxCheckoutAllowed } from "./config";
 import type { CheckoutRequest, PlanCode, PaymentProviderId } from "./types";
 import { PLAN_CATALOG, formatMoney, hmacSha256, id, nowIso } from "./util";
 import type { NormalizedPaymentEvent } from "./types";
@@ -9,6 +10,51 @@ import type { NormalizedPaymentEvent } from "./types";
 export async function startCheckout(req: CheckoutRequest) {
   const port = getPaymentPort(req.provider);
   return port.createCheckout(req);
+}
+
+/** Cancel local billing subscription + attempt PSP cancel when credentials exist. */
+export async function cancelBillingSubscriptionForLicense(input: {
+  customerEmail: string;
+  licenseId: string;
+}): Promise<{ localOk: boolean; providerOk: boolean | null; detail: string }> {
+  const email = input.customerEmail.toLowerCase();
+  const data = readBillingStore();
+  const sub = data.subscriptions.find(
+    (s) => s.customerEmail === email && s.licenseId === input.licenseId && (s.status === "active" || s.status === "trialing" || s.status === "past_due")
+  );
+  if (!sub) {
+    return { localOk: false, providerOk: null, detail: "No active billing subscription linked to this license." };
+  }
+
+  let providerOk: boolean | null = null;
+  if (sub.providerSubscriptionId && sub.provider !== "sandbox") {
+    try {
+      const port = getPaymentPort(sub.provider);
+      const r = await port.cancelSubscription(sub.providerSubscriptionId);
+      providerOk = r.ok;
+    } catch {
+      providerOk = false;
+    }
+  } else if (sub.provider === "sandbox") {
+    providerOk = true;
+  }
+
+  mutateBilling((store) => {
+    const s = store.subscriptions.find((x) => x.id === sub.id);
+    if (s) {
+      s.status = "cancelled";
+      s.cancelledAt = nowIso();
+    }
+  });
+
+  const detail =
+    providerOk === false
+      ? "Local subscription cancelled. Provider cancel API is not configured — cancel remotely in the PSP dashboard if needed."
+      : providerOk === true
+        ? "Subscription cancelled locally and at provider."
+        : "Subscription cancelled locally (no remote provider subscription id).";
+
+  return { localOk: true, providerOk, detail };
 }
 
 export function getBillingSummary(email: string) {
@@ -49,6 +95,9 @@ export async function completeSandboxCheckout(input: {
   customerName: string;
   provider?: PaymentProviderId;
 }) {
+  if (!isSandboxCheckoutAllowed()) {
+    throw new Error("SANDBOX_DISABLED_IN_PRODUCTION: Use a configured live payment provider.");
+  }
   const event: NormalizedPaymentEvent = {
     provider: "sandbox",
     providerEventId: id("evt_sandbox"),

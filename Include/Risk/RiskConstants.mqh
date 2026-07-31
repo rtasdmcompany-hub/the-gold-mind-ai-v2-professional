@@ -13,6 +13,7 @@
 /// @warning DO NOT invent or modify — Phase 2 AI layers on top only.
 
 #define GM_RISK_EQUITY_FRACTION       0.03      // 3% of equity per trade
+#define GM_MAX_LOT_SIZE               5.00      // Hard cap — never exceed (official EA rule)
 #define GM_FIXED_SL_PIPS              30.0      // Fixed Stop Loss = 30 pips
 #define GM_ATR_PERIOD                 14        // ATR(14)
 #define GM_ATR_TP_MULTIPLIER          1.0       // TP = 1.0 × live H4 ATR

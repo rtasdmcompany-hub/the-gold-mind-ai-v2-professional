@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { writeAudit } from "@/server/cloud/audit";
+import { isProductionRuntime } from "@/server/security/dev-bypass";
 import { decryptJson, encryptJson, launchDataDir, newId } from "./store-crypto";
 
 export type FeedbackCategory =
@@ -247,6 +248,7 @@ export function updateFeedback(
 }
 
 export function ensureDemoFeedback(): void {
+  if (isProductionRuntime() && process.env.PORTAL_ALLOW_DEMO_SEED !== "true") return;
   const store = read();
   if (store.items.some((i) => i.category === "structured")) return;
   submitFeedback({

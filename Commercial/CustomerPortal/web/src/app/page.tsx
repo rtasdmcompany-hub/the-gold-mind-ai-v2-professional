@@ -38,7 +38,7 @@ const FEATURES = [
   {
     icon: "◎",
     title: "Professional Updates",
-    desc: "Signed installers, checksum verification, and controlled release channels for every deployment.",
+    desc: "Checksum-verified installers and controlled release channels for every deployment.",
   },
   {
     icon: "◉",

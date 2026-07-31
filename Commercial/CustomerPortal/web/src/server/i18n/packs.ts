@@ -168,6 +168,11 @@ export function listInstalledLocales(): LocaleManifest[] {
 }
 
 export function getLocalePack(code: LocaleCode): { manifest: LocaleManifest; catalog: TranslationCatalog } {
+  // Shipped locales always use builtin catalogs so stale disk packs cannot override commercial copy.
+  // Optional disk overrides require explicit opt-in; unknown locale codes still load from disk.
+  if (BUILTIN[code] && process.env.PORTAL_ALLOW_DISK_LOCALE_OVERRIDE !== "true") {
+    return BUILTIN[code];
+  }
   const disk = loadDiskPack(String(code));
   if (disk) return disk;
   if (BUILTIN[code]) return BUILTIN[code];

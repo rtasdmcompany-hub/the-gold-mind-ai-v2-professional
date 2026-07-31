@@ -5,6 +5,7 @@
 import fs from "fs";
 import path from "path";
 import { decryptJson, encryptJson, newId, obsDataDir, sanitizeTelemetryDetail } from "./store-crypto";
+import { isProductionRuntime } from "@/server/security/dev-bypass";
 
 export type TelemetryKind =
   | "app_startup_ms"
@@ -121,6 +122,7 @@ export function getTelemetrySummary() {
 }
 
 export function ensureDemoTelemetry(): void {
+  if (isProductionRuntime() && process.env.PORTAL_ALLOW_DEMO_SEED !== "true") return;
   const store = read();
   if (store.samples.length > 0) return;
   const now = Date.now();

@@ -3,7 +3,7 @@
 **Product:** THE GOLD MIND AI v2.0 PROFESSIONAL  
 **Product ID:** `the-gold-mind-ai-v2-professional`  
 **Date:** 2026-07-27  
-**Commit:** pending isolation pass  
+**Commit:** `9d6281f`  
 **Policy:** Each RTAS product is fully independent — no shared customer-facing systems
 
 ---

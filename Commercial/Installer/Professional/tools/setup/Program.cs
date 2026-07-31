@@ -19,7 +19,7 @@ namespace TgmProfessionalSetup
         internal const string Version = "1.0.0";
         internal const string Publisher = "RTAS Group of Companies";
         internal const string PortalBase = "https://the-gold-mind-ai-v2-professional.vercel.app";
-        internal const string PortalLoginGoogle = PortalBase + "/login?provider=google&callbackUrl=%2Fportal%2Flicenses";
+        internal const string PortalLoginGoogle = PortalBase + "/login?callbackUrl=%2Fportal%2Flicenses";
 
         [STAThread]
         static int Main(string[] args)
@@ -217,38 +217,47 @@ namespace TgmProfessionalSetup
             if (!File.Exists(launcher))
                 launcher = Path.Combine(installRoot, "bin", "TGM-Professional-Launcher.cmd");
 
+            string iconPath = Path.Combine(installRoot, "icons", "tgm-professional.ico");
+            if (!File.Exists(iconPath))
+                iconPath = Path.Combine(installRoot, "app.ico");
+            if (!File.Exists(iconPath))
+                iconPath = null;
+
             string startDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
                 "Programs", Program.ProductName);
             Directory.CreateDirectory(startDir);
 
-            WriteShortcut(Path.Combine(startDir, Program.ProductName + ".lnk"), launcher, installRoot, null);
+            WriteShortcut(Path.Combine(startDir, Program.ProductName + ".lnk"), launcher, installRoot, null, iconPath);
             WriteShortcut(
                 Path.Combine(startDir, "Activate License.lnk"),
                 "powershell.exe",
                 installRoot,
-                "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + Path.Combine(installRoot, "scripts", "Activate-License.ps1") + "\" -InstallRoot \"" + installRoot + "\"");
+                "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + Path.Combine(installRoot, "scripts", "Activate-License.ps1") + "\" -InstallRoot \"" + installRoot + "\"",
+                iconPath);
             WriteShortcut(
                 Path.Combine(startDir, "Open Customer Portal.lnk"),
                 Program.PortalBase,
                 installRoot,
-                null);
+                null,
+                iconPath);
             WriteShortcut(
                 Path.Combine(startDir, "Deploy EA to MT5.lnk"),
                 "powershell.exe",
                 installRoot,
-                "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + Path.Combine(installRoot, "scripts", "Deploy-EA-To-MT5.ps1") + "\" -InstallRoot \"" + installRoot + "\"");
+                "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + Path.Combine(installRoot, "scripts", "Deploy-EA-To-MT5.ps1") + "\" -InstallRoot \"" + installRoot + "\"",
+                iconPath);
 
             if (createDesktop)
             {
                 string desk = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
                     Program.ProductName + ".lnk");
-                WriteShortcut(desk, launcher, installRoot, null);
+                WriteShortcut(desk, launcher, installRoot, null, iconPath);
             }
         }
 
-        static void WriteShortcut(string lnkPath, string target, string workDir, string args)
+        static void WriteShortcut(string lnkPath, string target, string workDir, string args, string iconPath)
         {
             var ps = new StringBuilder();
             ps.AppendLine("$w = New-Object -ComObject WScript.Shell");
@@ -258,6 +267,8 @@ namespace TgmProfessionalSetup
                 ps.AppendLine("$s.Arguments = '" + args.Replace("'", "''") + "'");
             ps.AppendLine("$s.WorkingDirectory = '" + workDir.Replace("'", "''") + "'");
             ps.AppendLine("$s.Description = '" + Program.ProductName.Replace("'", "''") + "'");
+            if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath))
+                ps.AppendLine("$s.IconLocation = '" + iconPath.Replace("'", "''") + ",0'");
             ps.AppendLine("$s.Save()");
             string tmp = Path.Combine(Path.GetTempPath(), "tgm-lnk-" + Guid.NewGuid().ToString("N") + ".ps1");
             File.WriteAllText(tmp, ps.ToString(), Encoding.UTF8);

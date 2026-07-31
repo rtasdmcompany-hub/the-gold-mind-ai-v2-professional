@@ -59,16 +59,21 @@ export default async function UpdatesPage({
 
       {check.latest && (
         <div className="card" style={{ marginBottom: 16 }}>
-          <h3>Release notes</h3>
+          <h3>{check.updateAvailable ? "Update available" : "Current stable package"}</h3>
           <p style={{ margin: "8px 0" }}>{check.latest.releaseNotes}</p>
           <div className="meta mono">SHA-256: {check.latest.sha256}</div>
           <div className="meta">
             Signature: {check.latest.signatureStatus}
             {check.latest.signatureSubject ? ` · ${check.latest.signatureSubject}` : ""}
           </div>
+          {check.updateAvailable && (
+            <p className="meta" style={{ marginTop: 10 }}>
+              Download the ZIP, extract it, run Setup.exe, and complete mandatory license activation with your existing email and key.
+            </p>
+          )}
           <p style={{ marginTop: 12 }}>
             <a className="btn btn-primary" href={`/api/releases/download/${check.latest.id}`}>
-              Download latest installer
+              Download latest installer ZIP
             </a>{" "}
             <Link className="btn" href="/portal/downloads">
               Download Center

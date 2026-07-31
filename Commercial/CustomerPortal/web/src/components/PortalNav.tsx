@@ -2,14 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { customerNav } from "@/lib/nav";
+import { betaNavItem, customerNav, partnerNavItem } from "@/lib/nav";
 import { BrandLogo } from "@/components/BrandLogo";
 
-export function PortalNav({ showAdmin = false }: { showAdmin?: boolean }) {
+export function PortalNav({
+  showAdmin = false,
+  showBeta = false,
+  showPartner = false,
+}: {
+  showAdmin?: boolean;
+  showBeta?: boolean;
+  showPartner?: boolean;
+}) {
   const pathname = usePathname();
-  const items = showAdmin
-    ? [...customerNav, { href: "/portal/admin", label: "Admin Console" }]
-    : [...customerNav];
+  const items = [
+    ...customerNav,
+    ...(showBeta ? [betaNavItem] : []),
+    ...(showPartner ? [partnerNavItem] : []),
+    ...(showAdmin ? [{ href: "/portal/admin", label: "Admin Console" }] : []),
+  ];
 
   return (
     <aside className="nav" aria-label="Customer Portal">

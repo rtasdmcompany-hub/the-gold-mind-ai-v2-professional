@@ -1,5 +1,7 @@
 # THE GOLD MIND PROFESSIONAL - License activation wizard (commercial).
 # Calls Customer Portal activation API. Does NOT touch Core Trading Engine.
+# Setup.exe requires successful activation to finish. This script is the retry path
+# if activation failed or you need to re-bind a PC with an existing portal key.
 param(
   [string]$InstallRoot = "$env:LOCALAPPDATA\THE GOLD MIND PROFESSIONAL",
   [string]$PortalBase = "",
@@ -17,15 +19,30 @@ $DefaultPortalBase = "https://the-gold-mind-ai-v2-professional.vercel.app"
 function Write-Step($m) { Write-Host ""; Write-Host "==> $m" -ForegroundColor Yellow }
 
 function Get-MachineFingerprint {
+  # Must match Setup.exe InstallerCore.MachineFingerprint exactly
+  # (MachineName|UserName|COMPUTERNAME) — same seat binding for install + retry.
   $raw = @(
     $env:COMPUTERNAME,
     $env:USERNAME,
-    (Get-CimInstance Win32_ComputerSystemProduct -EA SilentlyContinue).UUID,
-    (Get-CimInstance Win32_Processor -EA SilentlyContinue | Select-Object -First 1).ProcessorId
+    $env:COMPUTERNAME
   ) -join "|"
   $sha = [System.Security.Cryptography.SHA256]::Create()
   $bytes = [Text.Encoding]::UTF8.GetBytes($raw)
   return ([BitConverter]::ToString($sha.ComputeHash($bytes)) -replace "-", "").ToLowerInvariant()
+}
+
+function Enable-Tls12 {
+  # Vercel requires TLS 1.2+; PowerShell 5.1 / .NET may default to older protocols.
+  try {
+    $tls12 = [Net.SecurityProtocolType]::Tls12
+    if ([Enum]::IsDefined([Net.SecurityProtocolType], "Tls13")) {
+      [Net.ServicePointManager]::SecurityProtocol = $tls12 -bor [Net.SecurityProtocolType]::Tls13
+    } else {
+      [Net.ServicePointManager]::SecurityProtocol = $tls12
+    }
+  } catch {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+  }
 }
 
 function Get-PortalBase {
@@ -61,7 +78,7 @@ Write-Host "Portal: $base"
 
 if ($GoogleLogin) {
   Write-Step "Google Login"
-  $url = "$base/login?provider=google&callbackUrl=%2Fportal%2Flicenses"
+  $url = "$base/login?callbackUrl=%2Fportal%2Flicenses"
   Write-Host "  Opening production portal Google Sign-In..."
   Write-Host "  $url"
   try { Start-Process $url } catch { Write-Warning "Could not open browser: $_" }
@@ -94,11 +111,17 @@ $body = @{
   deviceName        = $deviceName
 } | ConvertTo-Json
 
-$uri = "$base/api/licenses/actions"
+$uri = "$base/api/licenses/installer-activate"
+Enable-Tls12
 try {
   $resp = Invoke-RestMethod -Uri $uri -Method POST -Body $body -ContentType "application/json" -TimeoutSec 60
 } catch {
-  Write-Host "  Activation API failed: $_" -ForegroundColor Red
+  $msg = $_.Exception.Message
+  if ($msg -match "SSL/TLS|secure channel") {
+    Write-Host "  Secure connection failed (TLS/SSL). Key may still be valid." -ForegroundColor Red
+    Write-Host "  Enable TLS 1.2 in Windows, then run this script again."
+  }
+  Write-Host "  Activation API failed: $msg" -ForegroundColor Red
   Write-Host "  Ensure the Customer Portal is reachable and the key is valid."
   Write-Host "  Portal: $base"
   Write-Host "  You can retry later: scripts\Activate-License.ps1"
@@ -108,6 +131,16 @@ try {
 if (-not $resp.ok -and -not $resp.license -and -not $resp.deviceId) {
   $err = if ($resp.error) { $resp.error } else { ($resp | ConvertTo-Json -Compress) }
   Write-Host "  Activation rejected: $err" -ForegroundColor Red
+  exit 1
+}
+
+$status = $null
+if ($resp.status) { $status = [string]$resp.status }
+elseif ($resp.license -and $resp.license.status) { $status = [string]$resp.license.status }
+
+if ($status -ne "active" -and $status -ne "grace") {
+  Write-Host "  Activation incomplete — portal status='$status' (need active/grace)." -ForegroundColor Red
+  Write-Host "  Trial and lifetime use the same rule. Installation must not treat this as success."
   exit 1
 }
 

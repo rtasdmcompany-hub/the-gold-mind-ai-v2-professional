@@ -4,14 +4,10 @@ import { createHash, randomBytes } from "crypto";
 import type { ReleaseChannel, ReleasePackage, ReleaseStoreData } from "./types";
 import { commercialDataRoot } from "@/server/cloud/data-root";
 import {
-  STABLE_PACKAGE_FILE,
-  STABLE_PACKAGE_ID,
-  STABLE_SHA256,
-  STABLE_SIZE_BYTES,
-  STABLE_VERSION,
-  configuredReleaseAssetUrl,
+  buildStableReleasePackage,
   isLegacySyntheticPackageId,
-  stableReleaseNotes,
+  STABLE_PACKAGE_ID,
+  portalBaseUrl,
 } from "./commercial-source";
 
 function dataDir(): string {
@@ -28,99 +24,48 @@ const EMPTY: ReleaseStoreData = { version: 1, packages: [], updateEvents: [], do
 
 let cache: ReleaseStoreData | null = null;
 
-function buildStablePackage(): ReleasePackage {
-  const base = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const external = configuredReleaseAssetUrl() || undefined;
-  return {
-    id: STABLE_PACKAGE_ID,
-    product: "THE GOLD MIND PROFESSIONAL",
-    version: STABLE_VERSION,
-    buildNumber: "10000",
-    channel: "stable",
-    status: "published",
-    releasedAt: "2026-07-28T12:28:31.000Z",
-    packageFile: STABLE_PACKAGE_FILE,
-    packageUrl: `${base}/api/releases/download/${STABLE_PACKAGE_ID}`,
-    externalAssetUrl: external,
-    packageSizeBytes: STABLE_SIZE_BYTES,
-    sha256: STABLE_SHA256,
-    signatureRequired: false,
-    signatureSubject: "CN=RTAS Group of Companies (pending public code sign)",
-    signatureStatus: "pending_code_sign",
-    releaseNotes: stableReleaseNotes(),
-    compatibility: {
-      os: ["Windows 10", "Windows 11"],
-      mt5: "build 3800+",
-      coreTag: "1.0.0",
-      coreFrozen: true,
-    },
-    downloadCount: 0,
-    updateSuccessCount: 0,
-    updateFailCount: 0,
-    rollbackEvents: 0,
-  };
-}
-
 function seedPackages(): ReleasePackage[] {
-  return [buildStablePackage()];
+  return [buildStableReleasePackage(portalBaseUrl())];
 }
 
-/** Ensure real 1.0.0 stable is catalogued; supersede legacy synthetic seeds. */
-function migrateCatalog(data: ReleaseStoreData): boolean {
+/**
+ * Replace legacy synthetic 2.0.x seeds with the real commercial stable catalog entry.
+ * Preserves download/update counters and event history when possible.
+ * Refreshes metadata from Build-CommercialRelease portal seed when present.
+ */
+function migrateCommercialCatalog(data: ReleaseStoreData): boolean {
   let changed = false;
+  const base = portalBaseUrl();
+  const stableTemplate = buildStableReleasePackage(base);
 
   for (const pkg of data.packages) {
     if (isLegacySyntheticPackageId(pkg.id) && pkg.status === "published") {
-      pkg.status = "superseded";
+      pkg.status = "yanked";
       changed = true;
     }
   }
 
-  const existing = data.packages.find((p) => p.id === STABLE_PACKAGE_ID);
-  const fresh = buildStablePackage();
+  const existing = data.packages.find((p) => p.id === stableTemplate.id) ||
+    data.packages.find((p) => p.id === STABLE_PACKAGE_ID);
   if (!existing) {
-    data.packages.unshift(fresh);
+    data.packages.unshift(stableTemplate);
     changed = true;
   } else {
-    // Keep counters; refresh identity / notes / integrity defaults when still on placeholders
-    if (existing.version !== STABLE_VERSION) {
-      existing.version = STABLE_VERSION;
-      changed = true;
-    }
-    if (existing.packageFile !== STABLE_PACKAGE_FILE) {
-      existing.packageFile = STABLE_PACKAGE_FILE;
-      changed = true;
-    }
-    if (existing.status !== "published") {
-      existing.status = "published";
-      changed = true;
-    }
-    if (existing.channel !== "stable") {
-      existing.channel = "stable";
-      changed = true;
-    }
-    if (!existing.sha256 || existing.sha256.length < 32) {
-      existing.sha256 = STABLE_SHA256;
-      changed = true;
-    }
-    if (!existing.packageSizeBytes || existing.packageSizeBytes < 100_000) {
-      existing.packageSizeBytes = STABLE_SIZE_BYTES;
-      changed = true;
-    }
-    const ext = configuredReleaseAssetUrl();
-    if (ext && existing.externalAssetUrl !== ext) {
-      existing.externalAssetUrl = ext;
-      changed = true;
-    }
-    if (!existing.releaseNotes?.includes("1.0.0")) {
-      existing.releaseNotes = stableReleaseNotes();
-      changed = true;
-    }
-    existing.compatibility = {
-      ...existing.compatibility,
-      coreTag: "1.0.0",
-      coreFrozen: true,
-    };
+    const downloadCount = existing.downloadCount;
+    const updateSuccessCount = existing.updateSuccessCount;
+    const updateFailCount = existing.updateFailCount;
+    const rollbackEvents = existing.rollbackEvents;
+    const before = `${existing.sha256}|${existing.packageSizeBytes}|${existing.version}|${existing.status}|${existing.packageFile}`;
+    Object.assign(existing, {
+      ...stableTemplate,
+      downloadCount,
+      updateSuccessCount,
+      updateFailCount,
+      rollbackEvents,
+    });
+    existing.status = "published";
+    const after = `${existing.sha256}|${existing.packageSizeBytes}|${existing.version}|${existing.status}|${existing.packageFile}`;
+    if (before !== after) changed = true;
   }
 
   return changed;
@@ -135,10 +80,7 @@ export function readReleaseStore(): ReleaseStoreData {
     return cache;
   }
   cache = JSON.parse(fs.readFileSync(p, "utf8")) as ReleaseStoreData;
-  if (!Array.isArray(cache.packages)) cache.packages = [];
-  if (!Array.isArray(cache.updateEvents)) cache.updateEvents = [];
-  if (!Array.isArray(cache.downloadEvents)) cache.downloadEvents = [];
-  if (migrateCatalog(cache)) {
+  if (migrateCommercialCatalog(cache)) {
     writeReleaseStore(cache);
   }
   return cache;
@@ -171,6 +113,7 @@ export function compareSemver(a: string, b: string): number {
     if ((aa[i] || 0) > (bb[i] || 0)) return 1;
     if ((aa[i] || 0) < (bb[i] || 0)) return -1;
   }
+  // rc/dev always "newer" metadata-wise if base equal and channel differs — treat string inequality
   if (a === b) return 0;
   return a > b ? 1 : -1;
 }
@@ -187,4 +130,9 @@ export function id(prefix: string): string {
 
 export function sha256Text(s: string): string {
   return createHash("sha256").update(s).digest("hex");
+}
+
+/** Test helper — clears in-memory cache so the next read hits disk. */
+export function clearReleaseStoreCache(): void {
+  cache = null;
 }

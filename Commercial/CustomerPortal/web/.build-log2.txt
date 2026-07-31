@@ -1,0 +1,255 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> tgm-customer-portal@1.0.10-phase12.s1 build
+> next build
+
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+   ▲ Next.js 15.5.9
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 519.8min
+   Linting and checking validity of types ...
+
+./src/server/announcements/store.ts
+21:7  Warning: 'EMPTY' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/211) ...
+   Generating static pages (52/211) 
+   Generating static pages (105/211) 
+   Generating static pages (158/211) 
+ ✓ Generating static pages (211/211)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                    Size  First Load JS
+┌ ○ /                                       4.58 kB         115 kB
+├ ○ /_not-found                               996 B         103 kB
+├ ○ /about                                  1.55 kB         112 kB
+├ ƒ /api/admin/ai                             410 B         103 kB
+├ ƒ /api/admin/api-platform                   410 B         103 kB
+├ ƒ /api/admin/billing                        410 B         103 kB
+├ ƒ /api/admin/closure                        410 B         103 kB
+├ ƒ /api/admin/enterprise                     410 B         103 kB
+├ ƒ /api/admin/executive                      410 B         103 kB
+├ ƒ /api/admin/i18n                           410 B         103 kB
+├ ƒ /api/admin/infrastructure                 410 B         103 kB
+├ ƒ /api/admin/launch                         410 B         103 kB
+├ ƒ /api/admin/licensing                      410 B         103 kB
+├ ƒ /api/admin/market                         410 B         103 kB
+├ ƒ /api/admin/mobile                         410 B         103 kB
+├ ƒ /api/admin/observability                  410 B         103 kB
+├ ƒ /api/admin/ops                            410 B         103 kB
+├ ƒ /api/admin/partners                       410 B         103 kB
+├ ƒ /api/admin/performance                    410 B         103 kB
+├ ƒ /api/admin/phase11                        410 B         103 kB
+├ ƒ /api/admin/phase11-bi                     410 B         103 kB
+├ ƒ /api/admin/phase11-closure                410 B         103 kB
+├ ƒ /api/admin/phase12                        410 B         103 kB
+├ ƒ /api/admin/releases                       410 B         103 kB
+├ ƒ /api/admin/security-audit                 410 B         103 kB
+├ ƒ /api/admin/success                        410 B         103 kB
+├ ƒ /api/admin/test-email                     410 B         103 kB
+├ ƒ /api/admin/website-launch                 410 B         103 kB
+├ ƒ /api/ai/chat                              410 B         103 kB
+├ ƒ /api/ai/search                            410 B         103 kB
+├ ƒ /api/auth/[...nextauth]                   410 B         103 kB
+├ ƒ /api/billing                              410 B         103 kB
+├ ƒ /api/billing/webhooks/[provider]          410 B         103 kB
+├ ƒ /api/cloud/analytics                      410 B         103 kB
+├ ƒ /api/cloud/audit                          410 B         103 kB
+├ ƒ /api/cloud/notifications                  410 B         103 kB
+├ ƒ /api/cloud/services                       410 B         103 kB
+├ ƒ /api/cloud/support                        410 B         103 kB
+├ ƒ /api/contact                              410 B         103 kB
+├ ƒ /api/devices                              410 B         103 kB
+├ ƒ /api/health                               410 B         103 kB
+├ ƒ /api/licenses                             410 B         103 kB
+├ ƒ /api/licenses/actions                     410 B         103 kB
+├ ƒ /api/licenses/installer-activate          410 B         103 kB
+├ ƒ /api/licenses/ready                       410 B         103 kB
+├ ƒ /api/mobile/auth                          410 B         103 kB
+├ ƒ /api/mobile/dashboard                     410 B         103 kB
+├ ƒ /api/mobile/devices                       410 B         103 kB
+├ ƒ /api/mobile/health                        410 B         103 kB
+├ ƒ /api/mobile/licenses                      410 B         103 kB
+├ ƒ /api/mobile/notifications                 410 B         103 kB
+├ ƒ /api/mobile/support                       410 B         103 kB
+├ ƒ /api/notifications/trade-closed           410 B         103 kB
+├ ƒ /api/partners/click                       410 B         103 kB
+├ ƒ /api/releases                             410 B         103 kB
+├ ƒ /api/releases/check                       410 B         103 kB
+├ ƒ /api/releases/download/[id]               410 B         103 kB
+├ ƒ /api/releases/report                      410 B         103 kB
+├ ƒ /api/subscriptions                        410 B         103 kB
+├ ƒ /api/trading/sync                         410 B         103 kB
+├ ƒ /api/v1/downloads                         410 B         103 kB
+├ ƒ /api/v1/health                            410 B         103 kB
+├ ƒ /api/v1/invoices                          410 B         103 kB
+├ ƒ /api/v1/licenses                          410 B         103 kB
+├ ƒ /api/v1/notifications                     410 B         103 kB
+├ ƒ /api/v1/oauth/token                       410 B         103 kB
+├ ƒ /api/v1/organizations                     410 B         103 kB
+├ ƒ /api/v1/partners                          410 B         103 kB
+├ ƒ /api/v1/profile                           410 B         103 kB
+├ ƒ /api/v1/subscriptions                     410 B         103 kB
+├ ƒ /api/v1/support/tickets                   410 B         103 kB
+├ ƒ /api/v1/webhooks                          410 B         103 kB
+├ ○ /apple-icon.png                             0 B            0 B
+├ ○ /company                                1.54 kB         112 kB
+├ ○ /contact                                1.55 kB         112 kB
+├ ○ /cookies                                1.55 kB         112 kB
+├ ○ /developers                               317 B         106 kB
+├ ○ /developers/auth                          410 B         103 kB
+├ ○ /developers/changelog                     410 B         103 kB
+├ ○ /developers/docs                          410 B         103 kB
+├ ○ /developers/explorer                      897 B         103 kB
+├ ○ /developers/quickstart                    410 B         103 kB
+├ ○ /developers/sdks                          410 B         103 kB
+├ ○ /developers/status                        410 B         103 kB
+├ ○ /developers/webhooks                      410 B         103 kB
+├ ○ /docs                                   3.67 kB         115 kB
+├ ○ /icon.png                                   0 B            0 B
+├ ○ /infrastructure                         1.54 kB         112 kB
+├ ƒ /login                                  1.95 kB         113 kB
+├ ○ /opengraph-image.png                        0 B            0 B
+├ ○ /partners/apply                         1.55 kB         112 kB
+├ ƒ /portal                                  1.5 kB         107 kB
+├ ƒ /portal/account                           410 B         103 kB
+├ ƒ /portal/admin                             317 B         106 kB
+├ ƒ /portal/admin/ai-analytics                317 B         106 kB
+├ ƒ /portal/admin/ai-assistant                317 B         106 kB
+├ ƒ /portal/admin/alerts                      410 B         103 kB
+├ ƒ /portal/admin/api-platform                317 B         106 kB
+├ ƒ /portal/admin/api-webhooks                317 B         106 kB
+├ ƒ /portal/admin/audit                       410 B         103 kB
+├ ƒ /portal/admin/benchmarks                  410 B         103 kB
+├ ƒ /portal/admin/beta                        410 B         103 kB
+├ ƒ /portal/admin/beta-dashboard              317 B         106 kB
+├ ƒ /portal/admin/bi                          410 B         103 kB
+├ ƒ /portal/admin/bi-customers                317 B         106 kB
+├ ƒ /portal/admin/bi-executive                317 B         106 kB
+├ ƒ /portal/admin/bi-revenue                  317 B         106 kB
+├ ƒ /portal/admin/bi-subscriptions            317 B         106 kB
+├ ƒ /portal/admin/billing                     410 B         103 kB
+├ ƒ /portal/admin/business-kpis               317 B         106 kB
+├ ƒ /portal/admin/cloud                       410 B         103 kB
+├ ƒ /portal/admin/cloud-performance           410 B         103 kB
+├ ƒ /portal/admin/commercial-ops              317 B         106 kB
+├ ƒ /portal/admin/commercial-workflows        410 B         103 kB
+├ ƒ /portal/admin/compliance                  410 B         103 kB
+├ ƒ /portal/admin/cs-operations               317 B         106 kB
+├ ƒ /portal/admin/customer-journey            410 B         103 kB
+├ ƒ /portal/admin/customer-success            317 B         106 kB
+├ ƒ /portal/admin/customers                   317 B         106 kB
+├ ƒ /portal/admin/data-protection             410 B         103 kB
+├ ƒ /portal/admin/database-optimization       410 B         103 kB
+├ ƒ /portal/admin/disaster-recovery           410 B         103 kB
+├ ƒ /portal/admin/enterprise-crm              317 B         106 kB
+├ ƒ /portal/admin/enterprise-success          317 B         106 kB
+├ ƒ /portal/admin/executive-scorecard         410 B         103 kB
+├ ƒ /portal/admin/feedback                    410 B         103 kB
+├ ƒ /portal/admin/global-ops                  317 B         106 kB
+├ ƒ /portal/admin/go-no-go                    317 B         106 kB
+├ ƒ /portal/admin/incident-timeline           410 B         103 kB
+├ ƒ /portal/admin/incidents                   410 B         103 kB
+├ ƒ /portal/admin/infra-capacity              317 B         106 kB
+├ ƒ /portal/admin/issues                      410 B         103 kB
+├ ƒ /portal/admin/launch                      317 B         106 kB
+├ ƒ /portal/admin/licenses                    410 B         103 kB
+├ ƒ /portal/admin/load-tests                  410 B         103 kB
+├ ƒ /portal/admin/localization                775 B         106 kB
+├ ƒ /portal/admin/localization-qa             317 B         106 kB
+├ ƒ /portal/admin/market                      317 B         106 kB
+├ ƒ /portal/admin/metrics                     410 B         103 kB
+├ ƒ /portal/admin/mobile                      317 B         106 kB
+├ ƒ /portal/admin/mobile-security             317 B         106 kB
+├ ƒ /portal/admin/monitoring-security         410 B         103 kB
+├ ƒ /portal/admin/mql5-compliance             410 B         103 kB
+├ ƒ /portal/admin/observability               317 B         106 kB
+├ ƒ /portal/admin/ops-center                  317 B         106 kB
+├ ƒ /portal/admin/ops-intelligence            410 B         103 kB
+├ ƒ /portal/admin/organizations               317 B         106 kB
+├ ƒ /portal/admin/owasp                       410 B         103 kB
+├ ƒ /portal/admin/partner-analytics           317 B         106 kB
+├ ƒ /portal/admin/partners                    317 B         106 kB
+├ ƒ /portal/admin/pentest                     410 B         103 kB
+├ ƒ /portal/admin/performance                 317 B         106 kB
+├ ƒ /portal/admin/phase10-closure             317 B         106 kB
+├ ƒ /portal/admin/phase11-certification       317 B         106 kB
+├ ƒ /portal/admin/phase11-decision            317 B         106 kB
+├ ƒ /portal/admin/phase12-customer-success    317 B         106 kB
+├ ƒ /portal/admin/phase12-lts                 317 B         106 kB
+├ ƒ /portal/admin/phase12-monthly             317 B         106 kB
+├ ƒ /portal/admin/phase12-v2-planning         317 B         106 kB
+├ ƒ /portal/admin/production-deployment       410 B         103 kB
+├ ƒ /portal/admin/releases                    410 B         103 kB
+├ ƒ /portal/admin/resilience                  410 B         103 kB
+├ ƒ /portal/admin/roles                       410 B         103 kB
+├ ƒ /portal/admin/scalability                 410 B         103 kB
+├ ƒ /portal/admin/secret-management           410 B         103 kB
+├ ƒ /portal/admin/security                    410 B         103 kB
+├ ƒ /portal/admin/security-audit              317 B         106 kB
+├ ƒ /portal/admin/sla-executive               317 B         106 kB
+├ ƒ /portal/admin/stabilization               410 B         103 kB
+├ ƒ /portal/admin/store-assets                410 B         103 kB
+├ ƒ /portal/admin/store-metadata              410 B         103 kB
+├ ƒ /portal/admin/success                     317 B         106 kB
+├ ƒ /portal/admin/support                     410 B         103 kB
+├ ƒ /portal/admin/support-analytics           410 B         103 kB
+├ ƒ /portal/admin/telemetry                   410 B         103 kB
+├ ƒ /portal/admin/usage                       410 B         103 kB
+├ ƒ /portal/admin/website-launch              317 B         106 kB
+├ ƒ /portal/announcements                     410 B         103 kB
+├ ƒ /portal/beta                              317 B         106 kB
+├ ƒ /portal/billing                         1.42 kB         107 kB
+├ ƒ /portal/billing/checkout/sandbox          317 B         106 kB
+├ ƒ /portal/devices                           824 B         103 kB
+├ ƒ /portal/downloads                         317 B         106 kB
+├ ƒ /portal/feedback                          410 B         103 kB
+├ ƒ /portal/invoices                          317 B         106 kB
+├ ƒ /portal/knowledge-base                    317 B         106 kB
+├ ƒ /portal/licenses                        1.85 kB         104 kB
+├ ƒ /portal/orders                            410 B         103 kB
+├ ƒ /portal/partner                          1.5 kB         107 kB
+├ ƒ /portal/partner/campaigns                 317 B         106 kB
+├ ƒ /portal/partner/commissions               317 B         106 kB
+├ ƒ /portal/partner/profile                   317 B         106 kB
+├ ƒ /portal/partner/resources                 317 B         106 kB
+├ ƒ /portal/partner/training                  317 B         106 kB
+├ ƒ /portal/security                          317 B         106 kB
+├ ƒ /portal/subscriptions                     317 B         106 kB
+├ ƒ /portal/support                          1.5 kB         107 kB
+├ ƒ /portal/trading                           317 B         106 kB
+├ ƒ /portal/updates                           317 B         106 kB
+├ ○ /pricing                                1.55 kB         112 kB
+├ ○ /privacy                                1.55 kB         112 kB
+├ ○ /refund                                 1.55 kB         112 kB
+├ ƒ /register                               1.55 kB         112 kB
+├ ○ /risk                                   1.55 kB         112 kB
+├ ○ /robots.txt                               410 B         103 kB
+├ ○ /security                               1.54 kB         112 kB
+├ ○ /sitemap.xml                              410 B         103 kB
+├ ○ /technology                             1.54 kB         112 kB
+├ ○ /terms                                  1.55 kB         112 kB
+├ ○ /twitter-image.png                          0 B            0 B
+└ ƒ /verify-email                           1.55 kB         112 kB
++ First Load JS shared by all                102 kB
+  ├ chunks/1255-9494d7e861e97d68.js         45.9 kB
+  ├ chunks/4bd1b696-f785427dddbba9fb.js     54.2 kB
+  └ other shared chunks (total)                2 kB
+
+
+ƒ Middleware                                  86 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

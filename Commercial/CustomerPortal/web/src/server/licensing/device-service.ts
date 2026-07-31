@@ -74,11 +74,57 @@ export function requestDeviceTransfer(deviceId: string, email: string): boolean 
       action: "device.transfer_requested",
       entityType: "device",
       entityId: d.id,
-      detail: "Transfer requested — deactivate source before activating destination",
+      detail: "Transfer requested — seat freed; activate destination device, then complete transfer",
     });
     ok = true;
   });
   return ok;
+}
+
+/**
+ * Finalize a pending transfer: deactivate the source device so only the new seat remains.
+ * Call after activating the destination (or to abandon and free the seat permanently).
+ */
+export function completeDeviceTransfer(deviceId: string, email: string): boolean {
+  const e = email.trim().toLowerCase();
+  let ok = false;
+  mutateStore((data) => {
+    const d = data.devices.find((x) => x.id === deviceId && x.customerEmail === e);
+    if (!d || d.status !== "pending_transfer") return;
+    d.status = "inactive";
+    d.lastActiveAt = nowIso();
+    appendAudit(data, {
+      actorEmail: e,
+      action: "device.transfer_completed",
+      entityType: "device",
+      entityId: d.id,
+      detail: "Transfer completed — source device deactivated",
+    });
+    ok = true;
+  });
+  return ok;
+}
+
+/** When a new device activates, auto-complete any pending_transfer devices on that license. */
+export function autoCompletePendingTransfers(licenseId: string, exceptDeviceId: string, actorEmail: string): number {
+  let n = 0;
+  mutateStore((data) => {
+    for (const d of data.devices) {
+      if (d.licenseId !== licenseId || d.id === exceptDeviceId) continue;
+      if (d.status !== "pending_transfer") continue;
+      d.status = "inactive";
+      d.lastActiveAt = nowIso();
+      appendAudit(data, {
+        actorEmail,
+        action: "device.transfer_completed",
+        entityType: "device",
+        entityId: d.id,
+        detail: "Auto-completed after destination activation",
+      });
+      n++;
+    }
+  });
+  return n;
 }
 
 export function listAllDevicesAdmin(): DeviceRecord[] {

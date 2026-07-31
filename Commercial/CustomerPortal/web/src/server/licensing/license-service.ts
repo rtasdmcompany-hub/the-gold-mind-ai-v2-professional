@@ -14,6 +14,7 @@ import {
   readStore,
   verifyIntegrity,
 } from "./store";
+import { autoCompletePendingTransfers } from "./device-service";
 import type {
   LicensePublicDto,
   LicenseRecord,
@@ -354,6 +355,8 @@ export function activateLicense(input: {
   const rest = withoutMac(activated);
   const finalLic: LicenseRecord = { ...rest, integrityMac: computeIntegrityMac(rest) };
   persistLicense(finalLic, email, "license.activated", "Activation complete");
+  // Destination activation completes any pending transfers on this license.
+  autoCompletePendingTransfers(finalLic.id, deviceId, email);
 
   const token = createValidationToken(finalLic.id, deviceId, email);
   const seatsUsed = readStore().devices.filter((d) => d.licenseId === finalLic.id && d.status === "active").length;

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { UserAvatar } from "@/components/BrandLogo";
 import { SignOutButton } from "@/components/SignOutButton";
 
@@ -21,7 +22,12 @@ export function PortalUserBar({
           {role && <div className="portal-userbar-role">{role}</div>}
         </div>
       </div>
-      <SignOutButton />
+      <div className="portal-userbar-actions">
+        <Link href="/" className="portal-home-btn">
+          Website Home
+        </Link>
+        <SignOutButton />
+      </div>
     </div>
   );
 }

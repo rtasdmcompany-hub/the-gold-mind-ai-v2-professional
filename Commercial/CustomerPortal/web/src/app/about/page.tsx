@@ -78,7 +78,7 @@ export default function AboutPage() {
               },
               {
                 title: "Update Pipeline",
-                desc: "Signed releases with SHA-256 checksums and controlled distribution channels.",
+                desc: "Checksum-verified releases with SHA-256 checksums and controlled distribution channels.",
               },
               {
                 title: "API Platform",
@@ -105,7 +105,7 @@ export default function AboutPage() {
             </h2>
             <p className="e-prose">
               HTTPS enforcement, CSP headers, CSRF protection, encrypted licensing, device fingerprint binding, and
-              comprehensive audit logging. Compliance documentation and legal surfaces prepared for counsel review.
+              comprehensive audit logging across the Customer Portal.
             </p>
           </ScrollReveal>
           <ScrollReveal delay={1}>

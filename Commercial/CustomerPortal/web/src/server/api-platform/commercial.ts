@@ -8,6 +8,7 @@ import { getPartnerByEmail } from "@/server/partners/portal";
 import { readEnterpriseStore } from "@/server/enterprise/store";
 import { listPushInbox } from "@/server/mobile/push";
 import { listTicketsForCustomer } from "@/server/mobile/support";
+import { listPublished } from "@/server/releases/release-service";
 import { API_CORE_ISOLATION } from "./types";
 
 function safe<T>(fn: () => T, fallback: T): T {
@@ -46,11 +47,30 @@ export function commercialInvoices(email: string) {
 }
 
 export function commercialDownloads() {
+  const packages = safe(() => listPublished("stable"), []);
+  const latest = packages[0];
   return {
-    downloads: [
-      { id: "installer", label: "Windows Installer", channel: "stable" },
-      { id: "docs", label: "User Guide", channel: "docs" },
-    ],
+    downloads: latest
+      ? [
+          {
+            id: latest.id,
+            label: `Windows Installer ZIP (${latest.version})`,
+            channel: latest.channel,
+            version: latest.version,
+            packageUrl: latest.packageUrl,
+            sha256: latest.sha256,
+            packageSizeBytes: latest.packageSizeBytes,
+          },
+        ]
+      : [],
+    latest: latest
+      ? {
+          id: latest.id,
+          version: latest.version,
+          packageUrl: latest.packageUrl,
+          sha256: latest.sha256,
+        }
+      : null,
   };
 }
 

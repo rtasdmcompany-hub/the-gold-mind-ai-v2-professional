@@ -11,9 +11,8 @@ export default async function AdminOperationsHub() {
   ensureSeedData();
   ensureDemoTickets();
   const session = await auth();
-  const email = session?.user?.email?.toLowerCase() || "";
   const role = (session?.user as { role?: string } | undefined)?.role;
-  if (!canAccessAdminConsole(role) && email !== "admin@goldmind.local") redirect("/portal");
+  if (!canAccessAdminConsole(role)) redirect("/portal");
 
   const dash = await getEnterpriseDashboardWithHealth();
 

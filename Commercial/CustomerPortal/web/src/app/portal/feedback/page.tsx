@@ -1,7 +1,9 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { StatusBadge } from "@/components/StatusBadge";
 import {
   FEEDBACK_CATEGORY_LABELS,
+  listFeedback,
   type FeedbackCategory,
 } from "@/server/launch/feedback-store";
 import { actionSubmitFeedback, actionSubmitStructuredFeedback } from "@/server/launch/actions";
@@ -24,14 +26,16 @@ function ScoreSelect({ id, name, label }: { id: string; name: string; label: str
 export default async function CustomerFeedbackPage() {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
+  const email = session.user.email.toLowerCase();
+  const mine = listFeedback().filter((f) => f.customerEmail === email).slice(0, 20);
 
   return (
     <>
       <header style={{ marginBottom: 20 }}>
-        <h1 className="page-title">Beta Feedback</h1>
+        <h1 className="page-title">Feedback</h1>
         <p className="page-sub">
-          Real feedback over assumptions. Bugs and feature requests are tracked separately. Core trading logic is not
-          changed during beta.
+          Submissions are persisted to the commercial feedback store. Bugs and feature requests are tracked separately.
+          Core trading logic is not changed from feedback alone.
         </p>
       </header>
 
@@ -55,7 +59,7 @@ export default async function CustomerFeedbackPage() {
         </div>
       </form>
 
-      <form action={actionSubmitFeedback} className="card">
+      <form action={actionSubmitFeedback} className="card" style={{ marginBottom: 16 }}>
         <h3>Bug report or feature request</h3>
         <div className="stack" style={{ marginTop: 8 }}>
           <div className="field">
@@ -74,11 +78,11 @@ export default async function CustomerFeedbackPage() {
           </div>
           <div className="field">
             <label htmlFor="title">Title</label>
-            <input id="title" name="title" required maxLength={120} />
+            <input id="title" name="title" required maxLength={120} minLength={3} />
           </div>
           <div className="field">
             <label htmlFor="detail2">Details</label>
-            <textarea id="detail2" name="detail" rows={5} required />
+            <textarea id="detail2" name="detail" rows={5} required minLength={10} />
           </div>
           <div className="field">
             <label htmlFor="satisfactionScore">Overall satisfaction (optional)</label>
@@ -95,6 +99,36 @@ export default async function CustomerFeedbackPage() {
           </button>
         </div>
       </form>
+
+      <h2 style={{ fontSize: 16, marginBottom: 12 }}>Your recent submissions</h2>
+      {mine.length === 0 ? (
+        <p className="meta">No submissions yet.</p>
+      ) : (
+        <div className="table-wrap">
+          <table className="data">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Type</th>
+                <th>Title</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mine.map((f) => (
+                <tr key={f.id}>
+                  <td>{f.createdAt.slice(0, 19).replace("T", " ")}</td>
+                  <td>{FEEDBACK_CATEGORY_LABELS[f.category] || f.category}</td>
+                  <td>{f.title}</td>
+                  <td>
+                    <StatusBadge status={f.status} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </>
   );
 }

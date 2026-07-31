@@ -3,15 +3,20 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AiAssistantWidget } from "@/components/AiAssistantWidget";
-import { listSupportTickets, ensureDemoTickets } from "@/server/admin/support-store";
+import {
+  listSupportTickets,
+  ensureSupportStoreLoaded,
+  supportStoreDurability,
+} from "@/server/admin/support-store";
 import { actionSubmitSupportTicket } from "@/server/admin/actions";
 
 export default async function SupportPage() {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
-  ensureDemoTickets();
+  await ensureSupportStoreLoaded();
   const email = session.user.email.toLowerCase();
-  const tickets = listSupportTickets().filter((t) => t.customerEmail === email);
+  const tickets = listSupportTickets({ customerEmail: email });
+  const durability = supportStoreDurability();
 
   return (
     <>
@@ -24,16 +29,22 @@ export default async function SupportPage() {
         </p>
       </header>
 
+      {durability.warning && (
+        <p className="meta" style={{ marginBottom: 12, color: "var(--gm-danger, #b91c1c)" }}>
+          {durability.warning}
+        </p>
+      )}
+
       <div className="card" style={{ marginBottom: 16 }}>
         <h3>New ticket</h3>
         <form action={actionSubmitSupportTicket} className="stack" style={{ marginTop: 12 }}>
           <div className="field">
             <label htmlFor="subject">Subject</label>
-            <input id="subject" name="subject" placeholder="Brief summary" required />
+            <input id="subject" name="subject" placeholder="Brief summary" required minLength={3} maxLength={200} />
           </div>
           <div className="field">
             <label htmlFor="body">Details</label>
-            <textarea id="body" name="body" rows={5} placeholder="How can we help?" required />
+            <textarea id="body" name="body" rows={5} placeholder="How can we help?" required minLength={10} maxLength={10000} />
           </div>
           <button type="submit" className="btn btn-primary">
             Submit ticket
@@ -55,7 +66,7 @@ export default async function SupportPage() {
           <tbody>
             {tickets.length === 0 && (
               <tr>
-                <td colSpan={5}>No tickets yet.</td>
+                <td colSpan={5}>No tickets yet — submit one above.</td>
               </tr>
             )}
             {tickets.map((t) => (

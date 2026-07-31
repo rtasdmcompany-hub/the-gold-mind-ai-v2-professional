@@ -23,15 +23,19 @@ private:
    double     m_sl_pips;
    bool       m_initialized;
 
-   /// @brief Pip size matching Gold Mind broker point modifier (+ 2-digit metals).
-   /// @details Production equates 30 pip ≈ 3.0 on typical XAU (digits=2, pip=0.1).
+   /// @brief Pip size matching Gold Mind metals + forex.
+   /// @details XAU: 1 pip = 0.10 → 30 pips = 3.00 (Exness digits=3 and classic digits=2).
    double PipSize(void) const
      {
-      const int digits = (int)SymbolInfoInteger(m_symbol, SYMBOL_DIGITS);
       const double point = SymbolInfoDouble(m_symbol, SYMBOL_POINT);
       if(point <= 0.0)
          return 0.0;
-      // 3/5-digit forex; 2/4-digit metals (XAU) — 1 pip = 10 points
+      string s = m_symbol;
+      StringToUpper(s);
+      if(StringFind(s, "XAU") >= 0 || StringFind(s, "XAG") >= 0 ||
+         StringFind(s, "GOLD") >= 0 || StringFind(s, "SILVER") >= 0)
+         return 0.10;
+      const int digits = (int)SymbolInfoInteger(m_symbol, SYMBOL_DIGITS);
       if(digits == 2 || digits == 3 || digits == 4 || digits == 5)
          return point * 10.0;
       return point;

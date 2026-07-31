@@ -1,19 +1,9 @@
-THE GOLD MIND PROFESSIONAL — Installation package notes
+﻿THE GOLD MIND PROFESSIONAL — Install
 
-This package delivers the commercial installer/updater shell only.
+Customer path (only):
+1. Run Setup.exe
+2. Follow the wizard
+3. Use the desktop/Start Menu launcher for Activate License and Deploy EA
 
-It does NOT modify:
-- Trading Engine
-- Strategy Logic
-- Recovery Engine
-- Risk Management
-- Order Execution
-- Magic Number Logic
-
-Install:
-  powershell -ExecutionPolicy Bypass -File ..\scripts\Install-TheGoldMindProfessional.ps1
-
-Update:
-  powershell -ExecutionPolicy Bypass -File ..\scripts\Update-TheGoldMindProfessional.ps1 -Apply
-
-Owner: RTAS Group of Companies
+Do not run PowerShell install scripts for customer installs.
+Portal: https://the-gold-mind-ai-v2-professional.vercel.app

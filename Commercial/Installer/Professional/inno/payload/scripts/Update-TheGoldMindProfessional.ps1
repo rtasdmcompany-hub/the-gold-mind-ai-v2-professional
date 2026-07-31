@@ -1,10 +1,10 @@
-# Secure Auto-Update Client — THE GOLD MIND PROFESSIONAL (Website Edition)
-# Fail-closed: checksum / signature failure → cancel + restore previous version + report.
+﻿# Secure Auto-Update Client â€” THE GOLD MIND PROFESSIONAL (Website Edition)
+# Fail-closed: checksum / signature failure â†’ cancel + restore previous version + report.
 # Independent of Core Trading Engine.
 param(
   [string]$InstallRoot = "$env:LOCALAPPDATA\THE GOLD MIND PROFESSIONAL",
   [string]$PortalBase = "",
-  [ValidateSet("stable", "rc", "development")]
+  [ValidateSet("stable")]
   [string]$Channel = "stable",
   [string]$CurrentVersion = "",
   [string]$ReportSecret = "",
@@ -26,7 +26,7 @@ function Resolve-PortalBase {
       if ($j.portalBase) {
         $b = ([string]$j.portalBase).TrimEnd("/")
         if ($b -match 'thegoldmind\.ai$' -or $b -match 'localhost') {
-          Write-Warning "Obsolete portalBase '$b' ignored — using production portal."
+          Write-Warning "Obsolete portalBase '$b' ignored â€” using production portal."
         } else {
           return $b
         }
@@ -71,11 +71,12 @@ function Send-UpdateReport {
       toVersion     = $ToVersion
       result        = $Result
       detail        = $Detail
+      email         = $CustomerEmail
       customerEmail = $CustomerEmail
       channel       = $Channel
-      secret        = $ReportSecret
     } | ConvertTo-Json
-    Invoke-RestMethod -Uri $ReportApi -Method POST -Body $body -ContentType "application/json" -TimeoutSec 30 | Out-Null
+    $headers = @{ "x-tgm-update-secret" = $ReportSecret }
+    Invoke-RestMethod -Uri $ReportApi -Method POST -Body $body -ContentType "application/json" -Headers $headers -TimeoutSec 30 | Out-Null
   } catch {
     Write-Warning "Update report failed: $_"
   }
@@ -83,7 +84,7 @@ function Send-UpdateReport {
 
 if (-not $CurrentVersion) { $CurrentVersion = Get-InstalledVersion }
 
-Write-Host "Checking · channel=$Channel · current=$CurrentVersion · portal=$PortalBase"
+Write-Host "Checking Â· channel=$Channel Â· current=$CurrentVersion Â· portal=$PortalBase"
 
 # Remainder of update logic preserved from prior implementation
 $checkUri = "$UpdateApi?channel=$Channel&version=$([uri]::EscapeDataString($CurrentVersion))"
@@ -100,11 +101,28 @@ if (-not $info.updateAvailable -and -not $info.available) {
   exit 0
 }
 
-$target = if ($info.version) { $info.version } else { $info.targetVersion }
-$downloadUrl = if ($info.downloadUrl) { $info.downloadUrl } else { "$PortalBase/api/releases/download/$target" }
-$expectedSha = if ($info.sha256) { $info.sha256 } else { $info.checksum }
+$latest = $info.latest
+$target = if ($latest -and $latest.version) { [string]$latest.version }
+  elseif ($info.version) { [string]$info.version }
+  elseif ($info.targetVersion) { [string]$info.targetVersion }
+  else { "" }
+$packageId = if ($latest -and $latest.id) { [string]$latest.id } else { $target }
+$downloadUrl = if ($latest -and $latest.packageUrl) { [string]$latest.packageUrl }
+  elseif ($latest -and $latest.downloadUrl) { [string]$latest.downloadUrl }
+  elseif ($info.downloadUrl) { [string]$info.downloadUrl }
+  elseif ($packageId) { "$PortalBase/api/releases/download/$packageId" }
+  else { "" }
+$expectedSha = if ($latest -and $latest.sha256) { [string]$latest.sha256 }
+  elseif ($info.sha256) { [string]$info.sha256 }
+  elseif ($info.checksum) { [string]$info.checksum }
+  else { "" }
 
-Write-Host "Update available: $CurrentVersion → $target"
+if (-not $target -or -not $downloadUrl) {
+  Write-Host "Update payload incomplete from portal check API." -ForegroundColor Red
+  exit 1
+}
+
+Write-Host "Update available: $CurrentVersion â†’ $target"
 Write-Host "Download: $downloadUrl"
 
 if (-not $Apply) {
@@ -158,3 +176,4 @@ try {
   if ($backup -and (Test-Path $backup)) { Remove-Item -Recurse -Force $backup -EA SilentlyContinue }
 }
 exit 0
+

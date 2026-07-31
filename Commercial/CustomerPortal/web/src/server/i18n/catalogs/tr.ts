@@ -73,7 +73,7 @@ export const TR_CATALOG: TranslationCatalog = {
   "legal.risk.title": "Risk açıklaması",
   "legal.cookies.banner": "Ticari portalı işletmek ve deneyiminizi iyileştirmek için çerez kullanırız.",
   "legal.accept": "Kabul et",
-  "regional.support.contact": "partners@thegoldmind.local · support@thegoldmind.local",
+  "regional.support.contact": "partners@rtas.group · support@rtas.group",
   "regional.legal.notice": "İşlem yapmak risk içerir. Geçmiş performans gelecekteki sonuçları garanti etmez.",
   "regional.measurement.metric": "Metrik",
   "regional.measurement.imperial": "Emperyal",

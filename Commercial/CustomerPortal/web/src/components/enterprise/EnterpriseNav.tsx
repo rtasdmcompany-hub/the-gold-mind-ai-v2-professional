@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/docs", label: "Docs" },
   { href: "/developers", label: "Developers" },
   { href: "/contact", label: "Contact" },
+  { href: "/register", label: "Register" },
 ];
 
 export function EnterpriseNav({ transparent = false }: { transparent?: boolean }) {
@@ -38,7 +39,13 @@ export function EnterpriseNav({ transparent = false }: { transparent?: boolean }
       className={`e-nav ${solid ? "e-nav--solid" : "e-nav--transparent"} ${shrunk ? "e-nav--shrunk" : ""}`}
     >
       <div className="e-nav-inner">
-        <BrandLogo variant="header" href="/" priority className="e-brand-logo e-brand-logo--header" />
+        <Link href="/" className="e-brand-lockup" onClick={() => setMenuOpen(false)}>
+          <BrandLogo variant="header" priority className="e-brand-logo e-brand-logo--header" />
+          <span className="e-brand-wordmark">
+            <span className="e-brand-wordmark-title">THE GOLD MIND</span>
+            <span className="e-brand-wordmark-sub">AI v2.0 PROFESSIONAL</span>
+          </span>
+        </Link>
         <nav>
           <ul className={`e-nav-links ${menuOpen ? "e-open" : ""}`}>
             {LINKS.map((l) => (

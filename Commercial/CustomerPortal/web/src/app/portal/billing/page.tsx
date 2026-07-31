@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CheckoutPanel } from "@/components/CheckoutPanel";
 import { getBillingSummary, formatMoney, PLAN_CATALOG } from "@/server/billing/billing-service";
+import { ensureBillingStoreLoaded, billingStoreDurability } from "@/server/billing/store";
+import { getProviderConfigStatus, isSandboxCheckoutAllowed } from "@/server/billing/config";
 import { listLicensesForCustomer } from "@/server/licensing/license-service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -9,11 +11,17 @@ import Link from "next/link";
 export default async function BillingPage() {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
+  await ensureBillingStoreLoaded();
   const email = session.user.email.toLowerCase();
   const billing = getBillingSummary(email);
   const licenses = listLicensesForCustomer(email);
   const sub = billing.subscriptions[0];
   const lic = licenses.find((l) => l.status === "active" || l.status === "grace") || licenses[0];
+  const durability = billingStoreDurability();
+  // Customers are only ever offered Paddle (once configured) or a dev-only sandbox —
+  // no unwired PSP internals are surfaced here.
+  const paddleConfigured = getProviderConfigStatus("paddle").configured;
+  const sandboxAllowed = isSandboxCheckoutAllowed();
 
   return (
     <>
@@ -24,7 +32,13 @@ export default async function BillingPage() {
         </p>
       </header>
 
-      <CheckoutPanel />
+      {durability.warning && (
+        <p className="meta" style={{ marginBottom: 12, color: "var(--gm-danger, #b91c1c)" }}>
+          {durability.warning}
+        </p>
+      )}
+
+      <CheckoutPanel sandboxAllowed={sandboxAllowed} paddleConfigured={paddleConfigured} />
 
       <div className="grid grid-3" style={{ marginBottom: 16 }}>
         <div className="card">
@@ -123,6 +137,10 @@ export default async function BillingPage() {
       </div>
 
       <h2 style={{ fontSize: 16 }}>Email notifications (outbox)</h2>
+      <p className="meta" style={{ marginBottom: 8 }}>
+        Status <strong>sent</strong> means Resend accepted delivery. <strong>queued</strong> /{" "}
+        <strong>failed</strong> means the message was not delivered to an inbox (check Resend config).
+      </p>
       <div className="table-wrap">
         <table className="data">
           <thead>

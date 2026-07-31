@@ -7,17 +7,15 @@ import { actionRecordTelemetry } from "@/server/observability/actions";
 export default async function TelemetryPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
   if (
-    !hasPermission(role, "admin.observability.read") &&
-    actor !== "admin@goldmind.local"
+    !hasPermission(role, "admin.observability.read")
   ) {
     redirect("/portal/admin");
   }
 
   ensureDemoTelemetry();
   const t = getTelemetrySummary();
-  const canWrite = hasPermission(role, "admin.observability.write") || actor === "admin@goldmind.local";
+  const canWrite = hasPermission(role, "admin.observability.write");
 
   return (
     <>

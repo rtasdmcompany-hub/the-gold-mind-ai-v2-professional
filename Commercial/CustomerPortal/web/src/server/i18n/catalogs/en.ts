@@ -100,7 +100,7 @@ export const EN_CATALOG: TranslationCatalog = {
   "legal.accept": "Accept",
 
   // regional
-  "regional.support.contact": "partners@thegoldmind.local · support@thegoldmind.local",
+  "regional.support.contact": "partners@rtas.group · support@rtas.group",
   "regional.legal.notice": "Trading involves risk. Past performance does not guarantee future results.",
   "regional.measurement.metric": "Metric",
   "regional.measurement.imperial": "Imperial",

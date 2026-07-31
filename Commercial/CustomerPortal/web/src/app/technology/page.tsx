@@ -13,7 +13,7 @@ const STACK = [
   { title: "AI Signal Layer", desc: "Commercial AI assistant and analytics operate outside the trading execution path." },
   { title: "Encrypted Stores", desc: "AES-256-GCM licensing, billing, audit, and support data with serverless-safe persistence." },
   { title: "API Platform", desc: "Versioned REST API v1 for licenses, subscriptions, webhooks, and partner integrations." },
-  { title: "Update Pipeline", desc: "Signed installers, SHA-256 checksums, rollback support, and controlled release channels." },
+  { title: "Update Pipeline", desc: "Checksum-verified installers, SHA-256 checksums, rollback support, and controlled release channels." },
   { title: "Health Monitoring", desc: "Real-time service health checks across auth, licensing, billing, and portal subsystems." },
 ];
 

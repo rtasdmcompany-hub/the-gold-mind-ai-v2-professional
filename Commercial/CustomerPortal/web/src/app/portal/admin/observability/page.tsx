@@ -8,11 +8,9 @@ import { getProductionHealthDashboard } from "@/server/observability/health-dash
 export default async function ObservabilityHealthPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
   if (
     !hasPermission(role, "admin.observability.read") &&
-    !hasPermission(role, "admin.cloud.read") &&
-    actor !== "admin@goldmind.local"
+    !hasPermission(role, "admin.cloud.read")
   ) {
     redirect("/portal/admin");
   }

@@ -19,7 +19,7 @@ function baseUrl(): string {
 }
 
 export type SignupResult =
-  | { ok: true; email: string; emailSent: boolean; mailError?: string; verifyUrl?: string }
+  | { ok: true; email: string; emailSent: boolean; verifyUrl?: string }
   | { ok: false; error: string };
 
 export async function registerAccount(input: {
@@ -53,7 +53,6 @@ export async function registerAccount(input: {
     verifyTokenHash: hashToken(token),
     verifyTokenExpiresAt: expires,
     provider: "credentials",
-    tradeAlertsEnabled: existing?.tradeAlertsEnabled ?? true,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };
@@ -61,32 +60,11 @@ export async function registerAccount(input: {
 
   const verifyUrl = `${baseUrl()}/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
   const subject = "Confirm your email — THE GOLD MIND PROFESSIONAL";
-  const text = [
-    `Confirm your THE GOLD MIND PROFESSIONAL account.`,
-    ``,
-    `Open this link to verify your email (required before sign-in):`,
-    verifyUrl,
-    ``,
-    `This link expires in 24 hours.`,
-    ``,
-    `If you did not create this account, ignore this message.`,
-  ].join("\n");
-  const html = `
-    <p>Confirm your <strong>THE GOLD MIND PROFESSIONAL</strong> account.</p>
-    <p><a href="${verifyUrl}" style="display:inline-block;padding:10px 18px;background:#c9a227;color:#111;text-decoration:none;border-radius:4px;font-weight:600">Verify email address</a></p>
-    <p style="font-size:13px;color:#666">Or open: <a href="${verifyUrl}">${verifyUrl}</a></p>
-    <p style="font-size:13px;color:#666">You must confirm before you can sign in. This link expires in 24 hours.</p>
-  `;
+  const text = `Confirm your THE GOLD MIND PROFESSIONAL account:\n\n${verifyUrl}\n\nThis link expires in 24 hours.`;
+  const html = `<p>Confirm your <strong>THE GOLD MIND PROFESSIONAL</strong> account.</p><p><a href="${verifyUrl}">Verify email address</a></p><p>This link expires in 24 hours.</p>`;
 
   const sent = await sendTransactionalEmail({ to: email, subject, html, text });
-  if (!sent.ok) {
-    console.warn(
-      `[accounts] Verification email not delivered via Resend (${sent.error || "unknown"}) — token flow still active`
-    );
-  } else {
-    console.info(`[accounts] Verification email accepted by Resend id=${sent.providerId || "n/a"} → ${email}`);
-  }
-  // Expose verify link when mail failed, in non-production, or when explicitly enabled.
+  // If outbound email is not configured, still return the verify link so signup can complete.
   const expose =
     !sent.ok ||
     process.env.NODE_ENV !== "production" ||
@@ -96,7 +74,6 @@ export async function registerAccount(input: {
     ok: true,
     email,
     emailSent: sent.ok,
-    mailError: sent.ok ? undefined : sent.error,
     verifyUrl: expose ? verifyUrl : undefined,
   };
 }
@@ -160,42 +137,134 @@ export async function upsertOAuthAccount(input: {
     verifyTokenHash: null,
     verifyTokenExpiresAt: null,
     provider: "google",
-    tradeAlertsEnabled: true,
     createdAt: now,
     updatedAt: now,
   });
 }
 
-/** Default ON when preference has never been set. */
 export function isTradeAlertsEnabled(account: AccountRecord | null | undefined): boolean {
   if (!account) return true;
   return account.tradeAlertsEnabled !== false;
 }
 
-export async function setTradeAlertsEnabled(
-  emailRaw: string,
-  enabled: boolean
-): Promise<AccountRecord | null> {
+export async function setTradeAlertsEnabled(emailRaw: string, enabled: boolean): Promise<void> {
   const email = emailRaw.trim().toLowerCase();
-  if (!email) return null;
-  const existing = await getAccountByEmail(email);
-  const now = new Date().toISOString();
-  if (existing) {
-    existing.tradeAlertsEnabled = enabled;
-    existing.updatedAt = now;
-    return saveAccount(existing);
+  let account = await getAccountByEmail(email);
+  if (!account) {
+    account = await upsertOAuthAccount({ email, name: email.split("@")[0] });
   }
-  return saveAccount({
-    id: newAccountId(),
-    email,
-    name: email.split("@")[0],
-    passwordHash: null,
-    emailVerifiedAt: now,
-    verifyTokenHash: null,
-    verifyTokenExpiresAt: null,
-    provider: "credentials",
-    tradeAlertsEnabled: enabled,
-    createdAt: now,
-    updatedAt: now,
-  });
+  account.tradeAlertsEnabled = enabled;
+  account.updatedAt = new Date().toISOString();
+  await saveAccount(account);
+}
+
+export async function updateAccountProfile(input: {
+  email: string;
+  name: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const email = input.email.trim().toLowerCase();
+  const name = input.name.trim();
+  if (name.length < 2) return { ok: false, error: "Name must be at least 2 characters." };
+  const account = await getAccountByEmail(email);
+  if (!account) return { ok: false, error: "Account not found. Sign in with email/password or Google first." };
+  account.name = name;
+  account.updatedAt = new Date().toISOString();
+  await saveAccount(account);
+  return { ok: true };
+}
+
+export type PasswordResetRequestResult =
+  | { ok: true; emailSent: boolean; resetUrl?: string }
+  | { ok: false; error: string };
+
+/**
+ * Always resolves ok:true (does not reveal account existence) unless the email is malformed.
+ * Google-only accounts (no passwordHash) are silently skipped — no email is sent — but the
+ * response shape is identical to avoid leaking account status to an unauthenticated caller.
+ */
+export async function requestPasswordReset(emailRaw: string): Promise<PasswordResetRequestResult> {
+  const email = emailRaw.trim().toLowerCase();
+  if (!email || !email.includes("@")) {
+    return { ok: false, error: "Please enter a valid email." };
+  }
+
+  const account = await getAccountByEmail(email);
+  if (!account || !account.passwordHash) {
+    // No account, or Google-only account — respond identically to a real send.
+    return { ok: true, emailSent: false };
+  }
+
+  const token = newVerifyToken();
+  const expires = new Date(Date.now() + 1000 * 60 * 60).toISOString();
+  account.resetTokenHash = hashToken(token);
+  account.resetTokenExpiresAt = expires;
+  account.updatedAt = new Date().toISOString();
+  await saveAccount(account);
+
+  const resetUrl = `${baseUrl()}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+  const subject = "Reset your password — THE GOLD MIND PROFESSIONAL";
+  const text = `A password reset was requested for your THE GOLD MIND PROFESSIONAL account:\n\n${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`;
+  const html = `<p>A password reset was requested for your <strong>THE GOLD MIND PROFESSIONAL</strong> account.</p><p><a href="${resetUrl}">Reset password</a></p><p>This link expires in 1 hour. If you did not request this, you can ignore this email.</p>`;
+
+  const sent = await sendTransactionalEmail({ to: email, subject, html, text });
+  const expose =
+    !sent.ok ||
+    process.env.NODE_ENV !== "production" ||
+    process.env.PORTAL_EXPOSE_VERIFY_LINK === "true";
+
+  return { ok: true, emailSent: sent.ok, resetUrl: expose ? resetUrl : undefined };
+}
+
+export async function resetPasswordWithToken(input: {
+  email: string;
+  token: string;
+  newPassword: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const email = input.email.trim().toLowerCase();
+  const token = input.token.trim();
+  if (input.newPassword.length < 8) {
+    return { ok: false, error: "New password must be at least 8 characters." };
+  }
+
+  const account = await getAccountByEmail(email);
+  if (!account) return { ok: false, error: "Invalid or expired reset link." };
+  if (!account.resetTokenHash || !account.resetTokenExpiresAt) {
+    return { ok: false, error: "No pending reset request for this account." };
+  }
+  if (new Date(account.resetTokenExpiresAt).getTime() < Date.now()) {
+    return { ok: false, error: "Reset link expired. Please request a new one." };
+  }
+  if (!token || hashToken(token) !== account.resetTokenHash) {
+    return { ok: false, error: "Invalid or expired reset link." };
+  }
+
+  account.passwordHash = hashPassword(input.newPassword);
+  account.resetTokenHash = null;
+  account.resetTokenExpiresAt = null;
+  account.updatedAt = new Date().toISOString();
+  await saveAccount(account);
+  return { ok: true };
+}
+
+export async function changeAccountPassword(input: {
+  email: string;
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const email = input.email.trim().toLowerCase();
+  const account = await getAccountByEmail(email);
+  if (!account) return { ok: false, error: "Account not found." };
+  if (!account.passwordHash) {
+    return { ok: false, error: "This account uses Google sign-in only. Password change is not available." };
+  }
+  if (!verifyPassword(input.currentPassword, account.passwordHash)) {
+    return { ok: false, error: "Current password is incorrect." };
+  }
+  if (input.newPassword.length < 8) {
+    return { ok: false, error: "New password must be at least 8 characters." };
+  }
+  account.passwordHash = hashPassword(input.newPassword);
+  account.updatedAt = new Date().toISOString();
+  await saveAccount(account);
+  return { ok: true };
 }

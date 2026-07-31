@@ -5,13 +5,22 @@ import type { ReleaseChannel } from "@/server/releases/types";
 /**
  * Updater telemetry endpoint (Website Edition).
  * Auth: Bearer UPDATE_REPORT_SECRET or x-tgm-update-secret (dev default allowed non-prod).
+ * Also accepts body.secret for older updater clients.
  * Public to desktop updater — not a portal session route.
  */
 export async function POST(req: Request) {
   const secret = process.env.UPDATE_REPORT_SECRET || "dev-update-report-secret";
+  let body: Record<string, unknown> = {};
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "INVALID_JSON" }, { status: 400 });
+  }
+
   const hdr =
     req.headers.get("x-tgm-update-secret") ||
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ||
+    (typeof body.secret === "string" ? body.secret : "") ||
     "";
   if (process.env.NODE_ENV === "production" && !process.env.UPDATE_REPORT_SECRET) {
     return NextResponse.json({ error: "REPORT_SECRET_REQUIRED" }, { status: 503 });
@@ -21,13 +30,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = await req.json();
     const result = String(body.result || "") as "success" | "fail" | "rollback";
     if (!["success", "fail", "rollback"].includes(result)) {
       return NextResponse.json({ error: "INVALID_RESULT" }, { status: 400 });
     }
+    const emailRaw = body.email || body.customerEmail;
     recordUpdateResult({
-      email: body.email ? String(body.email) : undefined,
+      email: emailRaw ? String(emailRaw) : undefined,
       fromVersion: String(body.fromVersion || ""),
       toVersion: String(body.toVersion || ""),
       channel: (body.channel || "stable") as ReleaseChannel,

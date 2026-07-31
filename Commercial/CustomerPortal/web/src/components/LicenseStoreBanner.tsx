@@ -62,11 +62,10 @@ export function LicenseStoreBanner() {
 
   return (
     <div className="card" style={{ marginBottom: 16, borderColor: "#a44" }}>
-      <h3 style={{ marginBottom: 6 }}>License store not ready</h3>
-      <p className="meta">{state.message}</p>
-      <p className="meta" style={{ marginTop: 8 }}>
-        Admin: add Upstash Redis (or Vercel KV) env vars on Vercel, then redeploy. Until then, Setup.exe
-        correctly refuses to install — no empty activations.
+      <h3 style={{ marginBottom: 6 }}>License activation temporarily unavailable</h3>
+      <p className="meta">
+        We can&apos;t confirm activations right now. Please try again shortly, or contact support if this
+        persists.
       </p>
     </div>
   );

@@ -13,7 +13,8 @@
 2. Run `Setup.exe`.
 3. Confirm install location (default: `%LOCALAPPDATA%\THE GOLD MIND PROFESSIONAL`).
 4. Allow MT5 detection / EA deploy when prompted.
-5. Activate license (email + key). Optional: Google login via portal first.
+5. Activate license (email + key). Optional: Google login via
+   https://the-gold-mind-ai-v2-professional.vercel.app/login?provider=google
 6. Open MT5 -> Navigator -> Expert Advisors -> **The Gold Mind**.
 7. Attach `TheGoldMindAI_Professional` to your chart.
 

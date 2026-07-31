@@ -10,14 +10,13 @@ import type { DbOptimizationFinding } from "@/server/performance/database-optimi
 export default async function DatabaseOptimizationPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
-  if (!hasPermission(role, "admin.observability.read") && actor !== "admin@goldmind.local") {
+  if (!hasPermission(role, "admin.observability.read")) {
     redirect("/portal/admin");
   }
   await ensureSprint5Evidence();
   const run = latestPerfRun("database");
   const payload = run?.payload as { findings: DbOptimizationFinding[]; score: number } | undefined;
-  const canWrite = hasPermission(role, "admin.observability.write") || actor === "admin@goldmind.local";
+  const canWrite = hasPermission(role, "admin.observability.write");
 
   return (
     <>

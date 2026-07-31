@@ -1,0 +1,35 @@
+﻿{
+    "collectedAt":  "2026-07-30T16:17:12.5710661+05:00",
+    "historyQualityOn":  "100% real ticks",
+    "historyQualityOff":  "100% real ticks",
+    "ticksOn":  "4825624",
+    "ticksOff":  "4825624",
+    "totalTradesOn":  "269",
+    "totalTradesOff":  "269",
+    "netProfitOn":  "-2 918.19",
+    "netProfitOff":  "-3 370.02",
+    "profitFactorOn":  "0.92",
+    "profitFactorOff":  "0.90",
+    "dealRowsCompared":  468,
+    "priceSame":  468,
+    "volumeDifferent":  464,
+    "directionDifferent":  0,
+    "learnActions":  [
+                         {
+                             "Action":  "ACTIVATED_READONLY",
+                             "Count":  400
+                         },
+                         {
+                             "Action":  "LOT_ADJUST",
+                             "Count":  13
+                         }
+                     ],
+    "forbiddenLearnLines":  0,
+    "priceIntegrityPass":  true,
+    "volumePolicyObserved":  true,
+    "sameTradeCount":  true,
+    "pendingOrdersCompared":  610,
+    "pendingPriceSlTpSame":  610,
+    "pendingVolumeDifferent":  610,
+    "pendingIntegrityPass":  true
+}

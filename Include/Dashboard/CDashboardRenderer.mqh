@@ -185,10 +185,82 @@ public:
       return true;
      }
 
+   void BuildCompactLayout(void)
+     {
+      UpdateScale();
+      const int x = m_settings.panel_x;
+      const int y0 = m_settings.panel_y;
+      const int w = Scaled(250);
+      const int font = MathMax(8, Scaled(m_settings.font_size));
+      const int header_h = Scaled(GM_DASH_HEADER_H);
+      const int panel_h = m_collapsed ? Scaled(GM_DASH_COMPACT_H_MIN) : Scaled(GM_DASH_COMPACT_H);
+
+      // Classic THE GOLD MIND panel palette (matches legacy EA)
+      const color bg         = C'18,16,12';
+      const color hdr        = C'38,32,18';
+      const color border     = C'198,168,86';
+      const color label_clr  = C'180,165,120';
+      const color title_clr  = C'255,215,100';
+      const color tagline_clr = C'198,168,86';
+      const long vis = m_collapsed ? OBJ_NO_PERIODS : OBJ_ALL_PERIODS;
+
+      m_widgets.DestroyAll();
+      m_widgets.Rect("BG", x, y0, w, panel_h, bg, border);
+      m_widgets.Rect("HDR", x, y0, w, header_h, hdr, hdr);
+      m_widgets.Label("LOGO", x + 8, y0 + 8, "GM", title_clr, font + 2, "Arial Bold");
+      m_widgets.Label("TITLE", x + 52, y0 + 6, "THE GOLD MIND", title_clr, font + 1, "Arial Bold");
+      m_widgets.Label("TAGLINE", x + 52, y0 + 22, "Mind The Market - Mine The Gold",
+                      tagline_clr, font - 1, "Arial");
+      m_widgets.Label("BTN_COLLAPSE", x + w - 28, y0 + 6,
+                      m_collapsed ? "[+]" : "[-]",
+                      m_collapsed ? clrLime : clrSilver, font, "Arial");
+      ObjectSetInteger(0, GM_DASH_OBJ_PREFIX "BTN_COLLAPSE", OBJPROP_SELECTABLE, true);
+
+      if(!m_collapsed)
+        {
+         m_widgets.Rect("SEP0", x + 8, y0 + 52, w - 16, 1, border, border);
+         m_widgets.Label("LblAcc", x + 15, y0 + 60, "Account", label_clr, font, "Arial");
+         m_widgets.Label("ValAcc", x + 140, y0 + 60, "---", clrLightSkyBlue, font, "Arial Bold");
+         m_widgets.Label("LblRisk", x + 15, y0 + 82, "Risk", label_clr, font, "Arial");
+         m_widgets.Label("ValRisk", x + 140, y0 + 82, "Auto 3% Equity", clrGold, font, "Arial Bold");
+         m_widgets.Label("LblPos", x + 15, y0 + 104, "Running", label_clr, font, "Arial");
+         m_widgets.Label("ValPos", x + 140, y0 + 104, "0", clrLime, font, "Arial Bold");
+         m_widgets.Label("LblTrail", x + 15, y0 + 126, "Trailing Engine", label_clr, font, "Arial");
+         m_widgets.Label("ValTrail", x + 140, y0 + 126, "BE/Trail/Hedge", C'120,210,150', font, "Arial Bold");
+
+         m_widgets.Rect("SEP1", x + 8, y0 + 150, w - 16, 1, border, border);
+         m_widgets.Label("LblLic", x + 15, y0 + 158, "Market Status", label_clr, font, "Arial");
+         m_widgets.Label("ValLic", x + 140, y0 + 158, "CHECKING", clrLightGray, font, "Arial Bold");
+
+         m_widgets.Rect("SEP2", x + 8, y0 + 182, w - 16, 1, border, border);
+         m_widgets.Label("LblDaily", x + 15, y0 + 190, "Today P/L", label_clr, font, "Arial");
+         m_widgets.Label("ValDaily", x + 140, y0 + 190, "$0.00", clrWhite, font + 1, "Arial Bold");
+         m_widgets.Label("LblSessionOpen", x + 15, y0 + 212, "Today Opened", label_clr, font, "Arial");
+         m_widgets.Label("ValSessionOpen", x + 140, y0 + 212, "0", clrWhite, font, "Arial Bold");
+         m_widgets.Label("LblTotalTrades", x + 15, y0 + 234, "Still Open", label_clr, font, "Arial");
+         m_widgets.Label("ValTotalTrades", x + 140, y0 + 234, "0", clrWhite, font, "Arial Bold");
+         m_widgets.Label("LblHedge", x + 15, y0 + 256, "Hedge", label_clr, font, "Arial");
+         m_widgets.Label("ValHedge", x + 140, y0 + 256, "0", clrWhite, font, "Arial Bold");
+         m_widgets.Label("LblWinLoss", x + 15, y0 + 278, "Today Closed", label_clr, font, "Arial");
+         m_widgets.Label("ValWinLoss", x + 140, y0 + 278, "0 (0W / 0L)", clrWhite, font, "Arial Bold");
+        }
+
+      m_layout_built = true;
+      for(int i = 0; i < m_val_count; i++)
+         m_last_vals[i] = "";
+     }
+
    void BuildLayout(void)
      {
       if(!m_visible)
          return;
+
+      if(m_settings.view_mode == GM_VIEW_COMPACT)
+        {
+         BuildCompactLayout();
+         return;
+        }
+
       UpdateScale();
       const SGmDashPalette pal = m_theme.Palette();
       const int x = m_settings.panel_x;
@@ -475,10 +547,36 @@ public:
 
    void ApplySnapshot(const SGmDashboardSnapshot &s)
      {
-      if(!m_visible || m_collapsed || !m_layout_built)
+      if(!m_visible || !m_layout_built)
+         return;
+
+      if(m_settings.view_mode == GM_VIEW_COMPACT)
         {
-         if(m_visible && !m_collapsed)
-            Put(0, "STATUS_V", s.ea_status, StClr(s.ea_status));
+         if(m_collapsed)
+            return;
+         bool dirty = false;
+         dirty |= Put(0, "ValAcc", IntegerToString(s.account_login), clrLightSkyBlue);
+         dirty |= Put(1, "ValRisk", "Auto 3% Equity", clrGold);
+         dirty |= Put(2, "ValPos", IntegerToString(s.running_trades), clrLime);
+         dirty |= Put(3, "ValTrail", "BE/Trail/Hedge", C'120,210,150');
+         dirty |= Put(4, "ValLic", s.market_status, StClr(s.market_status));
+         dirty |= Put(5, "ValDaily", StringFormat("$%+.2f", s.today_net), ValClr(s.today_net));
+         dirty |= Put(6, "ValSessionOpen", IntegerToString(s.today_opened), clrWhite);
+         dirty |= Put(7, "ValTotalTrades",
+                      IntegerToString(s.running_trades + s.active_hedge), clrWhite);
+         dirty |= Put(8, "ValHedge", IntegerToString(s.active_hedge), clrWhite);
+         dirty |= Put(9, "ValWinLoss",
+                      StringFormat("%d (%dW / %dL)",
+                                   s.today_closed, s.today_winners, s.today_losers),
+                      clrWhite);
+         if(dirty)
+            ChartRedraw(0);
+         return;
+        }
+
+      if(m_collapsed)
+        {
+         Put(0, "STATUS_V", s.ea_status, StClr(s.ea_status));
          return;
         }
 

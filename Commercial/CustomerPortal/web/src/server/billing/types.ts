@@ -32,6 +32,8 @@ export interface CheckoutSession {
   plan: PlanCode;
   amountCents: number;
   currency: string;
+  /** Present when checkout could not start (unconfigured provider). */
+  error?: string;
 }
 
 export interface NormalizedPaymentEvent {

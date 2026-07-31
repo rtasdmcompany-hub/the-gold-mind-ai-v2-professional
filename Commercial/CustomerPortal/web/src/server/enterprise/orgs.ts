@@ -7,6 +7,7 @@ import {
   newId,
   readEnterpriseStore,
 } from "./store";
+import { isProductionRuntime } from "@/server/security/dev-bypass";
 
 export function registerOrganization(input: {
   name: string;
@@ -186,6 +187,13 @@ export function getOrganization(orgId: string): Organization | undefined {
 }
 
 export function ensureDemoOrganization(): Organization {
+  if (isProductionRuntime() && process.env.PORTAL_ALLOW_DEMO_SEED !== "true") {
+    const store = readEnterpriseStore();
+    const existing =
+      store.organizations.find((o) => o.domain === "goldmind-enterprise.local") || store.organizations[0];
+    if (existing) return existing;
+    throw new Error("ENTERPRISE_DEMO_SEED_DISABLED");
+  }
   const store = readEnterpriseStore();
   const existing = store.organizations.find((o) => o.domain === "goldmind-enterprise.local");
   if (existing) return existing;

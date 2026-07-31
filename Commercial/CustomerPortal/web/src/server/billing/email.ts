@@ -32,7 +32,6 @@ export function queueCommercialEmail(input: {
   template: EmailTemplate;
   body: string;
   subject?: string;
-  /** Default queued — only mark sent after a real provider accept. */
   status?: "queued" | "sent" | "failed";
 }): string {
   const emailId = id("eml");
@@ -49,25 +48,20 @@ export function queueCommercialEmail(input: {
   });
 
   if (process.env.NODE_ENV !== "production" || process.env.BILLING_EMAIL_LOG === "true") {
-    console.info(`[billing-email] ${input.status || "queued"} → ${input.to} · ${input.template}`);
+    console.info(`[billing-email] → ${input.to} · ${input.template}`);
   }
   return emailId;
 }
 
-/** Update outbox row after Resend attempt (sent | failed). */
 export function updateCommercialEmailStatus(
-  emailId: string,
+  emailId: string | undefined,
   status: "queued" | "sent" | "failed",
-  errorDetail?: string
+  _note?: string
 ): void {
+  if (!emailId) return;
   mutateBilling((data) => {
     const row = data.emails.find((e) => e.id === emailId);
-    if (!row) return;
-    row.status = status;
-    if (errorDetail && status === "failed") {
-      const note = `\n[delivery] ${errorDetail}`;
-      if (!row.body.includes("[delivery]")) row.body = `${row.body}${note}`;
-    }
+    if (row) row.status = status;
   });
 }
 

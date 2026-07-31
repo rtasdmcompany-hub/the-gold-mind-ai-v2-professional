@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { writeAudit } from "@/server/cloud/audit";
+import { isProductionRuntime } from "@/server/security/dev-bypass";
 import { decryptJson, encryptJson, launchDataDir, newId } from "./store-crypto";
 
 export type IncidentSeverity = "critical" | "high" | "medium" | "low";
@@ -208,6 +209,7 @@ export function getIncidentTimeline() {
 }
 
 export function ensureDemoIncidents(): void {
+  if (isProductionRuntime() && process.env.PORTAL_ALLOW_DEMO_SEED !== "true") return;
   const store = read();
   if (store.incidents.length > 0) return;
   // Intentionally empty open Criticals — seed a closed medium for process demo

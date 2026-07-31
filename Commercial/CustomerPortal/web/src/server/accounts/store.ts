@@ -19,6 +19,8 @@ export type AccountRecord = {
   emailVerifiedAt: string | null;
   verifyTokenHash: string | null;
   verifyTokenExpiresAt: string | null;
+  resetTokenHash?: string | null;
+  resetTokenExpiresAt?: string | null;
   provider: "credentials" | "google" | "both";
   /** Email alerts when trades close (profit or loss). Default ON when unset. */
   tradeAlertsEnabled?: boolean;

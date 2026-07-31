@@ -26,8 +26,9 @@ export default async function KnowledgeBasePage({
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">Knowledge Base</h1>
         <p className="page-sub">
-          Installation · Activation · Licensing · Portal · Troubleshooting · Updates · FAQ · MT5 · Broker — commercial
-          guidance only
+          Static commercial guidance (shipped with the portal build — not a live CMS). View counts are session-memory
+          only and are not analytics. Installation · Activation · Licensing · Portal · Troubleshooting · Updates · FAQ ·
+          MT5 · Broker
         </p>
       </header>
 

@@ -3,8 +3,15 @@ import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
 import type { BillingStoreData } from "./types";
 import { commercialDataRoot } from "@/server/cloud/data-root";
+import {
+  durableGet,
+  durableSet,
+  isDurableStoreConfigured,
+  isDurableStoreRequired,
+} from "@/server/cloud/cache";
 
 const ALGO = "aes-256-gcm";
+const DURABLE_KEY = "tgm:billing:store:v1";
 
 function masterKey(): Buffer {
   const raw =
@@ -58,6 +65,8 @@ function storePath(): string {
 }
 
 let cache: BillingStoreData | null = null;
+let writeChain: Promise<void> = Promise.resolve();
+let loadPromise: Promise<void> | null = null;
 
 function normalizeStore(data: BillingStoreData): BillingStoreData {
   if (!Array.isArray(data.webhookAudits)) data.webhookAudits = [];
@@ -69,33 +78,107 @@ function normalizeStore(data: BillingStoreData): BillingStoreData {
   return data;
 }
 
-export function readBillingStore(): BillingStoreData {
-  if (cache) return cache;
+function loadRawFromDisk(): BillingStoreData {
   const p = storePath();
-  if (!fs.existsSync(p)) {
-    cache = structuredClone(EMPTY);
-    return cache;
-  }
+  if (!fs.existsSync(p)) return structuredClone(EMPTY);
   try {
-    cache = normalizeStore(decryptJson<BillingStoreData>(fs.readFileSync(p, "utf8")));
-    return cache!;
+    return normalizeStore(decryptJson<BillingStoreData>(fs.readFileSync(p, "utf8")));
   } catch {
     throw new Error("BILLING_STORE_DECRYPT_FAIL");
   }
 }
 
+export function assertDurableStoreForBilling(): void {
+  if (isDurableStoreRequired() && !isDurableStoreConfigured()) {
+    throw new Error(
+      "DURABLE_STORE_REQUIRED: Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN so billing invoices/orders survive redeploys."
+    );
+  }
+}
+
+/** Prefer Upstash durable blob on serverless, then encrypted disk. */
+export async function ensureBillingStoreLoaded(): Promise<void> {
+  if (cache) return;
+  if (!loadPromise) {
+    loadPromise = (async () => {
+      if (isDurableStoreConfigured()) {
+        try {
+          const remote = await durableGet(DURABLE_KEY);
+          if (remote) {
+            cache = normalizeStore(decryptJson<BillingStoreData>(remote));
+            return;
+          }
+        } catch {
+          /* fall through */
+        }
+      }
+      cache = loadRawFromDisk();
+      if (isDurableStoreConfigured() && (cache.invoices.length > 0 || cache.payments.length > 0 || cache.subscriptions.length > 0)) {
+        try {
+          await durableSet(DURABLE_KEY, encryptJson(cache));
+        } catch {
+          /* non-fatal */
+        }
+      }
+    })().finally(() => {
+      if (!cache) loadPromise = null;
+    });
+  }
+  await loadPromise;
+  if (!cache) cache = structuredClone(EMPTY);
+}
+
+export function readBillingStore(): BillingStoreData {
+  if (cache) return cache;
+  cache = loadRawFromDisk();
+  return cache;
+}
+
 export function writeBillingStore(data: BillingStoreData): void {
+  assertDurableStoreForBilling();
   cache = data;
-  fs.writeFileSync(storePath(), encryptJson(data), "utf8");
+  const blob = encryptJson(data);
+  writeChain = writeChain.then(async () => {
+    try {
+      fs.writeFileSync(storePath(), blob, "utf8");
+    } catch {
+      /* serverless may only have durable store */
+    }
+    if (isDurableStoreConfigured()) {
+      await durableSet(DURABLE_KEY, blob);
+    }
+  });
+}
+
+export async function flushBillingStore(): Promise<void> {
+  await writeChain;
 }
 
 export function mutateBilling(mutator: (data: BillingStoreData) => void): BillingStoreData {
   const data = structuredClone(readBillingStore());
   mutator(data);
-  // Cap collections
   if (data.processedWebhooks.length > 5000) data.processedWebhooks.length = 5000;
   if (data.webhookAudits.length > 5000) data.webhookAudits.length = 5000;
   if (data.emails.length > 2000) data.emails.length = 2000;
   writeBillingStore(normalizeStore(data));
   return data;
+}
+
+export function billingStoreDurability(): {
+  durableConfigured: boolean;
+  durableRequired: boolean;
+  warning?: string;
+} {
+  const durableConfigured = isDurableStoreConfigured();
+  const durableRequired = isDurableStoreRequired();
+  return {
+    durableConfigured,
+    durableRequired,
+    warning:
+      durableRequired && !durableConfigured
+        ? "Billing data will not survive serverless redeploys until Upstash Redis is configured."
+        : !durableConfigured
+          ? "Billing store is local-file only (dev). Configure UPSTASH_* for production durability."
+          : undefined,
+  };
 }

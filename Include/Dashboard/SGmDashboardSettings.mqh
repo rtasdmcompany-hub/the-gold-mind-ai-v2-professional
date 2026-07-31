@@ -64,17 +64,17 @@ struct SGmDashboardSettings
       lock_position = false;
       profile_name = "Default";
       font_preset = GM_FONT_MEDIUM;
-      view_mode = GM_VIEW_PROFESSIONAL;
+      view_mode = GM_VIEW_COMPACT;
       language = GM_LANG_EN;
       animations_enabled = false;
       settings_panel_open = false;
-      show_ai_section = true;
-      show_market_section = true;
-      show_report_section = true;
-      show_gauges = true;
-      show_timeline = true;
-      show_multi_instance = true;
-      show_notifications = true;
+      show_ai_section = false;
+      show_market_section = false;
+      show_report_section = false;
+      show_gauges = false;
+      show_timeline = false;
+      show_multi_instance = false;
+      show_notifications = false;
       custom_colors.Defaults();
      }
 

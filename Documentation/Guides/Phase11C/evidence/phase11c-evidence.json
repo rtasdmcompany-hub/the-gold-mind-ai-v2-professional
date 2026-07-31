@@ -1,0 +1,328 @@
+{
+  "generatedAt": "2026-07-30T09:11:08.107Z",
+  "certified": false,
+  "failureCount": 1,
+  "failures": [
+    "Missing real MT5/broker historical replay artifacts; deterministic scenario replay cannot prove production behavior"
+  ],
+  "freezeEvidence": [
+    "PASS: TGM_RISK_PER_TRADE_FRACTION=0.03 unchanged",
+    "PASS: CalculateAutoLotSize has no GmP11B calls",
+    "PASS: AI authority has no PositionClose/OrderModify/SLTP mutate",
+    "PASS: OrderDelete present (pending freeze/cancel only)",
+    "PASS: EA has AdjustLot + OnTick hooks",
+    "PASS: Lot adjust wraps GetTradeVolume output only",
+    "PASS: Activation ends AI authority",
+    "PASS: Failsafe disable paths present",
+    "PASS: No forbidden SL/TP/deal mutate patterns in AI layer"
+  ],
+  "replayConditions": [
+    {
+      "condition": "Strong Trend",
+      "confidence": 88.25999999999999,
+      "action": "NORMAL",
+      "band": "STRONG",
+      "reason": "ExecConf=88 Band=STRONG Spread=85 Vol=55 Trend=92 News=80 Broker=90 | TradeExactAsEngine"
+    },
+    {
+      "condition": "Weak Trend",
+      "confidence": 59.03999999999999,
+      "action": "FREEZE",
+      "band": "HIGH_RISK",
+      "reason": "ExecConf=59 Band=HIGH_RISK Spread=75 Vol=40 Trend=45 News=75 Broker=85 | MaxFreeze=30min"
+    },
+    {
+      "condition": "Sideways",
+      "confidence": 51.79,
+      "action": "FREEZE",
+      "band": "HIGH_RISK",
+      "reason": "ExecConf=52 Band=HIGH_RISK Spread=70 Vol=35 Trend=35 News=75 Broker=85 | MaxFreeze=30min"
+    },
+    {
+      "condition": "High Volatility",
+      "confidence": 72.05,
+      "action": "REDUCE_LOT",
+      "band": "CAUTION",
+      "reason": "ExecConf=72 Band=CAUTION Spread=50 Vol=92 Trend=70 News=55 Broker=70 | MaxLotReduction=50%"
+    },
+    {
+      "condition": "Low Volatility",
+      "confidence": 66.04,
+      "action": "REDUCE_LOT",
+      "band": "CAUTION",
+      "reason": "ExecConf=66 Band=CAUTION Spread=88 Vol=20 Trend=55 News=80 Broker=92 | MaxLotReduction=50%"
+    },
+    {
+      "condition": "London Open",
+      "confidence": 81.11000000000001,
+      "action": "NORMAL",
+      "band": "STRONG",
+      "reason": "ExecConf=81 Band=STRONG Spread=70 Vol=65 Trend=78 News=70 Broker=88 | TradeExactAsEngine"
+    },
+    {
+      "condition": "New York Open",
+      "confidence": 84.24,
+      "action": "NORMAL",
+      "band": "STRONG",
+      "reason": "ExecConf=84 Band=STRONG Spread=68 Vol=72 Trend=82 News=65 Broker=86 | TradeExactAsEngine"
+    },
+    {
+      "condition": "Asian Session",
+      "confidence": 60.33,
+      "action": "REDUCE_LOT",
+      "band": "CAUTION",
+      "reason": "ExecConf=60 Band=CAUTION Spread=80 Vol=30 Trend=50 News=85 Broker=90 | MaxLotReduction=50%"
+    },
+    {
+      "condition": "NFP",
+      "confidence": 60.77,
+      "action": "REDUCE_LOT",
+      "band": "CAUTION",
+      "reason": "ExecConf=61 Band=CAUTION Spread=35 Vol=95 Trend=60 News=15 Broker=55 | MaxLotReduction=50%"
+    },
+    {
+      "condition": "CPI",
+      "confidence": 60.940000000000005,
+      "action": "REDUCE_LOT",
+      "band": "CAUTION",
+      "reason": "ExecConf=61 Band=CAUTION Spread=38 Vol=90 Trend=58 News=18 Broker=58 | MaxLotReduction=50%"
+    },
+    {
+      "condition": "FOMC",
+      "confidence": 58.36000000000001,
+      "action": "FREEZE",
+      "band": "HIGH_RISK",
+      "reason": "ExecConf=58 Band=HIGH_RISK Spread=30 Vol=96 Trend=55 News=12 Broker=50 | MaxFreeze=30min"
+    },
+    {
+      "condition": "Gold Flash Moves",
+      "confidence": 73.7,
+      "action": "REDUCE_LOT",
+      "band": "CAUTION",
+      "reason": "ExecConf=74 Band=CAUTION Spread=40 Vol=98 Trend=88 News=40 Broker=60 | MaxLotReduction=50%"
+    },
+    {
+      "condition": "Weekend Gap",
+      "confidence": 40.00000000000001,
+      "action": "FREEZE",
+      "band": "HIGH_RISK",
+      "reason": "ExecConf=40 Band=HIGH_RISK Spread=25 Vol=70 Trend=40 News=25 Broker=65 | MaxFreeze=30min"
+    },
+    {
+      "condition": "Spread Expansion",
+      "confidence": 53.2,
+      "action": "FREEZE",
+      "band": "HIGH_RISK",
+      "reason": "ExecConf=53 Band=HIGH_RISK Spread=15 Vol=60 Trend=60 News=60 Broker=55 | MaxFreeze=30min"
+    },
+    {
+      "condition": "Broker Slippage",
+      "confidence": 56.4,
+      "action": "FREEZE",
+      "band": "HIGH_RISK",
+      "reason": "ExecConf=56 Band=HIGH_RISK Spread=45 Vol=55 Trend=65 News=70 Broker=25 | MaxFreeze=30min"
+    },
+    {
+      "condition": "Latency",
+      "confidence": 61.699999999999996,
+      "action": "REDUCE_LOT",
+      "band": "CAUTION",
+      "reason": "ExecConf=62 Band=CAUTION Spread=60 Vol=50 Trend=70 News=75 Broker=40 | MaxLotReduction=50%"
+    }
+  ],
+  "replayLogPath": "H:\\PERSONAL\\RTAS Digital Marketing Company\\RTAS Softwear\\THE GOLD MIND AI v2.0 Professional\\Documentation\\Guides\\Phase11C\\evidence\\AI_REPLAY_LOG.csv",
+  "replayDecisionCount": 800,
+  "replayEvidenceType": "DETERMINISTIC_POLICY_VECTORS",
+  "mt5HistoricalArtifacts": [],
+  "stressResults": [
+    {
+      "n": 100,
+      "elapsedMs": 0.9308000000000902,
+      "opsPerSec": 107434.46497635401,
+      "latency": {
+        "min": 0.0029999999999290594,
+        "p50": 0.003200000000106229,
+        "p95": 0.006300000000010186,
+        "p99": 0.011799999999993815,
+        "max": 0.011799999999993815,
+        "mean": 0.004018000000005486
+      },
+      "memory": {
+        "heapUsedDeltaMb": 0.17897796630859375,
+        "rssDeltaMb": 0.00390625,
+        "heapUsedMb": 6.0300140380859375,
+        "rssMb": 34.12109375
+      },
+      "decisions": {
+        "INCREASE_LOT": 0,
+        "NORMAL": 100,
+        "REDUCE_LOT": 0,
+        "FREEZE": 0,
+        "CANCEL": 0,
+        "PASS": 0
+      }
+    },
+    {
+      "n": 500,
+      "elapsedMs": 7.307000000000016,
+      "opsPerSec": 68427.5352401805,
+      "latency": {
+        "min": 0.002199999999902502,
+        "p50": 0.005200000000058935,
+        "p95": 0.009000000000014552,
+        "p99": 0.021299999999882857,
+        "max": 0.06270000000017717,
+        "mean": 0.005628400000007787
+      },
+      "memory": {
+        "heapUsedDeltaMb": 0.8407745361328125,
+        "rssDeltaMb": 0.5625,
+        "heapUsedMb": 6.896797180175781,
+        "rssMb": 34.78125
+      },
+      "decisions": {
+        "INCREASE_LOT": 0,
+        "NORMAL": 500,
+        "REDUCE_LOT": 0,
+        "FREEZE": 0,
+        "CANCEL": 0,
+        "PASS": 0
+      }
+    },
+    {
+      "n": 1000,
+      "elapsedMs": 11.686899999999923,
+      "opsPerSec": 85565.89001360553,
+      "latency": {
+        "min": 0.0022999999998774,
+        "p50": 0.005200000000058935,
+        "p95": 0.006300000000010186,
+        "p99": 0.014899999999897773,
+        "max": 0.10189999999988686,
+        "mean": 0.005217499999998153
+      },
+      "memory": {
+        "heapUsedDeltaMb": -0.541595458984375,
+        "rssDeltaMb": 0.40234375,
+        "heapUsedMb": 6.437652587890625,
+        "rssMb": 35.30859375
+      },
+      "decisions": {
+        "INCREASE_LOT": 0,
+        "NORMAL": 1000,
+        "REDUCE_LOT": 0,
+        "FREEZE": 0,
+        "CANCEL": 0,
+        "PASS": 0
+      }
+    },
+    {
+      "n": 5000,
+      "elapsedMs": 54.390699999999924,
+      "opsPerSec": 91927.480249381,
+      "latency": {
+        "min": 0.002199999999902502,
+        "p50": 0.0031999999998788553,
+        "p95": 0.005700000000160799,
+        "p99": 0.00980000000004111,
+        "max": 1.7177999999998974,
+        "mean": 0.004910839999999871
+      },
+      "memory": {
+        "heapUsedDeltaMb": -1.3488540649414062,
+        "rssDeltaMb": 2.28515625,
+        "heapUsedMb": 5.2389373779296875,
+        "rssMb": 37.703125
+      },
+      "decisions": {
+        "INCREASE_LOT": 0,
+        "NORMAL": 5000,
+        "REDUCE_LOT": 0,
+        "FREEZE": 0,
+        "CANCEL": 0,
+        "PASS": 0
+      }
+    },
+    {
+      "n": 10000,
+      "elapsedMs": 144.88810000000012,
+      "opsPerSec": 69018.78070041633,
+      "latency": {
+        "min": 0.002399999999852298,
+        "p50": 0.004599999999982174,
+        "p95": 0.005800000000135697,
+        "p99": 0.015499999999974534,
+        "max": 4.418799999999919,
+        "mean": 0.006786149999998679
+      },
+      "memory": {
+        "heapUsedDeltaMb": 0.3338623046875,
+        "rssDeltaMb": 1.23828125,
+        "heapUsedMb": 6.2872467041015625,
+        "rssMb": 39.671875
+      },
+      "decisions": {
+        "INCREASE_LOT": 0,
+        "NORMAL": 10000,
+        "REDUCE_LOT": 0,
+        "FREEZE": 0,
+        "CANCEL": 0,
+        "PASS": 0
+      }
+    }
+  ],
+  "failsafe": [
+    {
+      "case": "AI timeout",
+      "failsafe": true,
+      "health": "DISABLED",
+      "engineContinues": true,
+      "reason": "FAILSAFE: analysis timeout — AI disabled | Trading Engine continues"
+    },
+    {
+      "case": "AI crash",
+      "failsafe": true,
+      "health": "DISABLED",
+      "engineContinues": true,
+      "reason": "FAILSAFE: AI crash — AI disabled | Trading Engine continues"
+    },
+    {
+      "case": "AI invalid data",
+      "failsafe": true,
+      "health": "DISABLED",
+      "engineContinues": true,
+      "reason": "FAILSAFE: invalid ATR — AI disabled | Trading Engine continues"
+    },
+    {
+      "case": "AI disconnect",
+      "failsafe": true,
+      "health": "DISABLED",
+      "engineContinues": true,
+      "reason": "FAILSAFE: AI disconnect — AI disabled | Trading Engine continues"
+    },
+    {
+      "case": "AI exception",
+      "failsafe": true,
+      "health": "DISABLED",
+      "engineContinues": true,
+      "reason": "FAILSAFE: exception — forced AI exception | Trading Engine continues normally"
+    }
+  ],
+  "ownerLimits": {
+    "maxLotIncreasePct": 20,
+    "maxLotReducePct": 50,
+    "maxFreezeMin": 30,
+    "emergencyCancel": true,
+    "newsProtection": true,
+    "brokerProtection": true,
+    "weekendProtection": true,
+    "minLot": 0.01,
+    "maxLotCap": 5
+  },
+  "identityRule": "Entry/TP/SL/ATR/H4/Recovery/Hedge/Formula MUST be identical WITH vs WITHOUT AI",
+  "allowedDiffs": [
+    "LotAdjustment",
+    "PendingFreeze",
+    "PendingCancel"
+  ]
+}

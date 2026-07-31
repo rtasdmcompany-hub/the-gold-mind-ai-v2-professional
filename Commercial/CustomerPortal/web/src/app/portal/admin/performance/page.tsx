@@ -9,16 +9,14 @@ import { actionRunFullPerfSuite } from "@/server/performance/actions";
 export default async function PerformanceDashboardPage() {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const actor = session?.user?.email?.toLowerCase() || "";
   if (
-    !hasPermission(role, "admin.observability.read") &&
-    actor !== "admin@goldmind.local"
+    !hasPermission(role, "admin.observability.read")
   ) {
     redirect("/portal/admin");
   }
 
   const dash = await getExecutivePerformanceDashboard();
-  const canWrite = hasPermission(role, "admin.observability.write") || actor === "admin@goldmind.local";
+  const canWrite = hasPermission(role, "admin.observability.write");
 
   return (
     <>

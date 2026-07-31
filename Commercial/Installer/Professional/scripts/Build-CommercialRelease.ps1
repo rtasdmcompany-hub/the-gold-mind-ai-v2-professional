@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   THE GOLD MIND PROFESSIONAL - Final commercial packaging build.
 .DESCRIPTION
@@ -27,7 +27,7 @@ $OutDir = Join-Path $Commercial "Releases\$Version"
 $InstallerOut = Join-Path $OutDir "installer"
 $GhAssets = Join-Path $OutDir "github-assets"
 
-$CertSha = "75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce"
+$CertSha = "9fd202466a0894577f12721610b4a9a80f6f8d02bb9fd908aed3d3e88654d49a"
 $Mq5 = Join-Path $Root "Experts\TheGoldMindAI_Professional.mq5"
 $Ex5 = Join-Path $Root "Experts\TheGoldMindAI_Professional.ex5"
 $Csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
@@ -334,14 +334,15 @@ Sign mode for this build: $SignMode
   Set-Content (Join-Path $OutDir "RELEASE_NOTES.md") -Value $notes -Encoding UTF8
 
   $pkgManifest = Join-Path $InstallerProf "packages\manifest.stable.json"
-  $sigStatus = if ($SignMode -eq "unsigned") { "unsigned_dev" } else { "signed_$SignMode" }
-  $sigSubject = if ($SignMode -eq "unsigned") { "unsigned development build" } else { "RTAS Group of Companies" }
+  $sigStatus = if ($SignMode -eq "unsigned") { "pending_code_sign" } else { "signed_$SignMode" }
+  $sigSubject = if ($SignMode -eq "unsigned") { "Code signing pending" } else { "RTAS Group of Companies" }
+  $buildNumber = "{0}{1:D3}" -f ([datetime]::UtcNow.ToString("yy")), [datetime]::UtcNow.DayOfYear
   @{
     product          = "THE GOLD MIND PROFESSIONAL"
     edition          = "Website"
     channel          = $Channel
     version          = $Version
-    buildNumber      = (Get-Date -Format "yyDDD")
+    buildNumber      = $buildNumber
     releasedAt       = (Get-Date).ToUniversalTime().ToString("o")
     packageFile      = (Split-Path $zipPath -Leaf)
     packageSizeBytes = (Get-Item $zipPath).Length
@@ -425,6 +426,45 @@ function Publish-GitHubAssets {
 gh release create v$Version --title "THE GOLD MIND PROFESSIONAL $Version" --notes-file RELEASE_NOTES.md Setup.exe TheGoldMindSetup.exe TGM_PROFESSIONAL_${Version}_${Channel}.zip SHA256SUMS.txt SBOM.json VERSION_MANIFEST.json
 "@
   Set-Content (Join-Path $GhAssets "GITHUB_RELEASE.md") -Value $gh -Encoding UTF8
+}
+
+function Publish-PortalReleaseAsset([string]$zipPath) {
+  Write-Banner "Customer Portal download asset"
+  $portalReleases = Join-Path $Commercial "CustomerPortal\web\public\releases"
+  New-Item -ItemType Directory -Force -Path $portalReleases | Out-Null
+  $destZip = Join-Path $portalReleases (Split-Path $zipPath -Leaf)
+  Copy-Item -Force $zipPath $destZip
+  $zipHash = (Get-FileHash -Algorithm SHA256 $zipPath).Hash.ToLowerInvariant()
+  $zipSize = (Get-Item $zipPath).Length
+  $buildNumber = "{0}{1:D3}" -f ([datetime]::UtcNow.ToString("yy")), [datetime]::UtcNow.DayOfYear
+  $seed = [ordered]@{
+    id               = "rel_$($Version.Replace('.',''))_stable"
+    product          = "THE GOLD MIND PROFESSIONAL"
+    version          = $Version
+    buildNumber      = $buildNumber
+    channel          = $Channel
+    status           = "published"
+    releasedAt       = (Get-Date).ToUniversalTime().ToString("o")
+    packageFile      = (Split-Path $zipPath -Leaf)
+    packageUrl       = "$PortalBase/api/releases/download/rel_$($Version.Replace('.',''))_stable"
+    externalAssetUrl = "$PortalBase/releases/$(Split-Path $zipPath -Leaf)"
+    packageSizeBytes = $zipSize
+    sha256           = $zipHash
+    signatureRequired = ($SignMode -ne "unsigned")
+    signatureSubject  = if ($SignMode -eq "unsigned") { "Code signing pending" } else { "RTAS Group of Companies" }
+    signatureStatus   = if ($SignMode -eq "unsigned") { "pending_code_sign" } else { "valid" }
+    releaseNotes      = "Commercial packaging release $Version - extract ZIP, run Setup.exe, activate with existing license email/key."
+    compatibility     = @{
+      os         = @("Windows 10", "Windows 11")
+      mt5        = "build 3800+"
+      coreTag    = $Version
+      coreFrozen = $true
+    }
+  }
+  ($seed | ConvertTo-Json -Depth 6) | Set-Content (Join-Path $portalReleases "latest-stable.json") -Encoding UTF8
+  Write-Host "  Portal ZIP: $destZip"
+  Write-Host "  Catalog seed: $(Join-Path $portalReleases 'latest-stable.json')"
+  Write-Host "  After deploy, set RELEASE_STABLE_ZIP_URL if serverless FS cannot read public/releases."
 }
 
 function Write-Guides {
@@ -544,6 +584,7 @@ New-Sbom | Out-Null
 New-Manifests -zipPath $zip -setupPath $setup
 Invoke-Sign -setupPath $setup
 Publish-GitHubAssets
+Publish-PortalReleaseAsset -zipPath $zip
 Write-Guides
 
 if (-not $SkipValidate) {
@@ -555,3 +596,4 @@ Write-Banner "PACKAGING COMPLETE"
 Write-Host "Setup.exe: $setup"
 if (-not (Test-Path $setup)) { throw "Setup.exe missing - NOT READY" }
 Write-Host "READY FOR CUSTOMER INSTALLATION" -ForegroundColor Green
+

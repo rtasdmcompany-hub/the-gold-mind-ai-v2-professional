@@ -7,7 +7,7 @@ import { listLicensesForCustomer } from "@/server/licensing/license-service";
 import { redirect } from "next/navigation";
 
 export default async function DevicesPage() {
-  ensureSeedData();
+  await ensureSeedData();
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
   const devices = listDevicesForCustomer(session.user.email);
@@ -55,7 +55,7 @@ export default async function DevicesPage() {
                   <StatusBadge status={d.status} />
                 </td>
                 <td>
-                  <DeviceActions deviceId={d.id} name={d.name} />
+                  <DeviceActions deviceId={d.id} name={d.name} status={d.status} />
                 </td>
               </tr>
             ))}

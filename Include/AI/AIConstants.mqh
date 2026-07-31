@@ -19,8 +19,8 @@
 #define GM_AI_PRED_HIST_MAX         100
 #define GM_AI_REC_HIST_MAX          100
 #define GM_AI_SYNC_SEC              5
-#define GM_AI_COMING_SOON           "COMING SOON"
-#define GM_AI_NOT_INITIALIZED       "NOT INITIALIZED"
+#define GM_AI_COMING_SOON           "Standby"
+#define GM_AI_NOT_INITIALIZED       "Initializing"
 #define GM_AI_DB_FILE_PREFIX        "GM_AI_DB_"
 
 enum ENUM_GM_AI_MODE

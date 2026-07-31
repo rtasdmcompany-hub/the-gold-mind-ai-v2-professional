@@ -8,7 +8,6 @@ import { assertDurableStoreForLicensing } from "@/server/cloud/cache";
  * Validates license key + customer email + device fingerprint.
  * Must succeed for Setup.exe to finish (installer enforces this).
  * Trial / monthly / yearly / lifetime — same activation standard.
- * On success, license-service sends activation email via Resend (masked key + package).
  */
 export async function POST(req: Request) {
   try {

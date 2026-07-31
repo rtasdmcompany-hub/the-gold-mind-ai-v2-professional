@@ -12,7 +12,8 @@ export default async function PartnerPortalHome() {
   if (!session?.user?.email) redirect("/login");
   const email = session.user.email.toLowerCase();
   let partner = getPartnerByEmail(email);
-  if (!partner && (isDevAdminBypass(email) || email === "partner@goldmind.local")) {
+  // Demo partner injection is for local/dev bypass only — never invent a partner in production.
+  if (!partner && isDevAdminBypass(email)) {
     partner = ensureDemoPartner();
   }
   if (!partner) {

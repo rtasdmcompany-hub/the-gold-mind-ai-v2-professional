@@ -4,26 +4,31 @@ import { LicenseActionsPanel } from "@/components/LicenseActionsPanel";
 import { LicenseStoreBanner } from "@/components/LicenseStoreBanner";
 import { ensureSeedData } from "@/server/licensing/seed";
 import { listLicensesForCustomer } from "@/server/licensing/license-service";
+import { isSelfServePaidLicenseAllowed } from "@/server/billing/config";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default async function LicensesPage() {
   await ensureSeedData();
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
   const licenses = listLicensesForCustomer(session.user.email);
+  const allowPaidSelfServe = isSelfServePaidLicenseAllowed();
 
   return (
     <>
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">My Licenses</h1>
         <p className="page-sub">
-          Step 1: generate a key here. Step 2: paste it into Setup.exe. Installation finishes only after
-          portal activation succeeds — no second trip, no skipped licenses.
+          {allowPaidSelfServe
+            ? "Generate a key, then paste it into Setup.exe. Installation finishes only after portal activation succeeds."
+            : "Start a free trial key here, or purchase via Billing for paid keys. Paste the key into Setup.exe — installation finishes only after portal activation succeeds."}{" "}
+          <Link href="/portal/billing">Billing</Link>
         </p>
       </header>
 
       <LicenseStoreBanner />
-      <LicenseActionsPanel />
+      <LicenseActionsPanel allowPaidSelfServe={allowPaidSelfServe} />
 
       <div className="table-wrap">
         <table className="data">
@@ -41,7 +46,10 @@ export default async function LicensesPage() {
           <tbody>
             {licenses.length === 0 && (
               <tr>
-                <td colSpan={7}>No licenses yet — generate one above, then paste the key into Setup.exe.</td>
+                <td colSpan={7}>
+                  No licenses yet — {allowPaidSelfServe ? "generate one above" : "start a trial above or checkout in Billing"}, then
+                  paste the key into Setup.exe.
+                </td>
               </tr>
             )}
             {licenses.map((lic) => (

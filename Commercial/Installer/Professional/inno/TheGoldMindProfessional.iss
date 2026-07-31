@@ -61,14 +61,13 @@ Source: "payload\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"; WorkingDir: "{app}"
-Name: "{group}\Activate License"; Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\Activate-License.ps1"""; WorkingDir: "{app}"
-Name: "{group}\Deploy EA to MT5"; Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\Deploy-EA-To-MT5.ps1"""; WorkingDir: "{app}"
+Name: "{group}\Open Customer Portal"; Filename: "https://the-gold-mind-ai-v2-professional.vercel.app"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\PostInstall-Wizard.ps1"" -InstallRoot ""{app}"" -DeployEA:{code:DeployEaFlag}"; Flags: runhidden waituntilterminated; StatusMsg: "Configuring MT5 and license activation..."
 Filename: "{app}\bin\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
+; Post-install MT5/license configuration is handled by the WinForms launcher (no customer PowerShell windows).
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\logs"
