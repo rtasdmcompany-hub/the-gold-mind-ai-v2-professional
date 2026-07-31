@@ -281,8 +281,8 @@ export function ensureDemoTickets(): void {
   });
   updateSupportTicket(
     t1.id,
-    { assignee: "support@rtas.local", status: "resolved", resolution: "Sent KB activation guide" },
-    "support@rtas.local",
+    { assignee: "support@thegoldmind.local", status: "resolved", resolution: "Sent KB activation guide" },
+    "support@thegoldmind.local",
     "First response + resolved"
   );
   const t2 = createSupportTicket({
@@ -293,8 +293,8 @@ export function ensureDemoTickets(): void {
   });
   updateSupportTicket(
     t2.id,
-    { assignee: "support@rtas.local", status: "pending" },
-    "support@rtas.local",
+    { assignee: "support@thegoldmind.local", status: "pending" },
+    "support@thegoldmind.local",
     "Acknowledged — collecting package version"
   );
 }

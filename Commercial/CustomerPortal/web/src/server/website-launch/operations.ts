@@ -106,13 +106,13 @@ Sign in, activate your license, and download the installer from Downloads.
 
 Trading involves risk of loss. Read the Risk disclosure before live use.
 
-— RTAS Digital Marketing Company
+— THE GOLD MIND PROFESSIONAL
 `,
     "NOTIFY_MAINTENANCE.txt": `Subject: Scheduled maintenance — Customer Portal
 
 We will perform maintenance on {{window}}. Portal features may be briefly unavailable. Core EA on your MT5 terminal continues independently.
 
-— RTAS
+— THE GOLD MIND
 `,
     "NOTIFY_INCIDENT.txt": `Subject: Service update — {{summary}}
 
@@ -121,7 +121,7 @@ We are investigating an issue affecting {{scope}}. Trading Core on MT5 is not mo
 Status: {{status}}
 Next update: {{eta}}
 
-— RTAS
+— THE GOLD MIND
 `,
   };
   for (const [name, body] of Object.entries(templates)) {

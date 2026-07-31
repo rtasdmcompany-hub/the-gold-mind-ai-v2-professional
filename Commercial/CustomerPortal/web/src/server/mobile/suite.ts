@@ -110,8 +110,8 @@ function writeCompanionScaffold() {
           slug: "tgm-mobile-companion",
           version: "1.0.0",
           orientation: "portrait",
-          ios: { bundleIdentifier: "com.rtas.goldmind.companion", supportsTablet: true },
-          android: { package: "com.rtas.goldmind.companion" },
+          ios: { bundleIdentifier: "com.thegoldmind.companion", supportsTablet: true },
+          android: { package: "com.thegoldmind.companion" },
           extra: {
             tradingProhibited: true,
             apiBasePath: "/api/mobile",

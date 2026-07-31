@@ -13,8 +13,8 @@
 | `GOOGLE_CLIENT_SECRET` | SET |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | SET (aliases) |
 | `RESEND_API_KEY` | SET |
-| `RESEND_FROM_EMAIL` | SET (`THE GOLD MIND PROFESSIONAL <noreply@rtasstudio.com>`) |
-| `SUPPORT_EMAIL` / `SUPPORT_INBOX_EMAIL` | SET (`support@rtasstudio.com`) |
+| `RESEND_FROM_EMAIL` | SET (`THE GOLD MIND PROFESSIONAL <noreply@thegoldmind.ai>`) — domain verify pending |
+| `SUPPORT_EMAIL` / `SUPPORT_INBOX_EMAIL` | SET (`support@thegoldmind.ai`) |
 | `AUTH_URL` / `NEXTAUTH_URL` / `NEXT_PUBLIC_APP_URL` | SET to current Vercel app URL |
 | `AUTH_SECRET` / `NEXTAUTH_SECRET` / `LICENSE_STORE_SECRET` | GENERATED locally (gitignored) |
 
@@ -26,7 +26,7 @@ Files: `Commercial/CustomerPortal/web/.env.production` and `.env.local` (**not c
 
 | Service | Result | Notes |
 |---------|--------|-------|
-| Resend | **PASS** | Domain `rtasstudio.com` verified; SPF/DKIM verified; delivery tests PASS |
+| Resend | **PASS** (API) / **PENDING** (brand domain) | Shared account OK; From must be `@thegoldmind.ai` after Owner verifies that domain |
 | Google OAuth client | **PASS** (credentials) | Console redirect URI allowlist still needs Owner confirmation |
 | Portal production build | **PASS** | `BUILD_ID=3tHydF9iICckU3ZynMbWs` |
 | Trading Engine | Untouched | No MQL5/strategy changes |

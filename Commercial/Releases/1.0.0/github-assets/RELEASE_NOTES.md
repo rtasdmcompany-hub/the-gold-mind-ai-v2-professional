@@ -34,4 +34,4 @@ Sign mode: **pending_code_sign** (Authenticode certificate required — Owner ac
 
 ## Support
 Portal / docs: production domain after Owner DNS cutover  
-Contact: support@rtas.group
+Contact: support@thegoldmind.ai

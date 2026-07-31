@@ -10,7 +10,7 @@ export default function EulaPage() {
 
       <h2>1. License Grant</h2>
       <p>
-        Subject to a valid paid or trial license, RTAS grants you a limited, non-exclusive, non-transferable,
+        Subject to a valid paid or trial license, THE GOLD MIND grants you a limited, non-exclusive, non-transferable,
         revocable license to install and use THE GOLD MIND PROFESSIONAL Expert Advisor and accompanying commercial
         installer components on authorized devices up to your seat limit.
       </p>
@@ -25,7 +25,7 @@ export default function EulaPage() {
 
       <h2>3. Ownership</h2>
       <p>
-        RTAS retains all rights in the software, documentation, trademarks, and related materials. This EULA does
+        THE GOLD MIND retains all rights in the software, documentation, trademarks, and related materials. This EULA does
         not transfer ownership.
       </p>
 
@@ -49,7 +49,7 @@ export default function EulaPage() {
 
       <h2>7. Contact</h2>
       <p>
-        <a href="mailto:legal@rtas.group">legal@rtas.group</a>
+        <a href="mailto:legal@thegoldmind.ai">legal@thegoldmind.ai</a>
       </p>
     </LegalShell>
   );

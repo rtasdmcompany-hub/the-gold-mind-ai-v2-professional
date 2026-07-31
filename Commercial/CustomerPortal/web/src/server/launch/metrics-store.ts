@@ -148,20 +148,20 @@ export function ensureDemoMetrics(): void {
   const store = read();
   if (store.events.length > 0) return;
   const samples: Array<{ type: MetricEventType; email?: string; sessionMinutes?: number }> = [
-    { type: "install_success", email: "qa@rtas.local" },
+    { type: "install_success", email: "qa@thegoldmind.local" },
     { type: "install_success", email: "pro.trader@goldmind.local" },
     { type: "install_fail", email: "creator@example.com" },
-    { type: "activation_success", email: "qa@rtas.local" },
+    { type: "activation_success", email: "qa@thegoldmind.local" },
     { type: "activation_success", email: "pro.trader@goldmind.local" },
-    { type: "login_success", email: "qa@rtas.local" },
+    { type: "login_success", email: "qa@thegoldmind.local" },
     { type: "login_success", email: "pro.trader@goldmind.local" },
-    { type: "login_success", email: "support.lead@rtas.local" },
-    { type: "license_validation_ok", email: "qa@rtas.local" },
+    { type: "login_success", email: "support.lead@thegoldmind.local" },
+    { type: "license_validation_ok", email: "qa@thegoldmind.local" },
     { type: "license_validation_ok", email: "pro.trader@goldmind.local" },
-    { type: "portal_page_view", email: "qa@rtas.local" },
+    { type: "portal_page_view", email: "qa@thegoldmind.local" },
     { type: "portal_page_view", email: "pro.trader@goldmind.local" },
-    { type: "update_success", email: "qa@rtas.local" },
-    { type: "session_end", email: "qa@rtas.local", sessionMinutes: 24 },
+    { type: "update_success", email: "qa@thegoldmind.local" },
+    { type: "session_end", email: "qa@thegoldmind.local", sessionMinutes: 24 },
     { type: "session_end", email: "pro.trader@goldmind.local", sessionMinutes: 41 },
     { type: "support_request", email: "creator@example.com" },
   ];

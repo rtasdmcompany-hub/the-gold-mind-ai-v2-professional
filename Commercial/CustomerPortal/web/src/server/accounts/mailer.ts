@@ -1,3 +1,4 @@
+import { BRAND_RESEND_FROM } from "@/lib/brand";
 import { queueCommercialEmail, updateCommercialEmailStatus } from "@/server/billing/email";
 import type { EmailTemplate } from "@/server/billing/email";
 
@@ -32,7 +33,7 @@ export async function sendTransactionalEmail(input: {
   });
 
   const apiKey = (process.env.RESEND_API_KEY || "").trim();
-  const from = (process.env.RESEND_FROM_EMAIL || "").trim();
+  const from = (process.env.RESEND_FROM_EMAIL || BRAND_RESEND_FROM).trim();
   if (!apiKey || !from) {
     const error = "Email delivery is not configured (RESEND_API_KEY / RESEND_FROM_EMAIL missing).";
     console.warn(`[mailer] Outbox only — ${error} (to=${input.to} outbox=${outboxId})`);
@@ -87,7 +88,7 @@ export async function sendTransactionalEmail(input: {
 
 /** True when both Resend env vars are present (does not validate the key). */
 export function isResendConfigured(): boolean {
-  return !!(process.env.RESEND_API_KEY || "").trim() && !!(process.env.RESEND_FROM_EMAIL || "").trim();
+  return !!(process.env.RESEND_API_KEY || "").trim() && !!(process.env.RESEND_FROM_EMAIL || BRAND_RESEND_FROM).trim();
 }
 
 export function packageLabel(type: string): string {

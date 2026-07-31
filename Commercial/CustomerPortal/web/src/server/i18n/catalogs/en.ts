@@ -7,7 +7,7 @@ import type { TranslationCatalog } from "../types";
 export const EN_CATALOG: TranslationCatalog = {
   // common
   "common.appName": "THE GOLD MIND PROFESSIONAL",
-  "common.brand": "RTAS",
+  "common.brand": "THE GOLD MIND",
   "common.loading": "Loading…",
   "common.save": "Save",
   "common.cancel": "Cancel",
@@ -100,7 +100,7 @@ export const EN_CATALOG: TranslationCatalog = {
   "legal.accept": "Accept",
 
   // regional
-  "regional.support.contact": "partners@rtas.group · support@rtas.group",
+  "regional.support.contact": "partners@thegoldmind.ai · support@thegoldmind.ai",
   "regional.legal.notice": "Trading involves risk. Past performance does not guarantee future results.",
   "regional.measurement.metric": "Metric",
   "regional.measurement.imperial": "Imperial",

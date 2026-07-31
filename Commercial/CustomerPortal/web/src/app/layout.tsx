@@ -24,16 +24,16 @@ export const metadata: Metadata = {
     template: "%s · THE GOLD MIND PROFESSIONAL",
   },
   description:
-    "THE GOLD MIND AI v2.0 PROFESSIONAL by RTAS — Customer Portal, licensing, and certified Core. Trading involves risk of loss.",
+    "THE GOLD MIND AI v2.0 PROFESSIONAL — Customer Portal, licensing, downloads, and certified automated trading software. Trading involves risk of loss.",
   applicationName: "THE GOLD MIND AI v2.0 PROFESSIONAL",
-  authors: [{ name: "RTAS GROUP OF COMPANIES" }],
-  creator: "RTAS Digital Marketing Company",
-  publisher: "RTAS GROUP OF COMPANIES",
+  authors: [{ name: "THE GOLD MIND PROFESSIONAL" }],
+  creator: "THE GOLD MIND PROFESSIONAL",
+  publisher: "THE GOLD MIND PROFESSIONAL",
   keywords: [
     "THE GOLD MIND",
+    "THE GOLD MIND PROFESSIONAL",
     "MetaTrader 5",
     "Expert Advisor",
-    "RTAS",
     "automated trading",
     "Customer Portal",
   ],
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "THE GOLD MIND AI v2.0 PROFESSIONAL",
-    description: "Official website and Customer Portal by RTAS.",
+    description: "Official website and Customer Portal for THE GOLD MIND.",
     images: ["/brand/the-gold-mind-twitter-1200x600.png"],
   },
 };

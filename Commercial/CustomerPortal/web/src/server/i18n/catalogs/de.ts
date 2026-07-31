@@ -2,7 +2,7 @@ import type { TranslationCatalog } from "../types";
 
 export const DE_CATALOG: TranslationCatalog = {
   "common.appName": "THE GOLD MIND PROFESSIONAL",
-  "common.brand": "RTAS",
+  "common.brand": "THE GOLD MIND",
   "common.loading": "Wird geladen…",
   "common.save": "Speichern",
   "common.cancel": "Abbrechen",
@@ -73,7 +73,7 @@ export const DE_CATALOG: TranslationCatalog = {
   "legal.risk.title": "Risikohinweis",
   "legal.cookies.banner": "Wir verwenden Cookies, um das kommerzielle Portal zu betreiben und Ihre Erfahrung zu verbessern.",
   "legal.accept": "Akzeptieren",
-  "regional.support.contact": "partners@rtas.group · support@rtas.group",
+  "regional.support.contact": "partners@thegoldmind.ai · support@thegoldmind.ai",
   "regional.legal.notice": "Handel birgt Risiken. Vergangene Ergebnisse garantieren keine zukünftigen Erfolge.",
   "regional.measurement.metric": "Metrisch",
   "regional.measurement.imperial": "Imperial",

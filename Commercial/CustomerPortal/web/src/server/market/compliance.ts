@@ -178,7 +178,7 @@ export async function runMql5ComplianceReview(): Promise<{
       requirement: "Correct copyright information",
       status: "pass",
       severity: "Medium",
-      detail: "Copyright 2026, RTAS Group of Companies · Division RTAS Digital Marketing Company",
+      detail: "Copyright 2026, THE GOLD MIND",
       mitigation: "Keep copyright aligned in listing and #property copyright",
     },
   ];

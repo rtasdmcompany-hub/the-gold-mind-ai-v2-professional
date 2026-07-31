@@ -21,7 +21,7 @@ export default async function AdminOperationsHub() {
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">Enterprise Operations Hub</h1>
         <p className="page-sub">
-          RTAS commercial operations center — customers · licenses · revenue · support · health. Never touches Trading
+          THE GOLD MIND commercial operations center — customers · licenses · revenue · support · health. Never touches Trading
           Engine.
         </p>
       </header>

@@ -6,7 +6,7 @@ export default function TermsPage() {
       <p>
         <strong>Status:</strong> Production draft — OWNER REVIEW REQUIRED before open commercial launch.
         Effective date (draft): 31 July 2026. These Terms govern access to THE GOLD MIND PROFESSIONAL website,
-        Customer Portal, downloads, and related commercial services operated by RTAS Group of Companies.
+        Customer Portal, downloads, and related commercial services operated by THE GOLD MIND.
       </p>
 
       <h2>1. Agreement</h2>
@@ -42,13 +42,13 @@ export default function TermsPage() {
 
       <h2>6. Intellectual Property</h2>
       <p>
-        Software, branding, documentation, and website content remain the property of RTAS or its licensors. License
+        Software, branding, documentation, and website content remain the property of THE GOLD MIND or its licensors. License
         grants a limited right to use, not ownership.
       </p>
 
       <h2>7. Limitation of Liability</h2>
       <p>
-        To the maximum extent permitted by law, RTAS is not liable for trading losses, indirect or consequential
+        To the maximum extent permitted by law, THE GOLD MIND is not liable for trading losses, indirect or consequential
         damages, or service interruptions beyond fees paid for the affected subscription period.
       </p>
 
@@ -60,8 +60,8 @@ export default function TermsPage() {
 
       <h2>9. Contact</h2>
       <p>
-        <a href="mailto:legal@rtas.group">legal@rtas.group</a> ·{" "}
-        <a href="mailto:support@rtas.group">support@rtas.group</a>
+        <a href="mailto:legal@thegoldmind.ai">legal@thegoldmind.ai</a> ·{" "}
+        <a href="mailto:support@thegoldmind.ai">support@thegoldmind.ai</a>
       </p>
     </LegalShell>
   );

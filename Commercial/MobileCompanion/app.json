@@ -5,11 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "ios": {
-      "bundleIdentifier": "com.rtas.goldmind.companion",
+      "bundleIdentifier": "com.thegoldmind.companion",
       "supportsTablet": true
     },
     "android": {
-      "package": "com.rtas.goldmind.companion"
+      "package": "com.thegoldmind.companion"
     },
     "extra": {
       "tradingProhibited": true,

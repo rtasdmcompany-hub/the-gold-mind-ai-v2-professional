@@ -1,8 +1,8 @@
 # BRAND_STANDARD.md
 
-**Phase 8 · Sprint 1**  
-**Brand owner:** RTAS Group of Companies · RTAS Digital Marketing Company  
 **Product:** THE GOLD MIND · Automated Trading Software  
+**Commercial identity:** THE GOLD MIND only (separate commercial product)  
+**Updated:** 2026-07-31  
 
 ---
 
@@ -10,21 +10,39 @@
 
 Use exactly:
 
-- **RTAS Group of Companies**  
-- **THE GOLD MIND**  
-- **Automated Trading Software**  
+- **THE GOLD MIND**
+- **THE GOLD MIND PROFESSIONAL**
+- **Automated Trading Software**
 
 Product edition lockups:
 
-- **THE GOLD MIND PROFESSIONAL** (Website)  
-- **THE GOLD MIND MARKET** (MQL5 Market)  
+- **THE GOLD MIND PROFESSIONAL** (Website)
+- **THE GOLD MIND MARKET** (MQL5 Market)
+
+Do **not** use RTAS Studio, RTAS Group, RTAS Digital, or other company-group branding in any customer-facing surface.
 
 Do **not** redesign logos.  
-Place official binary assets under `Commercial/Assets/` only as supplied by brand owner.
+Place official binary assets under `Commercial/Assets/` only as supplied for THE GOLD MIND.
 
 ---
 
-## 2. Primary theme — Premium Black · Luxury Gold · Modern Enterprise
+## 2. Email identity (placeholders until domain cutover)
+
+| Role | Address |
+|------|---------|
+| Support | support@thegoldmind.ai |
+| Admin | admin@thegoldmind.ai |
+| Billing | billing@thegoldmind.ai |
+| License | license@thegoldmind.ai |
+| Transactional From | THE GOLD MIND PROFESSIONAL \<noreply@thegoldmind.ai\> |
+
+Canonical constants: `Commercial/CustomerPortal/web/src/lib/brand.ts`
+
+Shared infrastructure accounts (Resend, Google Cloud, Paddle, Upstash) are allowed. Customer-visible From/Reply-To/support addresses must use THE GOLD MIND identity only.
+
+---
+
+## 3. Primary theme — Premium Black · Luxury Gold · Modern Enterprise
 
 ### Color tokens (commercial UI / web guidance)
 
@@ -50,8 +68,6 @@ Place official binary assets under `Commercial/Assets/` only as supplied by bran
 | Product UI | Clean modern sans for dense trading UI readability |
 | Code/logs | Monospace (developer surfaces only) |
 
-Until official font files are provided in Assets, use platform-safe stacks that preserve hierarchy — do not invent a new logo type.
-
 ### Visual style
 
 - Modern Enterprise  
@@ -61,7 +77,7 @@ Until official font files are provided in Assets, use platform-safe stacks that 
 
 ---
 
-## 3. Voice & tone
+## 4. Voice & tone
 
 | Do | Don’t |
 |----|-------|
@@ -72,24 +88,14 @@ Until official font files are provided in Assets, use platform-safe stacks that 
 
 ---
 
-## 4. Where brand must appear
+## 5. Where brand must appear
 
 - Installer splash / about  
 - Welcome Wizard header  
 - Website landing / pricing  
 - Customer Portal chrome  
-- Market product gallery (Market edition assets)  
-- Support email templates  
-- Premium report covers  
+- Transactional email From/signatures  
+- Legal documents & footer  
+- Metadata / SEO / Open Graph  
 
----
-
-## 5. Asset pipeline
-
-1. Brand owner drops official files into `Commercial/Assets/Logos|Icons|Splash|Storefront`  
-2. Packages reference those paths only  
-3. No third-party logo recreation  
-
----
-
-*End of BRAND_STANDARD.md*
+Parent-company badges must **not** appear in footer or portal chrome.

@@ -5,7 +5,7 @@ import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 
 export const metadata: Metadata = {
   title: "Contact — THE GOLD MIND PROFESSIONAL",
-  description: "Contact RTAS Digital Marketing Company for THE GOLD MIND PROFESSIONAL commercial inquiries.",
+  description: "Contact THE GOLD MIND for THE GOLD MIND PROFESSIONAL commercial inquiries.",
 };
 
 export default async function ContactPage({
@@ -67,7 +67,7 @@ export default async function ContactPage({
             )}
           </ScrollReveal>
           <p style={{ marginTop: 24, fontSize: 13, color: "var(--e-text-dim)", textAlign: "center" }}>
-            Legal entity: RTAS Group of Companies · Division RTAS Digital Marketing Company
+            Product: THE GOLD MIND · support@thegoldmind.ai · billing@thegoldmind.ai
           </p>
         </div>
       </section>

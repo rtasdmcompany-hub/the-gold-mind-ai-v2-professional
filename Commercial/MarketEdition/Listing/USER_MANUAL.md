@@ -19,4 +19,4 @@ Refer to the EA Inputs dialog. Typical groups in the certified build include Ide
 
 ## Support
 
-Use MQL5 Market product comments and RTAS Market support policy. Website Customer Portal is a separate product.
+Use MQL5 Market product comments and THE GOLD MIND Market support policy. Website Customer Portal is a separate product.

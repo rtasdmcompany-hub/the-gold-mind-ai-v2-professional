@@ -3,11 +3,11 @@
   "productName": "THE GOLD MIND AI v2.0 PROFESSIONAL",
   "productShortName": "THE GOLD MIND PROFESSIONAL",
   "commercialVersion": "1.0.0",
-  "parentCompany": "RTAS Digital Marketing Company",
-  "companyGroup": "RTAS GROUP OF COMPANIES",
+  "parentCompany": "THE GOLD MIND",
+  "companyGroup": "THE GOLD MIND",
   "coreSha256": "75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce",
   "isolation": {
-    "policy": "Each RTAS product is fully independent — no shared customer-facing branding, URLs, OAuth, databases, or license stores.",
+    "policy": "THE GOLD MIND is a separate commercial product. Shared infrastructure accounts are allowed; customer-facing branding, emails, portal labels, and legal identity must be THE GOLD MIND only.",
     "dedicatedGitHubRepo": "rtasdmcompany-hub/the-gold-mind-ai-v2-professional",
     "dedicatedVercelProject": "rtas-group/the-gold-mind-ai-v2-professional",
     "mustNotReferenceProducts": [
@@ -22,5 +22,14 @@
     "oauthCallbackPath": "/api/auth/callback/google",
     "healthPath": "/api/health"
   },
-  "futureCustomDomain": "https://thegoldmind.ai"
+  "futureCustomDomain": "https://thegoldmind.ai",
+  "brandEmails": {
+    "domain": "thegoldmind.ai",
+    "support": "support@thegoldmind.ai",
+    "admin": "admin@thegoldmind.ai",
+    "billing": "billing@thegoldmind.ai",
+    "license": "license@thegoldmind.ai",
+    "noreply": "noreply@thegoldmind.ai",
+    "note": "Temporary placeholders until custom domain DNS cutover."
+  }
 }

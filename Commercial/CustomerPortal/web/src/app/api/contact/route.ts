@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { writeAudit } from "@/server/cloud/audit";
 import { applySecurityHeaders } from "@/server/cloud/security-headers";
 import { sendTransactionalEmail } from "@/server/accounts/mailer";
+import { BRAND_EMAILS } from "@/lib/brand";
 
 /** POST /api/contact — public commercial inquiry intake (no Core involvement). */
 export async function POST(req: Request) {
@@ -17,8 +18,8 @@ export async function POST(req: Request) {
 
   const supportInbox = (
     process.env.SUPPORT_INBOX_EMAIL ||
-    process.env.RESEND_FROM_EMAIL ||
-    ""
+    process.env.SUPPORT_EMAIL ||
+    BRAND_EMAILS.support
   ).trim();
 
   let emailSent = false;

@@ -22,7 +22,7 @@ export default function DisclaimerPage() {
 
       <h2>3. Independent Operation</h2>
       <p>
-        The MetaTrader 5 Trading Engine executes under your broker account and settings. RTAS does not operate your
+        The MetaTrader 5 Trading Engine executes under your broker account and settings. THE GOLD MIND does not operate your
         trading account, place discretionary human trades on your behalf, or control your broker relationship.
       </p>
 
@@ -34,8 +34,8 @@ export default function DisclaimerPage() {
 
       <h2>5. Contact</h2>
       <p>
-        <a href="mailto:legal@rtas.group">legal@rtas.group</a> ·{" "}
-        <a href="mailto:support@rtas.group">support@rtas.group</a>
+        <a href="mailto:legal@thegoldmind.ai">legal@thegoldmind.ai</a> ·{" "}
+        <a href="mailto:support@thegoldmind.ai">support@thegoldmind.ai</a>
       </p>
     </LegalShell>
   );

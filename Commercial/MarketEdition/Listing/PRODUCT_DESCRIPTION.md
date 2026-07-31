@@ -35,4 +35,4 @@ Past Strategy Tester results (if shown) are historical / hypothetical and **do n
 
 **Copyright**
 
-Copyright 2026, RTAS Group of Companies · Division: RTAS Digital Marketing Company.
+Copyright 2026, THE GOLD MIND.

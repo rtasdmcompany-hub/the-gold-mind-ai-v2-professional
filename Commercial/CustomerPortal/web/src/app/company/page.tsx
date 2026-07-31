@@ -1,62 +1,55 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
-import { InnerPage } from "@/components/enterprise/InnerPage";
-import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 
 export const metadata: Metadata = {
-  title: "Company — THE GOLD MIND PROFESSIONAL",
-  description: "RTAS GROUP OF COMPANIES — THE GOLD MIND AI international trading software division.",
+  title: "Company",
+  description: "About THE GOLD MIND — the commercial product behind THE GOLD MIND PROFESSIONAL.",
 };
 
 export default function CompanyPage() {
   return (
-    <EnterpriseShell>
-      <InnerPage
-        eyebrow="RTAS GROUP OF COMPANIES"
-        title="Our Company"
-        subtitle="An international technology group delivering professional trading software and commercial cloud services."
-      >
-        <div className="e-about-grid">
-          <ScrollReveal>
-            <div className="e-glass-card">
-              <h3>Who We Are</h3>
-              <p>
-                THE GOLD MIND AI v2.0 PROFESSIONAL is developed by RTAS Digital Marketing Company, a division of RTAS
-                GROUP OF COMPANIES. We build institutional-grade MetaTrader 5 automation with a certified, frozen Core
-                engine and enterprise commercial infrastructure.
-              </p>
-            </div>
-          </ScrollReveal>
-          <ScrollReveal delay={1}>
-            <div className="e-glass-card">
-              <h3>What We Do</h3>
-              <p>
-                We license professional Expert Advisor software, operate the Customer Portal for activation and updates,
-                and provide enterprise support — entirely separate from live trading execution on customer MT5
-                terminals.
-              </p>
-            </div>
-          </ScrollReveal>
-        </div>
-        <ScrollReveal delay={2}>
-          <div className="e-glass-card" style={{ marginTop: "var(--e-space-lg)" }}>
-            <h3>Leadership & Governance</h3>
-            <p>
-              Commercial operations follow controlled launch governance with executive certification gates, security
-              audits, and counsel-reviewed legal surfaces before open Stable release.
-            </p>
-            <div className="e-btn-group" style={{ marginTop: 20 }}>
-              <Link href="/about" className="e-btn e-btn-ghost">
-                About THE GOLD MIND
-              </Link>
-              <Link href="/contact" className="e-btn e-btn-primary">
-                Contact
-              </Link>
-            </div>
-          </div>
-        </ScrollReveal>
-      </InnerPage>
-    </EnterpriseShell>
+    <main className="legal-page">
+      <div className="legal-inner">
+        <p className="eyebrow">COMPANY</p>
+        <h1>THE GOLD MIND</h1>
+        <p className="legal-lead">
+          THE GOLD MIND is an independent commercial product offering professional MT5 Expert Advisor
+          licensing, customer portal access, billing, and support for THE GOLD MIND PROFESSIONAL.
+        </p>
+
+        <section className="legal-section">
+          <h2>What we sell</h2>
+          <p>
+            We sell licenses and access to THE GOLD MIND PROFESSIONAL — a trading-automation product for
+            MetaTrader 5 — through our Customer Portal. Infrastructure partners may power email, auth,
+            billing, and hosting behind the scenes; customer-facing identity remains THE GOLD MIND only.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <h2>Product focus</h2>
+          <ul>
+            <li>Professional MT5 Expert Advisor distribution and licensing</li>
+            <li>Secure Customer Portal for account, license, and billing management</li>
+            <li>Transparent commercial policies and support channels</li>
+          </ul>
+        </section>
+
+        <section className="legal-section">
+          <h2>Contact</h2>
+          <p>
+            Product and support: <a href="mailto:support@thegoldmind.ai">support@thegoldmind.ai</a>
+          </p>
+          <p>
+            Billing: <a href="mailto:billing@thegoldmind.ai">billing@thegoldmind.ai</a>
+          </p>
+          <p>
+            <Link href="/contact">Contact page →</Link>
+          </p>
+        </section>
+
+        <p className="legal-updated">Last updated: July 31, 2026</p>
+      </div>
+    </main>
   );
 }

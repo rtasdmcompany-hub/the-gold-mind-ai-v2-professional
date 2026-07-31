@@ -67,31 +67,7 @@ export function BrandLogo({
   );
 }
 
-export function RtasGroupBadge({ height = 48, className }: { height?: number; className?: string }) {
-  return (
-    <Image
-      src="/brand/rtas-group-footer-badge.png"
-      alt="A Project Of RTAS GROUP OF COMPANIES"
-      width={Math.round(height * 1.4)}
-      height={height}
-      className={className ?? "e-brand-logo e-brand-logo--badge"}
-      style={{ width: "auto", height, objectFit: "contain" }}
-    />
-  );
-}
 
-export function RtasDigitalBadge({ height = 40, className }: { height?: number; className?: string }) {
-  return (
-    <Image
-      src="/brand/rtas-digital-marketing-footer.png"
-      alt="RTAS Digital Marketing Company"
-      width={Math.round(height * 1.4)}
-      height={height}
-      className={className ?? "e-brand-logo e-brand-logo--badge"}
-      style={{ width: "auto", height, objectFit: "contain" }}
-    />
-  );
-}
 
 export function UserAvatar({
   name,

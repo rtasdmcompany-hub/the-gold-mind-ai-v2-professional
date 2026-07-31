@@ -3,7 +3,7 @@ import type { Session } from "next-auth";
 import Link from "next/link";
 import { PortalNav } from "@/components/PortalNav";
 import { PortalUserBar } from "@/components/PortalUserBar";
-import { BrandLogo, RtasGroupBadge } from "@/components/BrandLogo";
+import { BrandLogo } from "@/components/BrandLogo";
 import { canAccessAdminConsole } from "@/server/admin/roles";
 import { isDevAdminBypass } from "@/server/security/dev-bypass";
 import { getParticipantByEmail } from "@/server/launch/beta-store";
@@ -56,7 +56,6 @@ export default async function PortalLayout({
         <footer className="portal-footer-block">
           <div className="portal-footer-brands">
             <BrandLogo variant="footer" href="/" />
-            <RtasGroupBadge height={44} />
           </div>
           <p className="footer-note">
             THE GOLD MIND AI v2.0 PROFESSIONAL · Customer Portal · Commercial service only · Core Trading Engine is not

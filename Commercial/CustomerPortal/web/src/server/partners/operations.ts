@@ -267,7 +267,7 @@ export function ensureDemoPartner(): PartnerProfile {
   const app = submitPartnerApplication({
     email: "partner@goldmind.local",
     name: "Demo Partner",
-    company: "RTAS Channel Demo",
+    company: "THE GOLD MIND Channel Demo",
     region: "EMEA",
     country: "AE",
     pitch: "Demo partner for Phase 11 Sprint 3 validation",

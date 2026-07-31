@@ -26,33 +26,25 @@ const FOOTER = {
   ],
 };
 
-const FOOTER_LOGOS = [
-  { src: "/brand/footer-gold-mind.png", alt: "THE GOLD MIND Automated Trading Software" },
-  { src: "/brand/footer-rtas-group.png", alt: "RTAS GROUP OF COMPANIES" },
-  { src: "/brand/footer-rtas-digital.png", alt: "RTAS Digital Marketing Company" },
-];
-
 export function EnterpriseFooter() {
   return (
     <footer className="e-footer e-footer--compact">
       <div className="e-container">
         <div className="e-footer-grid e-footer-grid--compact">
           <div className="e-footer-brand">
-            <div className="e-footer-logos e-footer-logos--brand" aria-label="Brand marks">
-              {FOOTER_LOGOS.map((logo) => (
-                <div key={logo.src} className="e-footer-logo-cell">
-                  <Image
-                    src={logo.src}
-                    alt={logo.alt}
-                    width={88}
-                    height={88}
-                    className="e-footer-logo-img"
-                  />
-                </div>
-              ))}
+            <div className="e-footer-logos e-footer-logos--brand" aria-label="THE GOLD MIND brand">
+              <div className="e-footer-logo-cell">
+                <Image
+                  src="/brand/footer-gold-mind.png"
+                  alt="THE GOLD MIND Automated Trading Software"
+                  width={88}
+                  height={88}
+                  className="e-footer-logo-img"
+                />
+              </div>
             </div>
             <p className="e-footer-desc">
-              THE GOLD MIND AI v2.0 PROFESSIONAL — institutional automated trading by RTAS GROUP OF COMPANIES.
+              THE GOLD MIND AI v2.0 PROFESSIONAL — institutional automated trading software for MetaTrader 5.
             </p>
           </div>
           <div className="e-footer-col">
@@ -89,7 +81,7 @@ export function EnterpriseFooter() {
 
         <hr className="e-divider-glass" />
         <div className="e-footer-bottom">
-          <span>© {new Date().getFullYear()} RTAS GROUP OF COMPANIES</span>
+          <span>© {new Date().getFullYear()} THE GOLD MIND PROFESSIONAL</span>
           <span className="e-footer-risk">Trading involves substantial risk of loss.</span>
         </div>
       </div>

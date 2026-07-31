@@ -1,12 +1,13 @@
 # Commercial Assets — Official Brand Placement
 
-Place **existing official** RTAS / THE GOLD MIND brand files here.
+Place **existing official** THE GOLD MIND brand files here.
 
 ## Rules
 
 - Do **not** redesign logos.
 - Do **not** invent alternate marks without Owner approval.
-- Use only approved official assets supplied by RTAS Group of Companies / RTAS Digital Marketing Company.
+- Use only approved official assets supplied for **THE GOLD MIND**.
+- Do **not** ship RTAS Studio / RTAS Group / RTAS Digital marks in customer-facing UI.
 
 ## Status (2026-07-26)
 
@@ -29,6 +30,6 @@ Premium Black · Luxury Gold · Modern Enterprise Style
 
 Identity:
 
-- RTAS Group of Companies  
 - THE GOLD MIND  
+- THE GOLD MIND PROFESSIONAL  
 - Automated Trading Software  

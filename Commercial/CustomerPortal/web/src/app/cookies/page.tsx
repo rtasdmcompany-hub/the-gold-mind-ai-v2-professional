@@ -34,7 +34,7 @@ export default function CookiesPage() {
 
       <h2>5. Contact</h2>
       <p>
-        <a href="mailto:privacy@rtas.group">privacy@rtas.group</a>
+        <a href="mailto:privacy@thegoldmind.ai">privacy@thegoldmind.ai</a>
       </p>
     </LegalShell>
   );

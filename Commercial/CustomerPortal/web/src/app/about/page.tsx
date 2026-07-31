@@ -5,7 +5,7 @@ import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 
 export const metadata: Metadata = {
   title: "About — THE GOLD MIND PROFESSIONAL",
-  description: "Mission, vision, technology, and global presence of THE GOLD MIND AI v2.0 PROFESSIONAL by RTAS.",
+  description: "Mission, vision, technology, and global presence of THE GOLD MIND AI v2.0 PROFESSIONAL.",
 };
 
 export default function AboutPage() {
@@ -13,7 +13,7 @@ export default function AboutPage() {
     <EnterpriseShell>
       <div className="e-page-hero e-container">
         <ScrollReveal>
-          <p className="e-eyebrow">RTAS GROUP OF COMPANIES</p>
+          <p className="e-eyebrow">THE GOLD MIND</p>
           <h1 className="e-section-title">About THE GOLD MIND</h1>
           <p className="e-section-sub">
             An international AI trading software company delivering institutional-grade automation on MetaTrader 5.
@@ -128,7 +128,7 @@ export default function AboutPage() {
             <h2 className="e-section-title">International by design</h2>
             <p className="e-section-sub">
               Deployed on global edge infrastructure with multi-region readiness, i18n support, and regional compliance
-              configuration. A project of RTAS GROUP OF COMPANIES · Developed by RTAS Digital Marketing Company.
+              configuration. Product of THE GOLD MIND.
             </p>
             <Link href="/contact" className="e-btn e-btn-primary">
               Contact Us

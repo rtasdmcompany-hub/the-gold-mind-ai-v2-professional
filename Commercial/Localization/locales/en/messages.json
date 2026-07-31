@@ -1,6 +1,6 @@
 {
   "common.appName": "THE GOLD MIND PROFESSIONAL",
-  "common.brand": "RTAS",
+  "common.brand": "THE GOLD MIND",
   "common.loading": "Loading…",
   "common.save": "Save",
   "common.cancel": "Cancel",
@@ -71,7 +71,7 @@
   "legal.risk.title": "Risk Disclosure",
   "legal.cookies.banner": "We use cookies to operate the commercial portal and improve your experience.",
   "legal.accept": "Accept",
-  "regional.support.contact": "partners@rtas.group · support@rtas.group",
+  "regional.support.contact": "partners@thegoldmind.ai · support@thegoldmind.ai",
   "regional.legal.notice": "Trading involves risk. Past performance does not guarantee future results.",
   "regional.measurement.metric": "Metric",
   "regional.measurement.imperial": "Imperial"

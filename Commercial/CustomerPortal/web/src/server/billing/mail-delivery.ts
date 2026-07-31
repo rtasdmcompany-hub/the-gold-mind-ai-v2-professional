@@ -25,7 +25,7 @@ export function deliverBillingEmail(input: {
   const text = input.body;
   const html = `<div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.5;color:#111">
     <p style="white-space:pre-wrap">${escapeHtml(text)}</p>
-    <p style="color:#666;font-size:12px;margin-top:24px">THE GOLD MIND PROFESSIONAL · RTAS Group of Companies</p>
+    <p style="color:#666;font-size:12px;margin-top:24px">THE GOLD MIND PROFESSIONAL</p>
   </div>`;
 
   void sendTransactionalEmail({

@@ -24,7 +24,7 @@ export async function sendLicenseCreatedEmail(input: {
     `Store this key securely. It is shown in this email once for delivery.`,
     `Activate it in the Customer Portal or during desktop installation.`,
     ``,
-    `— RTAS Digital / THE GOLD MIND PROFESSIONAL`,
+    `— THE GOLD MIND PROFESSIONAL`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -39,7 +39,7 @@ export async function sendLicenseCreatedEmail(input: {
       ${input.licenseId ? `<li><strong>License ID:</strong> ${escapeHtml(input.licenseId)}</li>` : ""}
     </ul>
     <p>Store this key securely. Activate it in the Customer Portal or during desktop installation.</p>
-    <p style="color:#666;font-size:13px">— RTAS Digital / THE GOLD MIND PROFESSIONAL</p>
+    <p style="color:#666;font-size:13px">— THE GOLD MIND PROFESSIONAL</p>
   `;
 
   const sent = await sendTransactionalEmail({
@@ -82,7 +82,7 @@ export async function sendLicenseActivatedEmail(input: {
     ``,
     `You can manage devices and subscriptions in the Customer Portal.`,
     ``,
-    `— RTAS Digital / THE GOLD MIND PROFESSIONAL`,
+    `— THE GOLD MIND PROFESSIONAL`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -98,7 +98,7 @@ export async function sendLicenseActivatedEmail(input: {
       ${input.deviceName ? `<li><strong>Device:</strong> ${escapeHtml(input.deviceName)}</li>` : ""}
     </ul>
     <p>Manage devices and subscriptions in the Customer Portal.</p>
-    <p style="color:#666;font-size:13px">— RTAS Digital / THE GOLD MIND PROFESSIONAL</p>
+    <p style="color:#666;font-size:13px">— THE GOLD MIND PROFESSIONAL</p>
   `;
 
   const sent = await sendTransactionalEmail({

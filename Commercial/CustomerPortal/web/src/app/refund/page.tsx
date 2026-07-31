@@ -15,13 +15,13 @@ export default function RefundPage() {
       <p>
         Refund eligibility depends on time since purchase and whether the license has been activated/downloaded.
         Unless mandatory consumer law requires otherwise, refund requests should be submitted within fourteen (14)
-        days of purchase to <a href="mailto:billing@rtas.group">billing@rtas.group</a> with your order or invoice
+        days of purchase to <a href="mailto:billing@thegoldmind.ai">billing@thegoldmind.ai</a> with your order or invoice
         reference.
       </p>
 
       <h2>3. Lifetime Licenses</h2>
       <p>
-        Lifetime licenses are refundable only as required by applicable law or as expressly approved by RTAS in
+        Lifetime licenses are refundable only as required by applicable law or as expressly approved by THE GOLD MIND in
         writing for exceptional cases (e.g. verified duplicate charge).
       </p>
 

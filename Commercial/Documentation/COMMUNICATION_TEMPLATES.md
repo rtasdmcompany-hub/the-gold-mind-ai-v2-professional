@@ -2,14 +2,16 @@
 
 **Phase 8 · Sprint 8**  
 **Channel:** Email (primary) · Portal copy variants  
-**Tone:** Precise · calm · premium · RTAS / THE GOLD MIND identity  
-**Rule:** Templates only — no Core changes
+**Tone:** Precise · calm · premium · THE GOLD MIND identity only  
+**Rule:** Templates only — no Core changes · no RTAS Studio / parent-company branding in customer mail
 
 ---
 
 ## Shared header/footer
 
-**Header:** THE GOLD MIND PROFESSIONAL · RTAS Group of Companies  
+**Header:** THE GOLD MIND PROFESSIONAL  
+**From:** THE GOLD MIND PROFESSIONAL \<noreply@thegoldmind.ai\>  
+**Support:** support@thegoldmind.ai · Billing: billing@thegoldmind.ai · License: license@thegoldmind.ai  
 **Footer:** Support Center link · Privacy · Unsubscribe (marketing only) · “Past performance ≠ future results” where trading context appears  
 
 ---

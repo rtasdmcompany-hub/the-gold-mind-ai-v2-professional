@@ -44,7 +44,7 @@ export default async function LoginPage({
           <div className="e-login-card e-glass-card e-login-glass">
             <div className="e-login-brand">
               <BrandLogo variant="login" priority className="e-brand-logo e-brand-logo--login" />
-              <p className="e-login-eyebrow">RTAS GROUP OF COMPANIES</p>
+              <p className="e-login-eyebrow">THE GOLD MIND</p>
               <h1 className="e-login-title">Customer Portal</h1>
               <p className="e-login-sub">
                 Sign in with a verified account. New users must register and confirm email first.

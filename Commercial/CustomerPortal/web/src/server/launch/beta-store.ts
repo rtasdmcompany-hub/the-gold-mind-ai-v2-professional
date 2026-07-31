@@ -429,14 +429,14 @@ export function ensureDemoBetaParticipants(): void {
     steps: EnrollmentStep[];
   }> = [
     {
-      email: "qa@rtas.local",
-      name: "RTAS QA",
+      email: "qa@thegoldmind.local",
+      name: "THE GOLD MIND QA",
       group: "internal_team",
       status: "active",
       steps: ENROLLMENT_STEPS,
     },
     {
-      email: "support.lead@rtas.local",
+      email: "support.lead@thegoldmind.local",
       name: "Support Lead",
       group: "support_team",
       status: "active",

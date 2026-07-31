@@ -5,8 +5,8 @@
   "channel": "market-rc",
   "coreFile": "Experts/TheGoldMindAI_Professional.mq5",
   "coreSha256": "75002e46e3c200292c3696b2767bba20f2dd4200c74078555f84bc1f54a033ce",
-  "copyright": "Copyright 2026, RTAS Group of Companies",
-  "division": "RTAS Digital Marketing Company",
+  "copyright": "Copyright 2026, THE GOLD MIND",
+  "division": "THE GOLD MIND",
   "delivery": "MQL5 Market one-click (no Website installer)",
   "excludedFromPackage": [
     "CustomerPortal",
