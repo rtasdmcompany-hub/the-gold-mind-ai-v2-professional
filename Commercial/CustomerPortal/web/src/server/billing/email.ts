@@ -56,9 +56,10 @@ export function queueCommercialEmail(input: {
 export function updateCommercialEmailStatus(
   emailId: string | undefined,
   status: "queued" | "sent" | "failed",
-  _note?: string
+  note?: string
 ): void {
   if (!emailId) return;
+  void note;
   mutateBilling((data) => {
     const row = data.emails.find((e) => e.id === emailId);
     if (row) row.status = status;

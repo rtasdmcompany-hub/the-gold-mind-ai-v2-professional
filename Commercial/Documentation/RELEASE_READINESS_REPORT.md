@@ -16,7 +16,8 @@
 **NO-GO for open commercial sales until Owner external blockers are cleared.**
 
 Internal engineering is release-ready for packaging and controlled deployment.  
-Open customer launch remains blocked only by Owner actions (signing, live payments, DNS, Redis, OAuth, legal).
+Owner blockers reduced to **4** items in `OWNER_ACTION_REQUIRED.md` (signing, DNS, production services/secrets, legal).  
+See also `GO_LIVE_CHECKLIST.md` and `.env.production.example`.
 
 ---
 

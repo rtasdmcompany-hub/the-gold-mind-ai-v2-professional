@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requirePermission, requireSession } from "@/server/licensing/session";
-import { updateSupportTicket, ensureDemoTickets } from "@/server/admin/support-store";
+import { updateSupportTicket } from "@/server/admin/support-store";
 import { issueSensitiveConfirmToken, consumeSensitiveConfirmToken, logAdminSecurityEvent } from "@/server/admin/security";
 import { writeAudit } from "@/server/cloud/audit";
 
