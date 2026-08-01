@@ -29,9 +29,9 @@ Trial and lifetime use the **same** Active rule.
 
 ## Owner actions required (this environment cannot finish them)
 
-1. **Rebuild Setup.exe on Windows**  
-   `Commercial/Installer/Professional/scripts/Build-CommercialRelease.ps1`  
-   (needs Windows `csc.exe`). Then re-download/install the new Setup.
+1. **Use the new canonical Setup.exe already rebuilt in-repo**  
+   `Commercial/Releases/1.0.0/installer/Setup.exe`  
+   (strict license markers embedded; rebuild via `Build-CommercialRelease.ps1` / mono `mcs` replaces in place).
 
 2. **Recompile EX5 in MetaEditor**  
    Open `Experts/TheGoldMindAI_Professional.mq5` → Compile → replace packaged `TheGoldMindAI_Professional.ex5`.  
