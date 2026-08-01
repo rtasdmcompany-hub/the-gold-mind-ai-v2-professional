@@ -7,6 +7,7 @@ import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 import { SoftwareShowcase } from "@/components/enterprise/SoftwareShowcase";
 import { TrustSection } from "@/components/enterprise/TrustSection";
 import { AiAssistantWidget } from "@/components/AiAssistantWidget";
+import { InvestorAlertModal } from "@/components/enterprise/InvestorAlertModal";
 import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
@@ -51,6 +52,7 @@ const FEATURES = [
 export default function HomePage() {
   return (
     <EnterpriseShell navTransparent>
+      <InvestorAlertModal />
       <section className="e-hero">
         <HeroBackground />
         <div className="e-hero-grid">
