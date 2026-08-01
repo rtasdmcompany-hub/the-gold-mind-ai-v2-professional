@@ -79,6 +79,18 @@ void GmP11B_UpdatePanel(const int panelX, const int panelY)
    g_p11e.UpdatePanel(panelX, panelY);
   }
 
+void GmP11B_OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
+  {
+   if(!P11B_Enable_Supervisor)
+      return;
+   g_p11e.OnChartEvent(id, lparam, dparam, sparam);
+  }
+
+bool GmP11B_IsPanelDragging(void)
+  {
+   return g_p11e.IsPanelDragging();
+  }
+
 bool GmP11B_IsActive(void)
   {
    return g_p11e.IsSupervisorActive();

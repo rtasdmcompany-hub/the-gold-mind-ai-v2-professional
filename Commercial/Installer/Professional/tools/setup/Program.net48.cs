@@ -5,6 +5,7 @@ using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -17,7 +18,7 @@ namespace TgmProfessionalSetup
     {
         internal const string ProductName = "THE GOLD MIND PROFESSIONAL";
         internal const string Version = "1.0.0";
-        internal const string Publisher = "RTAS Group of Companies";
+        internal const string Publisher = "THE GOLD MIND";
         internal const string PortalBase = "https://the-gold-mind-ai-v2-professional.vercel.app";
         internal const string PortalLoginGoogle = PortalBase + "/login?provider=google&callbackUrl=%2Fportal%2Flicenses";
 
@@ -39,8 +40,20 @@ namespace TgmProfessionalSetup
             {
                 if (silent)
                 {
+                    string email = (Environment.GetEnvironmentVariable("TGM_LICENSE_EMAIL") ?? "").Trim();
+                    string key = (Environment.GetEnvironmentVariable("TGM_LICENSE_KEY") ?? "").Trim();
+                    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(key))
+                        throw new InvalidOperationException("SILENT install requires TGM_LICENSE_EMAIL and TGM_LICENSE_KEY.");
                     Directory.CreateDirectory(installRoot);
                     InstallerCore.ExtractPayload(installRoot);
+                    try
+                    {
+                        InstallerCore.ActivateLicense(installRoot, email, key);
+                    }
+                    catch (Exception actEx)
+                    {
+                        throw new InvalidOperationException("License activation failed: " + actEx.Message, actEx);
+                    }
                     InstallerCore.CreateShortcuts(installRoot, createDesktop: false);
                     InstallerCore.RegisterUninstall(installRoot);
                     return 0;
@@ -157,6 +170,8 @@ namespace TgmProfessionalSetup
 
         public static string DeployEa(string installRoot, string terminalPath)
         {
+            if (!IsLicenseActivated(installRoot))
+                throw new InvalidOperationException("License activation failed: EA deploy blocked until portal status is Active.");
             string src = Path.Combine(installRoot, "ea", "TheGoldMindAI_Professional.ex5");
             if (!File.Exists(src)) throw new InvalidOperationException("EA source missing: " + src);
             string destDir = Path.Combine(terminalPath, "MQL5", "Experts", "The Gold Mind");
@@ -194,9 +209,9 @@ namespace TgmProfessionalSetup
                 CopyDir(dir, Path.Combine(dest, Path.GetFileName(dir)));
         }
 
-        public static void RunHiddenPs(string script, string args)
+        public static int RunHiddenPs(string script, string args)
         {
-            if (!File.Exists(script)) return;
+            if (!File.Exists(script)) return 1;
             var psi = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
@@ -207,8 +222,150 @@ namespace TgmProfessionalSetup
             };
             using (Process p = Process.Start(psi))
             {
-                if (p != null) p.WaitForExit(120000);
+                if (p == null) return 1;
+                if (!p.WaitForExit(120000))
+                {
+                    try { p.Kill(); } catch { }
+                    return 1;
+                }
+                return p.ExitCode;
             }
+        }
+
+        /// <summary>Must match Activate-License.ps1 Get-MachineFingerprint.</summary>
+        public static string MachineFingerprint()
+        {
+            string raw = string.Join("|", new[]
+            {
+                Environment.GetEnvironmentVariable("COMPUTERNAME") ?? Environment.MachineName,
+                Environment.UserName,
+                Environment.GetEnvironmentVariable("COMPUTERNAME") ?? Environment.MachineName
+            });
+            using (var sha = SHA256.Create())
+            {
+                byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(raw));
+                var sb = new StringBuilder(hash.Length * 2);
+                foreach (byte b in hash) sb.Append(b.ToString("x2"));
+                return sb.ToString();
+            }
+        }
+
+        public static bool IsLicenseActivated(string installRoot)
+        {
+            string path = Path.Combine(installRoot, "config", "license-activation.json");
+            if (!File.Exists(path)) return false;
+            try
+            {
+                string json = File.ReadAllText(path);
+                string lower = json.ToLowerInvariant();
+                return lower.Contains("\"status\": \"active\"") || lower.Contains("\"status\":\"active\"")
+                    || lower.Contains("\"status\": \"grace\"") || lower.Contains("\"status\":\"grace\"");
+            }
+            catch { return false; }
+        }
+
+        public static void ActivateLicense(string installRoot, string email, string licenseKey)
+        {
+            if (string.IsNullOrWhiteSpace(licenseKey))
+                throw new InvalidOperationException("License key is required.");
+            if (string.IsNullOrWhiteSpace(email))
+                throw new InvalidOperationException("Customer email is required.");
+
+            string fp = MachineFingerprint();
+            string deviceName = Environment.MachineName;
+            string body =
+                "{"
+                + "\"action\":\"activate\","
+                + "\"licenseKey\":\"" + JsonEscape(licenseKey.Trim()) + "\","
+                + "\"customerEmail\":\"" + JsonEscape(email.Trim().ToLowerInvariant()) + "\","
+                + "\"deviceFingerprint\":\"" + JsonEscape(fp) + "\","
+                + "\"deviceName\":\"" + JsonEscape(deviceName) + "\""
+                + "}";
+
+            string uri = Program.PortalBase.TrimEnd('/') + "/api/licenses/installer-activate";
+            string respText;
+            try
+            {
+                using (var wc = new WebClient())
+                {
+                    wc.Headers[HttpRequestHeader.ContentType] = "application/json";
+                    wc.Encoding = Encoding.UTF8;
+                    ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | (SecurityProtocolType)12288;
+                    respText = wc.UploadString(uri, "POST", body);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("License activation failed: " + ex.Message, ex);
+            }
+
+            string status = ExtractJsonString(respText, "status");
+            if (string.IsNullOrEmpty(status))
+            {
+                int licIdx = respText.IndexOf("\"license\"", StringComparison.OrdinalIgnoreCase);
+                if (licIdx >= 0)
+                    status = ExtractJsonString(respText.Substring(licIdx), "status");
+            }
+            bool okFlag = respText.IndexOf("\"ok\":true", StringComparison.OrdinalIgnoreCase) >= 0
+                       || respText.IndexOf("\"ok\": true", StringComparison.OrdinalIgnoreCase) >= 0;
+            if (!okFlag || (status != "active" && status != "grace"))
+            {
+                string err = ExtractJsonString(respText, "error");
+                throw new InvalidOperationException(
+                    "License activation failed: " + (string.IsNullOrEmpty(err) ? ("status=" + status) : err));
+            }
+
+            string deviceId = ExtractJsonString(respText, "deviceId");
+            string licenseId = ExtractJsonString(respText, "id");
+            string cfgDir = Path.Combine(installRoot, "config");
+            Directory.CreateDirectory(cfgDir);
+            string state =
+                "{\n"
+                + "  \"email\": \"" + JsonEscape(email.Trim().ToLowerInvariant()) + "\",\n"
+                + "  \"activatedAt\": \"" + DateTime.UtcNow.ToString("o") + "\",\n"
+                + "  \"portalBase\": \"" + JsonEscape(Program.PortalBase.TrimEnd('/')) + "\",\n"
+                + "  \"deviceId\": \"" + JsonEscape(deviceId) + "\",\n"
+                + "  \"licenseId\": \"" + JsonEscape(licenseId) + "\",\n"
+                + "  \"status\": \"" + JsonEscape(status) + "\",\n"
+                + "  \"fingerprintHash\": \"" + JsonEscape(fp.Substring(0, Math.Min(16, fp.Length))) + "…\"\n"
+                + "}\n";
+            File.WriteAllText(Path.Combine(cfgDir, "license-activation.json"), state, Encoding.UTF8);
+            File.WriteAllText(Path.Combine(cfgDir, "portal.json"),
+                "{\n  \"portalBase\": \"" + Program.PortalBase + "\",\n  \"productId\": \"the-gold-mind-ai-v2-professional\"\n}\n",
+                Encoding.UTF8);
+        }
+
+        static string JsonEscape(string s)
+        {
+            if (s == null) return "";
+            return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "").Replace("\n", " ");
+        }
+
+        static string ExtractJsonString(string json, string key)
+        {
+            if (string.IsNullOrEmpty(json) || string.IsNullOrEmpty(key)) return "";
+            string needle = "\"" + key + "\"";
+            int i = json.IndexOf(needle, StringComparison.OrdinalIgnoreCase);
+            if (i < 0) return "";
+            i = json.IndexOf(':', i + needle.Length);
+            if (i < 0) return "";
+            i++;
+            while (i < json.Length && char.IsWhiteSpace(json[i])) i++;
+            if (i >= json.Length) return "";
+            if (json[i] == '"')
+            {
+                i++;
+                int startJ = i;
+                while (i < json.Length && json[i] != '"')
+                {
+                    if (json[i] == '\\' && i + 1 < json.Length) i += 2;
+                    else i++;
+                }
+                return json.Substring(startJ, i - startJ);
+            }
+            int endJ = i;
+            while (endJ < json.Length && ",}]".IndexOf(json[endJ]) < 0) endJ++;
+            return json.Substring(i, endJ - i).Trim();
         }
 
         public static void CreateShortcuts(string installRoot, bool createDesktop)
@@ -309,10 +466,12 @@ namespace TgmProfessionalSetup
         ProgressBar _progressBar;
         CheckBox _optLaunch;
         CheckBox _optPortal;
-        CheckBox _optActivate;
         CheckBox _optDesktop;
+        TextBox _licenseEmail;
+        TextBox _licenseKey;
         string _installRoot;
         string _installedEaPath;
+        bool _payloadExtracted;
 
         public SetupWizardForm(string defaultRoot)
         {
@@ -420,8 +579,8 @@ namespace TgmProfessionalSetup
             _body.Controls.Clear();
             _back.Enabled = _step > 0 && _step < 5;
             _next.Enabled = true;
-            _next.Text = _step == 4 ? "Install" : (_step == 5 ? "Finish" : "Next");
-            _cancel.Visible = _step < 5;
+            _next.Text = _step == 5 ? "Install" : (_step == 6 ? "Finish" : "Next");
+            _cancel.Visible = _step < 6;
 
             switch (_step)
             {
@@ -429,8 +588,9 @@ namespace TgmProfessionalSetup
                 case 1: RenderLicense(); break;
                 case 2: RenderFolder(); break;
                 case 3: RenderMt5(); break;
-                case 4: RenderProgress(); break;
-                case 5: RenderFinish(); break;
+                case 4: RenderLicenseKey(); break;
+                case 5: RenderProgress(); break;
+                case 6: RenderFinish(); break;
             }
         }
 
@@ -470,7 +630,7 @@ namespace TgmProfessionalSetup
                 BorderStyle = BorderStyle.FixedSingle,
                 Text =
                     "END-USER LICENSE AGREEMENT (SUMMARY)\n\n" +
-                    "THE GOLD MIND PROFESSIONAL is licensed software from RTAS Group of Companies.\n\n" +
+                    "THE GOLD MIND PROFESSIONAL is licensed software from THE GOLD MIND.\n\n" +
                     "• Trading involves substantial risk of loss.\n" +
                     "• Past performance is not indicative of future results.\n" +
                     "• The Core Trading Engine binary is certified and must not be reverse engineered.\n" +
@@ -571,6 +731,60 @@ namespace TgmProfessionalSetup
             _body.Controls.Add(hint);
         }
 
+        void RenderLicenseKey()
+        {
+            _title.Text = "License Activation";
+            _subtitle.Text = "Portal key is required — trial and lifetime use the same Active rule";
+            var hint = new Label
+            {
+                AutoSize = false,
+                Left = 0,
+                Top = 0,
+                Width = 640,
+                Height = 72,
+                ForeColor = Color.FromArgb(180, 175, 165),
+                Text =
+                    "1) Create / login to your Customer Portal account\n" +
+                    "2) Generate a license key on My Licenses\n" +
+                    "3) Paste the same portal email + key below. Setup cannot finish until status is Active."
+            };
+            var openPortal = MakeBtn("Open Portal", true);
+            openPortal.Left = 0; openPortal.Top = 78; openPortal.Width = 140;
+            openPortal.Click += (s, e) =>
+            {
+                try { Process.Start(new ProcessStartInfo(Program.PortalLoginGoogle) { UseShellExecute = true }); } catch { }
+            };
+            var emailLbl = new Label { Text = "Customer email (portal login)", AutoSize = true, Top = 124, Left = 0 };
+            _licenseEmail = new TextBox
+            {
+                Left = 0, Top = 148, Width = 640,
+                BackColor = Color.FromArgb(20, 20, 24),
+                ForeColor = Color.FromArgb(243, 239, 230),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            var keyLbl = new Label { Text = "License key", AutoSize = true, Top = 188, Left = 0 };
+            _licenseKey = new TextBox
+            {
+                Left = 0, Top = 212, Width = 640,
+                BackColor = Color.FromArgb(20, 20, 24),
+                ForeColor = Color.FromArgb(243, 239, 230),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            var note = new Label
+            {
+                AutoSize = false, Left = 0, Top = 258, Width = 640, Height = 40,
+                ForeColor = Color.FromArgb(212, 188, 130),
+                Text = "Without a valid key, installation will not complete and the EA will not be deployed."
+            };
+            _body.Controls.Add(hint);
+            _body.Controls.Add(openPortal);
+            _body.Controls.Add(emailLbl);
+            _body.Controls.Add(_licenseEmail);
+            _body.Controls.Add(keyLbl);
+            _body.Controls.Add(_licenseKey);
+            _body.Controls.Add(note);
+        }
+
         void RenderProgress()
         {
             _title.Text = "Installing";
@@ -607,12 +821,10 @@ namespace TgmProfessionalSetup
                         (_installedEaPath != null ? "\nEA deployed: " + _installedEaPath : "\nEA deploy can be completed from Start Menu.")
             };
             _optLaunch = new CheckBox { Text = "Launch THE GOLD MIND", Checked = true, AutoSize = true, Top = 90, Left = 0 };
-            _optPortal = new CheckBox { Text = "Open Customer Portal", Checked = true, AutoSize = true, Top = 120, Left = 0 };
-            _optActivate = new CheckBox { Text = "Activate License", Checked = true, AutoSize = true, Top = 150, Left = 0 };
+            _optPortal = new CheckBox { Text = "Open Customer Portal", Checked = false, AutoSize = true, Top = 120, Left = 0 };
             _body.Controls.Add(done);
             _body.Controls.Add(_optLaunch);
             _body.Controls.Add(_optPortal);
-            _body.Controls.Add(_optActivate);
         }
 
         void OnNext()
@@ -636,14 +848,52 @@ namespace TgmProfessionalSetup
                     return;
                 }
             }
-            if (_step == 5)
+            if (_step == 4)
+            {
+                string email = (_licenseEmail != null ? _licenseEmail.Text : "").Trim();
+                string key = (_licenseKey != null ? _licenseKey.Text : "").Trim();
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    MessageBox.Show(this, "License key is required.", Text,
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    MessageBox.Show(this, "Customer email is required.", Text,
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                try
+                {
+                    Cursor = Cursors.WaitCursor;
+                    Directory.CreateDirectory(_installRoot);
+                    if (!_payloadExtracted)
+                    {
+                        InstallerCore.ExtractPayload(_installRoot);
+                        _payloadExtracted = true;
+                    }
+                    InstallerCore.ActivateLicense(_installRoot, email, key);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "License activation failed:\n" + ex.Message, Text,
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                finally
+                {
+                    Cursor = Cursors.Default;
+                }
+            }
+            if (_step == 6)
             {
                 FinishActions();
                 ExitCode = 0;
                 Close();
                 return;
             }
-            if (_step < 5)
+            if (_step < 6)
             {
                 _step++;
                 RenderStep();
@@ -654,18 +904,23 @@ namespace TgmProfessionalSetup
         {
             try
             {
+                if (!InstallerCore.IsLicenseActivated(_installRoot))
+                    throw new InvalidOperationException("License activation failed: portal status is not Active.");
+
                 SetProgress(10, "Creating install directory…");
                 Directory.CreateDirectory(_installRoot);
 
                 SetProgress(30, "Extracting commercial package…");
-                InstallerCore.ExtractPayload(_installRoot);
+                if (!_payloadExtracted)
+                {
+                    InstallerCore.ExtractPayload(_installRoot);
+                    _payloadExtracted = true;
+                }
 
                 SetProgress(55, "Deploying Expert Advisor…");
-                if (_terminalList != null && _terminalList.SelectedItem != null)
+                if (_terminalList != null && _terminalList.SelectedItem is Mt5Terminal term)
                 {
-                    Mt5Terminal term = _terminalList.SelectedItem as Mt5Terminal;
-                    if (term != null)
-                        _installedEaPath = InstallerCore.DeployEa(_installRoot, term.Path);
+                    _installedEaPath = InstallerCore.DeployEa(_installRoot, term.Path);
                 }
 
                 SetProgress(75, "Creating shortcuts…");
@@ -676,7 +931,7 @@ namespace TgmProfessionalSetup
                 InstallerCore.RegisterUninstall(_installRoot);
 
                 SetProgress(100, "Installation complete.");
-                _step = 5;
+                _step = 6;
                 RenderStep();
             }
             catch (Exception ex)
@@ -700,12 +955,6 @@ namespace TgmProfessionalSetup
             if (_optPortal != null && _optPortal.Checked)
             {
                 try { Process.Start(new ProcessStartInfo(Program.PortalBase) { UseShellExecute = true }); } catch { }
-            }
-            if (_optActivate != null && _optActivate.Checked)
-            {
-                try { Process.Start(new ProcessStartInfo(Program.PortalLoginGoogle) { UseShellExecute = true }); } catch { }
-                string act = Path.Combine(_installRoot, "scripts", "Activate-License.ps1");
-                InstallerCore.RunHiddenPs(act, "-InstallRoot \"" + _installRoot + "\" -GoogleLogin");
             }
             if (_optLaunch != null && _optLaunch.Checked)
             {

@@ -122,7 +122,7 @@ export function latestWebsiteLaunchRun(kind: WebsiteLaunchKind) {
 }
 
 export const CORE_CERT_SHA =
-  "9fd202466a0894577f12721610b4a9a80f6f8d02bb9fd908aed3d3e88654d49a";
+  "1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e";
 
 export function workspaceRoot(): string {
   const commercial = path.resolve(process.cwd(), "..", "..");

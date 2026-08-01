@@ -665,6 +665,14 @@ void OnChartEvent(const int id, const long &lparam, const double &dparam, const 
       EnableDashboardChartEvents();
       EnsureDashboardPresent();
       RenderDashboardLayout();
+      GmP11B_UpdatePanel(g_uiX, g_uiY);
+      return;
+     }
+
+   // AI Dynamic Engine panel (move / minimize / maximize) — UI only
+   if(id == CHARTEVENT_OBJECT_CLICK && StringFind(sparam, "TGM_AI_") == 0)
+     {
+      GmP11B_OnChartEvent(id, lparam, dparam, sparam);
       return;
      }
 
@@ -683,6 +691,10 @@ void OnChartEvent(const int id, const long &lparam, const double &dparam, const 
 
    if(id == CHARTEVENT_MOUSE_MOVE)
      {
+      GmP11B_OnChartEvent(id, lparam, dparam, sparam);
+      if(GmP11B_IsPanelDragging())
+         return;
+
       const int mouseX = (int)lparam;
       const int mouseY = (int)dparam;
       const int mouseState = (sparam == "" ? 0 : (int)StringToInteger(sparam));

@@ -30,7 +30,7 @@ See also `GO_LIVE_CHECKLIST.md` and `.env.production.example`.
 | Stable ZIP | **PASS** | 863565 B · SHA256 `e61120628ba0d43d9d0f84d931cb0cd863890fa95a0e997b04d13a951d83229a` |
 | Setup.exe / TheGoldMindSetup.exe | **PASS** | 464896 B · SHA256 `f48f3698a5401a66869481c7cb615505067fd4f64699b87f484db6afdfd29b07` |
 | Packaged EX5 | **PASS** | 251018 B · SHA256 `890e22254ef44f86e82bc3700cd2b0dd0eaddf57c3ce91ff0f801b999c347535` |
-| mq5 Core SHA | **PASS** | `9fd202466a0894577f12721610b4a9a80f6f8d02bb9fd908aed3d3e88654d49a` |
+| mq5 Core SHA | **PASS** | `1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e` |
 | Source-tree EX5 drift | **FIXED** | Restored certified EX5 into `Experts/` and installer payload from release ZIP |
 | Portal ZIP mirror | **PASS** | Matches release ZIP SHA |
 | Code signing | **OWNER** | `signMode=unsigned` / `pending_code_sign` |

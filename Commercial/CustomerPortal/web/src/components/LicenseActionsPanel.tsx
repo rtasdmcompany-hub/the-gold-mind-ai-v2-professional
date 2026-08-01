@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { actionActivateLicense, actionCreateLicense } from "@/server/licensing/actions";
 import type { LicenseType } from "@/server/licensing/types";
 import Link from "next/link";
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [oneTimeKey, setOneTimeKey] = useState<string | null>(null);
@@ -25,8 +27,8 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
         <h3>1. Generate license key</h3>
         <p className="meta" style={{ marginBottom: 12 }}>
           {allowPaidSelfServe
-            ? `Create a trial or paid key here (dev / self-serve mode). Copy once, then paste into ${product.installer.name}.`
-            : "Create a free trial key here. Paid monthly/yearly/lifetime keys are issued after verified checkout in Billing (or by an admin)."}
+            ? `Create a trial or paid key here (dev / self-serve mode). Copy once, then paste into ${product.installer.name} during install.`
+            : `Create a free trial key here. Paid monthly/yearly/lifetime keys are issued after verified checkout in Billing (or by an admin). Copy the key into ${product.installer.name} — Setup will not finish until the portal marks it Active.`}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {types.map((type) => (
@@ -44,7 +46,10 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
                     return;
                   }
                   setOneTimeKey(r.plaintextKey);
-                  setMessage(`Created ${type} license ${r.license.id} — copy the key into {product.installer.name}`);
+                  setMessage(
+                    `Created ${type} license ${r.license.id} — copy the key into ${product.installer.name} (status stays pending until Setup activates it).`
+                  );
+                  router.refresh();
                 })
               }
             >
@@ -65,10 +70,10 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
       </div>
 
       <div className="card">
-        <h3>2. Optional: activate in browser</h3>
+        <h3>2. Re-check key in browser (optional)</h3>
         <p className="meta" style={{ marginBottom: 12 }}>
-          Preferred path is {product.installer.name} activation (binds your Windows PC). Use this only to re-check a key
-          in the portal.
+          Preferred path is {product.installer.name} during installation (binds your Windows PC). Use this only to
+          re-check or recover a key in the portal after Setup already activated it.
         </p>
         <form
           className="stack"
@@ -78,6 +83,7 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
               if (r.ok) {
                 setMessage(`Activated · device ${r.deviceId}`);
                 setOneTimeKey(null);
+                router.refresh();
               } else {
                 setMessage(`Activation failed: ${r.error}`);
               }

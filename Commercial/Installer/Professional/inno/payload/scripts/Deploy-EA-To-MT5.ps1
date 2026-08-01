@@ -118,6 +118,27 @@ function Deploy-Ea([string]$terminalPath) {
   return $dest
 }
 
+Write-Step "License activation gate"
+$activationFile = Join-Path $InstallRoot "config\license-activation.json"
+if (-not (Test-Path $activationFile)) {
+  Write-Host "  License activation failed: missing config\license-activation.json" -ForegroundColor Red
+  Write-Host "  Run Setup.exe (or scripts\Activate-License.ps1) with your portal email + key first."
+  Write-Host "  Trial and lifetime use the same Active rule — EA deploy is blocked until then."
+  exit 1
+}
+try {
+  $act = Get-Content $activationFile -Raw | ConvertFrom-Json
+  $st = ([string]$act.status).ToLowerInvariant()
+  if ($st -ne "active" -and $st -ne "grace") {
+    Write-Host "  License activation failed: portal status='$st' (need active/grace)." -ForegroundColor Red
+    exit 1
+  }
+  Write-Host "  License OK ($st) — device $($act.deviceId)" -ForegroundColor Green
+} catch {
+  Write-Host "  License activation failed: cannot read activation file." -ForegroundColor Red
+  exit 1
+}
+
 Write-Step "MT5 terminal detection"
 $terminals = @(Get-Mt5Terminals | Where-Object { $_.HasExperts -or $_.Path -match 'MetaQuotes\\Terminal' })
 if ($terminals.Count -eq 0) {
