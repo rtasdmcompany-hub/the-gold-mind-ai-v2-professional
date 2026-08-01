@@ -701,11 +701,12 @@
   justify-content: center;
 }
 
-/* Video panel stays on the right (original side) */
+/* Video panel on the right, nudged slightly toward the hero copy */
 .e-hero-grid > .e-reveal:last-child {
   display: flex;
   justify-content: flex-end;
   width: 100%;
+  padding-right: clamp(40px, 7vw, 110px);
 }
 
 /* ── Dashboard panel (portrait Live phone) ── */
@@ -1176,6 +1177,10 @@
   .e-hero-content { max-width: none; margin-inline: auto; }
   .e-lead { margin-inline: auto; }
   .e-btn-group { justify-content: center; }
+  .e-hero-grid > .e-reveal:last-child {
+    justify-content: center;
+    padding-right: 0;
+  }
   .e-dashboard--portrait {
     justify-self: center;
     max-width: 280px;
