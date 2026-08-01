@@ -42,10 +42,6 @@ export function HeroDashboard() {
 
   return (
     <div className="e-dashboard e-dashboard--portrait" aria-label={`${brand.brandName} product preview`}>
-      <div className="e-dashboard-header">
-        <span className="e-dashboard-title">{brand.brandName}</span>
-      </div>
-
       <div className="e-dashboard-video-frame">
         {loadVideo ? (
           <video
