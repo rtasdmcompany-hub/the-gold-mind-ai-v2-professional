@@ -38,7 +38,9 @@ export type AuditAction =
   | "device.transfer_completed"
   | "subscription.updated"
   | "tamper.detected"
-  | "admin.lookup";
+  | "admin.lookup"
+  | "trial.reissued"
+  | "trial.denied";
 
 export interface LicenseRecord {
   id: string;
@@ -60,6 +62,22 @@ export interface LicenseRecord {
   lastValidatedAt: string | null;
   /** HMAC of canonical license fields for tamper detection */
   integrityMac: string;
+  /** AES envelope of trial plaintext — lets portal re-show the same key */
+  keyEnvelope?: string | null;
+  /** Normalized email used for one-trial-per-identity */
+  emailNorm?: string | null;
+  /** Hash of client IP at first trial issue (abuse guard) */
+  issuedIpHash?: string | null;
+}
+
+/** Tracks free-trial issuance for email + IP abuse prevention */
+export interface TrialClaimRecord {
+  id: string;
+  email: string;
+  emailNorm: string;
+  ipHash: string;
+  licenseId: string;
+  createdAt: string;
 }
 
 export interface DeviceRecord {
@@ -106,6 +124,8 @@ export interface LicenseStoreData {
   devices: DeviceRecord[];
   subscriptions: SubscriptionRecord[];
   audit: AuditEvent[];
+  /** Present after trial anti-abuse rollout; older blobs omit this */
+  trialClaims?: TrialClaimRecord[];
 }
 
 /** Safe DTO — never includes keyHash or full key */
@@ -117,6 +137,7 @@ export interface LicensePublicDto {
   edition: string;
   seatsUsed: number;
   seatsMax: number;
+  createdAt: string;
   activatedAt: string | null;
   expiresAt: string | null;
   graceEndsAt: string | null;

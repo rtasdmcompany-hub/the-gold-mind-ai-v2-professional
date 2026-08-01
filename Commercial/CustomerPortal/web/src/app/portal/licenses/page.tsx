@@ -23,7 +23,7 @@ export default async function LicensesPage() {
         <p className="page-sub">
           {allowPaidSelfServe
             ? `Generate a key, then paste it into ${product.installer.name}. Installation finishes only after portal activation succeeds.`
-            : `Start a free trial key here, or purchase via Billing for paid keys. Paste the key into ${product.installer.name} — installation finishes only after portal activation succeeds.`}{" "}
+            : `One free trial per email (and per IP). Regenerating shows the same key and original dates. Paid keys come from Billing. Paste into ${product.installer.name} — install finishes only after portal activation succeeds.`}{" "}
           <Link href="/portal/billing">Billing</Link>
         </p>
       </header>
@@ -38,6 +38,7 @@ export default async function LicensesPage() {
               <th>License</th>
               <th>Type</th>
               <th>Status</th>
+              <th>Created</th>
               <th>Activated</th>
               <th>Expires</th>
               <th>Renewal</th>
@@ -47,8 +48,8 @@ export default async function LicensesPage() {
           <tbody>
             {licenses.length === 0 && (
               <tr>
-                <td colSpan={7}>
-                  No licenses yet — {allowPaidSelfServe ? "generate one above" : "start a trial above or checkout in Billing"}, then
+                <td colSpan={8}>
+                  No licenses yet — {allowPaidSelfServe ? "generate one above" : "get your trial key above or checkout in Billing"}, then
                   paste the key into {product.installer.name}.
                 </td>
               </tr>
@@ -66,6 +67,7 @@ export default async function LicensesPage() {
                 <td>
                   <StatusBadge status={lic.status} />
                 </td>
+                <td>{lic.createdAt?.slice(0, 10) || "—"}</td>
                 <td>{lic.activatedAt?.slice(0, 10) || "—"}</td>
                 <td>{lic.expiresAt?.slice(0, 10) || "Lifetime"}</td>
                 <td>{lic.renewalStatus}</td>

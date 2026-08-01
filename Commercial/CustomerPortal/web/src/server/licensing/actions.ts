@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { activateLicense, createLicense, renewLicense, cancelLicense } from "@/server/licensing/license-service";
 import {
   deactivateDevice,
@@ -11,6 +12,7 @@ import {
 import { requireAdmin, requireSession } from "@/server/licensing/session";
 import { ensureStoreLoaded, flushStoreVerified } from "@/server/licensing/store";
 import { assertDurableStoreForLicensing } from "@/server/cloud/cache";
+import { clientIpFromHeaders } from "@/server/cloud/audit";
 import type { LicenseType } from "@/server/licensing/types";
 import {
   isFreeRenewAllowed,
@@ -28,21 +30,41 @@ export async function actionCreateLicense(type: LicenseType) {
         "SELF_SERVE_LICENSE_BLOCKED: Paid keys are issued after verified checkout (Billing) or by an admin. Trial remains available, or set PORTAL_ALLOW_SELF_SERVE_LICENSE=true for non-payment minting.",
       plaintextKey: "",
       license: null,
+      reused: false,
     };
   }
   assertDurableStoreForLicensing();
   await ensureStoreLoaded();
+  const h = await headers();
+  const clientIp = clientIpFromHeaders(h);
   const result = createLicense({
     customerEmail: s.email,
     customerName: s.name,
     type,
     actorEmail: s.email,
+    clientIp,
   });
+  if (!result.ok) {
+    await flushStoreVerified().catch(() => undefined);
+    revalidatePath("/portal/licenses");
+    return {
+      ok: false as const,
+      error: result.error,
+      plaintextKey: "",
+      license: result.license ?? null,
+      reused: false,
+    };
+  }
   await flushStoreVerified();
   revalidatePath("/portal");
   revalidatePath("/portal/licenses");
   revalidatePath("/portal/subscriptions");
-  return { ok: true as const, ...result };
+  return {
+    ok: true as const,
+    license: result.license,
+    plaintextKey: result.plaintextKey,
+    reused: result.reused,
+  };
 }
 
 export async function actionActivateLicense(formData: FormData) {
@@ -181,7 +203,13 @@ export async function actionAdminCreateLicenseForCustomer(formData: FormData) {
   const email = String(formData.get("email") || "").toLowerCase();
   const name = String(formData.get("name") || "Customer");
   const type = String(formData.get("type") || "monthly") as LicenseType;
-  const result = createLicense({ customerEmail: email, customerName: name, type, actorEmail: "admin" });
+  const result = createLicense({
+    customerEmail: email,
+    customerName: name,
+    type,
+    actorEmail: "admin",
+    bypassIpCheck: true,
+  });
   await flushStoreVerified();
   revalidatePath("/portal/admin");
   return result;

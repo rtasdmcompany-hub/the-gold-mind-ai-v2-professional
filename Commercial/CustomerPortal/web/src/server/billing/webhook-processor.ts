@@ -42,7 +42,11 @@ export function processNormalizedEvent(event: NormalizedPaymentEvent): {
         customerName: event.customerName || event.customerEmail,
         type: planToLicenseType(plan),
         actorEmail: `billing:${event.provider}`,
+        bypassIpCheck: true,
       });
+      if (!created.ok) {
+        throw new Error(`LICENSE_CREATE_FAILED:${created.error}`);
+      }
       licenseId = created.license.id;
       plaintextKey = created.plaintextKey;
 

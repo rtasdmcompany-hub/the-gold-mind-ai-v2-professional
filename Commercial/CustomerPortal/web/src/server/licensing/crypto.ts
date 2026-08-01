@@ -41,6 +41,53 @@ export function generateLicenseKey(type: string): string {
   return `TGM-${prefix}-${body.slice(0, 4)}-${body.slice(4, 8)}-${body.slice(8, 12)}`;
 }
 
+/**
+ * Collapse common alias tricks so one person cannot mint many free trials
+ * via Gmail dots / plus-tags / googlemail.
+ */
+export function normalizeTrialEmail(email: string): string {
+  const e = email.trim().toLowerCase();
+  const at = e.lastIndexOf("@");
+  if (at < 1) return e;
+  let local = e.slice(0, at);
+  let domain = e.slice(at + 1);
+  local = local.split("+")[0] || local;
+  if (domain === "googlemail.com") domain = "gmail.com";
+  if (domain === "gmail.com") local = local.replace(/\./g, "");
+  return `${local}@${domain}`;
+}
+
+/** Stable trial key for an email — same address always yields the same key. */
+export function deriveTrialKey(email: string): string {
+  const norm = normalizeTrialEmail(email);
+  const digest = hmacSha256(`tgm-trial-key-v1|${norm}`).toUpperCase().replace(/[^A-F0-9]/g, "");
+  const body = (digest + digest).slice(0, 12);
+  return `TGM-TRL-${body.slice(0, 4)}-${body.slice(4, 8)}-${body.slice(8, 12)}`;
+}
+
+/** Encrypt a recoverable trial plaintext key (AES-GCM via store cipher). */
+export function sealSecret(plaintext: string): string {
+  return encryptJson({ v: 1, s: plaintext });
+}
+
+export function openSecret(blob: string | null | undefined): string | null {
+  if (!blob) return null;
+  try {
+    const o = decryptJson<{ v?: number; s?: string }>(blob);
+    return typeof o?.s === "string" && o.s ? o.s : null;
+  } catch {
+    return null;
+  }
+}
+
+export function hashClientIp(ip: string): string {
+  const cleaned = (ip || "").trim().toLowerCase();
+  if (!cleaned || cleaned === "127.0.0.1" || cleaned === "::1" || cleaned === "unknown") {
+    return "";
+  }
+  return sha256(`tgm-trial-ip-v1|${cleaned}`);
+}
+
 export function maskLicenseKey(keyOrPrefix: string): string {
   if (keyOrPrefix.includes("*")) return keyOrPrefix;
   const parts = keyOrPrefix.split("-");

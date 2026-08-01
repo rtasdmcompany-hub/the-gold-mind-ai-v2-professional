@@ -1,9 +1,14 @@
 import {
   addDays,
+  deriveTrialKey,
   generateLicenseKey,
   graceDays,
+  hashClientIp,
+  normalizeTrialEmail,
   nowIso,
+  openSecret,
   safeEqualHex,
+  sealSecret,
   seatsForType,
   sha256,
 } from "./crypto";
@@ -27,6 +32,10 @@ import {
   sendLicenseCreatedEmail,
 } from "@/server/accounts/license-emails";
 import { product, productDurationDays } from "@/lib/product";
+
+export type CreateLicenseResult =
+  | { ok: true; license: LicensePublicDto; plaintextKey: string; reused: boolean }
+  | { ok: false; error: string; license?: LicensePublicDto | null };
 
 function withoutMac(lic: LicenseRecord): Omit<LicenseRecord, "integrityMac"> {
   const { integrityMac, ...rest } = lic;
@@ -52,12 +61,78 @@ export function toPublicLicense(lic: LicenseRecord, seatsUsed: number): LicenseP
     edition: lic.edition,
     seatsUsed,
     seatsMax: lic.seatsMax,
+    createdAt: lic.createdAt,
     activatedAt: lic.activatedAt,
     expiresAt: lic.expiresAt,
     graceEndsAt: lic.graceEndsAt,
     renewalStatus: renewalLabel(lic),
     lastValidatedAt: lic.lastValidatedAt,
   };
+}
+
+function findOldestTrialForEmailNorm(emailNorm: string): LicenseRecord | null {
+  const trials = readStore()
+    .licenses.filter(
+      (l) =>
+        l.type === "trial" &&
+        l.status !== "revoked" &&
+        (l.emailNorm || normalizeTrialEmail(l.customerEmail)) === emailNorm
+    )
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+  return trials[0] ?? null;
+}
+
+function resolveTrialPlaintext(lic: LicenseRecord, email: string): string | null {
+  const sealed = openSecret(lic.keyEnvelope);
+  if (sealed) return sealed.trim().toUpperCase();
+  const derived = deriveTrialKey(email);
+  if (safeEqualHex(lic.keyHash, sha256(derived)) || lic.keyHash === sha256(derived)) {
+    return derived;
+  }
+  // Also try normalized-email derivation against stored customer email
+  const derivedNorm = deriveTrialKey(lic.customerEmail);
+  if (safeEqualHex(lic.keyHash, sha256(derivedNorm)) || lic.keyHash === sha256(derivedNorm)) {
+    return derivedNorm;
+  }
+  return null;
+}
+
+function ensureTrialClaim(input: {
+  email: string;
+  emailNorm: string;
+  ipHash: string;
+  licenseId: string;
+  createdAt: string;
+}): void {
+  mutateStore((store) => {
+    if (!store.trialClaims) store.trialClaims = [];
+    const exists = store.trialClaims.some(
+      (c) => c.licenseId === input.licenseId || c.emailNorm === input.emailNorm
+    );
+    if (exists) return;
+    store.trialClaims.push({
+      id: `tcl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+      email: input.email,
+      emailNorm: input.emailNorm,
+      ipHash: input.ipHash,
+      licenseId: input.licenseId,
+      createdAt: input.createdAt,
+    });
+  });
+}
+
+/** Persist recoverable trial key when customer pastes it (legacy random keys). */
+export function rememberTrialKeyPlaintext(licenseId: string, plaintextKey: string): void {
+  const key = plaintextKey.trim().toUpperCase();
+  if (!key) return;
+  mutateStore((store) => {
+    const lic = store.licenses.find((l) => l.id === licenseId && l.type === "trial");
+    if (!lic) return;
+    if (lic.keyEnvelope) return;
+    if (!safeEqualHex(lic.keyHash, sha256(key)) && lic.keyHash !== sha256(key)) return;
+    lic.keyEnvelope = sealSecret(key);
+    if (!lic.emailNorm) lic.emailNorm = normalizeTrialEmail(lic.customerEmail);
+  });
 }
 
 function expiresForType(type: LicenseType, from: Date = new Date()): string | null {
@@ -84,7 +159,12 @@ function subStatusFromLicense(status: LicenseStatus): SubscriptionStatus {
   }
 }
 
-/** Purchase → License Generation (returns plaintext key ONCE) */
+/**
+ * Purchase / trial key generation.
+ * Trial: one key per email (aliases collapsed), original createdAt/expiresAt kept forever;
+ * regenerating returns the same key and remaining time. IP abuse guard blocks new emails
+ * from an IP that already claimed a free trial.
+ */
 export function createLicense(input: {
   customerEmail: string;
   customerName: string;
@@ -92,9 +172,111 @@ export function createLicense(input: {
   actorEmail?: string;
   /** Skip Resend delivery (seed / internal). */
   skipEmail?: boolean;
-}): { license: LicensePublicDto; plaintextKey: string } {
+  /** Client IP for trial abuse detection (from x-forwarded-for). */
+  clientIp?: string | null;
+  /** Admin / seed paths may skip IP binding. */
+  bypassIpCheck?: boolean;
+}): CreateLicenseResult {
   const email = input.customerEmail.trim().toLowerCase();
-  const plaintextKey = generateLicenseKey(input.type);
+  const emailNorm = normalizeTrialEmail(email);
+  const ipHash = hashClientIp(input.clientIp || "");
+
+  if (input.type === "trial") {
+    const existing = findOldestTrialForEmailNorm(emailNorm);
+    if (existing) {
+      assertNotTampered(existing, existing.customerEmail);
+      const lic = refreshLicenseState(existing);
+      let plaintextKey = resolveTrialPlaintext(lic, email);
+      if (!plaintextKey) {
+        // Legacy random trial without envelope — keep dates/keyHash; cannot mint a second trial.
+        mutateStore((store) => {
+          appendAudit(store, {
+            actorEmail: input.actorEmail || email,
+            action: "trial.reissued",
+            entityType: "license",
+            entityId: lic.id,
+            detail: `Trial re-show requested for ${emailNorm}; plaintext not recoverable yet (activate once to bind key envelope)`,
+          });
+        });
+        const seatsUsed = readStore().devices.filter(
+          (d) => d.licenseId === lic.id && d.status === "active"
+        ).length;
+        return {
+          ok: false,
+          error:
+            "TRIAL_ALREADY_ISSUED: A free trial was already created for this email. The original key and expiry are unchanged. Paste the key you received earlier into Setup, or activate once in the portal so the key can be re-shown.",
+          license: toPublicLicense(lic, seatsUsed),
+        };
+      }
+
+      // Backfill envelope / claim metadata without touching dates.
+      mutateStore((store) => {
+        const row = store.licenses.find((x) => x.id === lic.id);
+        if (!row) return;
+        if (!row.keyEnvelope) row.keyEnvelope = sealSecret(plaintextKey!);
+        if (!row.emailNorm) row.emailNorm = emailNorm;
+        if (!row.issuedIpHash && ipHash) row.issuedIpHash = ipHash;
+        appendAudit(store, {
+          actorEmail: input.actorEmail || email,
+          action: "trial.reissued",
+          entityType: "license",
+          entityId: lic.id,
+          detail: `Re-issued existing trial key for ${emailNorm} (dates unchanged)`,
+        });
+      });
+      ensureTrialClaim({
+        email,
+        emailNorm,
+        ipHash: ipHash || existing.issuedIpHash || "",
+        licenseId: lic.id,
+        createdAt: lic.createdAt,
+      });
+
+      const seatsUsed = readStore().devices.filter(
+        (d) => d.licenseId === lic.id && d.status === "active"
+      ).length;
+      return {
+        ok: true,
+        license: toPublicLicense(refreshLicenseState(lic), seatsUsed),
+        plaintextKey,
+        reused: true,
+      };
+    }
+
+    if (!input.bypassIpCheck && ipHash) {
+      const data = readStore();
+      const claims = data.trialClaims || [];
+      const ipTaken = claims.find((c) => c.ipHash && c.ipHash === ipHash && c.emailNorm !== emailNorm);
+      const licIpTaken = data.licenses.find(
+        (l) =>
+          l.type === "trial" &&
+          l.status !== "revoked" &&
+          l.issuedIpHash &&
+          l.issuedIpHash === ipHash &&
+          (l.emailNorm || normalizeTrialEmail(l.customerEmail)) !== emailNorm
+      );
+      if (ipTaken || licIpTaken) {
+        mutateStore((store) => {
+          appendAudit(store, {
+            actorEmail: input.actorEmail || email,
+            action: "trial.denied",
+            entityType: "system",
+            entityId: emailNorm,
+            detail: `Trial denied — IP already used by another email (${ipTaken?.emailNorm || licIpTaken?.customerEmail})`,
+          });
+        });
+        return {
+          ok: false,
+          error:
+            "TRIAL_IP_LIMIT: A free trial was already claimed from this network/IP with a different email. One free trial per email and per IP.",
+          license: null,
+        };
+      }
+    }
+  }
+
+  const plaintextKey =
+    input.type === "trial" ? deriveTrialKey(email) : generateLicenseKey(input.type);
   const keyHash = sha256(plaintextKey);
   const parts = plaintextKey.split("-");
   const keyPrefix = parts.slice(0, 2).join("-");
@@ -119,6 +301,9 @@ export function createLicense(input: {
     expiresAt,
     graceEndsAt: null,
     lastValidatedAt: null,
+    keyEnvelope: input.type === "trial" ? sealSecret(plaintextKey) : null,
+    emailNorm: input.type === "trial" ? emailNorm : null,
+    issuedIpHash: input.type === "trial" ? ipHash || null : null,
   };
 
   const license: LicenseRecord = {
@@ -142,6 +327,17 @@ export function createLicense(input: {
       renewedAt: null,
       pendingPlanChange: null,
     });
+    if (input.type === "trial") {
+      if (!data.trialClaims) data.trialClaims = [];
+      data.trialClaims.push({
+        id: `tcl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        email,
+        emailNorm,
+        ipHash: ipHash || "",
+        licenseId: id,
+        createdAt,
+      });
+    }
     appendAudit(data, {
       actorEmail: input.actorEmail || email,
       action: "license.created",
@@ -162,7 +358,7 @@ export function createLicense(input: {
     }).catch((e) => console.warn("[licensing] create email failed:", e));
   }
 
-  return { license: publicLic, plaintextKey };
+  return { ok: true, license: publicLic, plaintextKey, reused: false };
 }
 
 export function listLicensesForCustomer(email: string): LicensePublicDto[] {
@@ -301,11 +497,22 @@ export function activateLicense(input: {
   assertNotTampered(lic, email);
   lic = refreshLicenseState(lic);
 
-  if (lic.customerEmail !== email) return { ok: false, error: "LICENSE_EMAIL_MISMATCH" };
+  if (
+    lic.customerEmail !== email &&
+    !(lic.type === "trial" && normalizeTrialEmail(lic.customerEmail) === normalizeTrialEmail(email))
+  ) {
+    return { ok: false, error: "LICENSE_EMAIL_MISMATCH" };
+  }
   if (lic.status === "revoked") return { ok: false, error: "LICENSE_REVOKED" };
   if (lic.status === "expired") return { ok: false, error: "LICENSE_EXPIRED" };
   if (lic.status === "cancelled" && (!lic.expiresAt || Date.now() > Date.parse(lic.expiresAt))) {
     return { ok: false, error: "LICENSE_CANCELLED" };
+  }
+
+  // Bind recoverable plaintext so "Get trial key" can re-show the same key later.
+  if (lic.type === "trial") {
+    rememberTrialKeyPlaintext(lic.id, key);
+    lic = readStore().licenses.find((l) => l.id === lic!.id) || lic;
   }
 
   const fpHash = sha256(input.deviceFingerprint.trim());

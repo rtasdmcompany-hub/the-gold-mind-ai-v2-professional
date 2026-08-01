@@ -21,7 +21,17 @@ const EMPTY: LicenseStoreData = {
   devices: [],
   subscriptions: [],
   audit: [],
+  trialClaims: [],
 };
+
+function normalizeStoreShape(data: LicenseStoreData): LicenseStoreData {
+  if (!Array.isArray(data.trialClaims)) data.trialClaims = [];
+  if (!Array.isArray(data.licenses)) data.licenses = [];
+  if (!Array.isArray(data.devices)) data.devices = [];
+  if (!Array.isArray(data.subscriptions)) data.subscriptions = [];
+  if (!Array.isArray(data.audit)) data.audit = [];
+  return data;
+}
 
 /** Durable Redis key — survives Vercel /tmp wipes when UPSTASH_* is set. */
 const DURABLE_KEY = "tgm:licensing:store:v1";
@@ -59,7 +69,7 @@ function loadRawFromDisk(): LicenseStoreData {
   if (!fs.existsSync(p)) return structuredClone(EMPTY);
   try {
     const blob = fs.readFileSync(p, "utf8");
-    return decryptJson<LicenseStoreData>(blob);
+    return normalizeStoreShape(decryptJson<LicenseStoreData>(blob));
   } catch {
     throw new Error("LICENSE_STORE_TAMPER_OR_DECRYPT_FAIL");
   }
@@ -78,7 +88,7 @@ export async function ensureStoreLoaded(): Promise<void> {
         try {
           const remote = await durableGet(DURABLE_KEY);
           if (remote) {
-            memoryCache = decryptJson<LicenseStoreData>(remote);
+            memoryCache = normalizeStoreShape(decryptJson<LicenseStoreData>(remote));
             return;
           }
         } catch {
@@ -106,7 +116,7 @@ export function readStore(): LicenseStoreData {
   if (!memoryCache) {
     memoryCache = loadRawFromDisk();
   }
-  return memoryCache;
+  return normalizeStoreShape(memoryCache);
 }
 
 export function writeStore(data: LicenseStoreData): void {

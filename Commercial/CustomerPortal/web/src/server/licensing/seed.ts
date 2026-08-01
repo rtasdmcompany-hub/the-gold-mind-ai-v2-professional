@@ -25,15 +25,19 @@ export async function ensureSeedData(): Promise<{ demoKey?: string; adminKey?: s
     type: "yearly",
     actorEmail: "system@seed",
     skipEmail: true,
+    bypassIpCheck: true,
   });
-
   const admin = createLicense({
     customerEmail: ADMIN_EMAIL,
     customerName: "Portal Admin",
     type: "lifetime",
     actorEmail: "system@seed",
     skipEmail: true,
+    bypassIpCheck: true,
   });
+  if (!demo.ok || !admin.ok) {
+    throw new Error("SEED_LICENSE_CREATE_FAILED");
+  }
 
   activateLicense({
     plaintextKey: demo.plaintextKey,

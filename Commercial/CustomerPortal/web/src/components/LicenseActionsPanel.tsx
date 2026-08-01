@@ -11,6 +11,12 @@ type Props = {
   allowPaidSelfServe: boolean;
 };
 
+function remainingTrialDays(expiresAt: string | null | undefined): number | null {
+  if (!expiresAt) return null;
+  const ms = Date.parse(expiresAt) - Date.now();
+  return Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+}
+
 export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -24,11 +30,14 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
   return (
     <div className="grid grid-2" style={{ marginBottom: 20 }}>
       <div className="card">
-        <h3>1. Generate license key</h3>
+        <h3>1. Get license key</h3>
         <p className="meta" style={{ marginBottom: 12 }}>
+          Free trial: <strong>one per email</strong> (and per IP). Regenerating always returns the{" "}
+          <strong>same key</strong> with the <strong>original start/expiry</strong> — elapsed days are
+          not reset. Paste the key into {product.installer.name}.
           {allowPaidSelfServe
-            ? `Create a trial or paid key here (dev / self-serve mode). Copy once, then paste into ${product.installer.name} during install.`
-            : `Create a free trial key here. Paid monthly/yearly/lifetime keys are issued after verified checkout in Billing (or by an admin). Copy the key into ${product.installer.name} — Setup will not finish until the portal marks it Active.`}
+            ? " Paid self-serve minting is enabled in this environment."
+            : " Paid monthly/yearly/lifetime keys are issued after verified checkout in Billing (or by an admin)."}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {types.map((type) => (
@@ -41,19 +50,36 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
                 start(async () => {
                   const r = await actionCreateLicense(type);
                   if (!r.ok) {
-                    setMessage(r.error);
+                    const left = remainingTrialDays(r.license?.expiresAt);
+                    setMessage(
+                      r.error +
+                        (r.license
+                          ? ` · Existing trial ${r.license.keyMasked} (created ${r.license.createdAt?.slice(0, 10) || "—"}, expires ${r.license.expiresAt?.slice(0, 10) || "—"})${
+                              left === null ? "" : ` · ~${left} day(s) left`
+                            }`
+                          : "")
+                    );
                     setOneTimeKey(null);
                     return;
                   }
                   setOneTimeKey(r.plaintextKey);
-                  setMessage(
-                    `Created ${type} license ${r.license.id} — copy the key into ${product.installer.name} (status stays pending until Setup activates it).`
-                  );
+                  if (type === "trial" && r.reused) {
+                    const left = remainingTrialDays(r.license.expiresAt);
+                    setMessage(
+                      `Same trial key as before (created ${r.license.createdAt?.slice(0, 10) || "—"}, expires ${r.license.expiresAt?.slice(0, 10) || "—"})${
+                        left === null ? "" : ` · ~${left} day(s) remaining`
+                      }. Dates are not reset.`
+                    );
+                  } else {
+                    setMessage(
+                      `Created ${type} license ${r.license.id} — copy the key into ${product.installer.name} (status stays pending until Setup activates it).`
+                    );
+                  }
                   router.refresh();
                 })
               }
             >
-              New {type}
+              {type === "trial" ? "Get trial key" : `New ${type}`}
             </button>
           ))}
           {!allowPaidSelfServe && (
@@ -64,7 +90,7 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
         </div>
         {oneTimeKey && (
           <p className="mono" style={{ marginTop: 12, color: "var(--gm-gold-300)" }}>
-            One-time key (paste into installer): {oneTimeKey}
+            License key (paste into installer): {oneTimeKey}
           </p>
         )}
       </div>
