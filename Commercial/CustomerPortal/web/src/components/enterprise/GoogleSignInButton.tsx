@@ -1,4 +1,4 @@
-import { signIn } from "@/auth";
+import { safeGoogleSignIn } from "@/server/auth/safe-signin";
 
 function GoogleIcon() {
   return (
@@ -44,7 +44,7 @@ export function GoogleSignInButton({
     <form
       action={async () => {
         "use server";
-        await signIn("google", { redirectTo: callbackUrl });
+        await safeGoogleSignIn({ callbackUrl });
       }}
     >
       <button type="submit" className="e-btn-google" disabled={disabled}>

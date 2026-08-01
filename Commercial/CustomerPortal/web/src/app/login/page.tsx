@@ -1,4 +1,4 @@
-import { auth, signIn } from "@/auth";
+import { auth } from "@/auth";
 import type { Session } from "next-auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -8,6 +8,28 @@ import { FinancialParticles } from "@/components/enterprise/FinancialParticles";
 import { GoogleAutoStart } from "@/components/enterprise/GoogleAutoStart";
 import { GoogleSignInButton } from "@/components/enterprise/GoogleSignInButton";
 import { brand } from "@/lib/brand";
+import { safeCredentialsSignIn, safeGoogleSignIn } from "@/server/auth/safe-signin";
+
+function loginErrorMessage(code?: string): string {
+  switch ((code || "").trim()) {
+    case "CredentialsSignin":
+      return "Email or password is incorrect, or the email is not verified yet. Register and confirm your email first.";
+    case "AccessDenied":
+      return "Sign-in was denied. If you tried too many times, wait a few minutes and try again.";
+    case "Configuration":
+    case "MissingSecret":
+      return "Sign-in is temporarily unavailable (server configuration). Please try again shortly or use Google.";
+    case "OAuthSignInError":
+    case "OAuthCallbackError":
+      return "Google sign-in failed. Try again, or use your verified email and password.";
+    case "Verification":
+      return "Please verify your email before signing in.";
+    default:
+      return code
+        ? "Sign-in failed. Try Google again, or use your verified email and password."
+        : "";
+  }
+}
 
 export default async function LoginPage({
   searchParams,
@@ -31,6 +53,7 @@ export default async function LoginPage({
     return id.includes(".apps.googleusercontent.com") && secret.length >= 20;
   })();
   const preferGoogle = (sp.provider || "").toLowerCase() === "google" && googleConfigured && !sp.error;
+  const errorText = loginErrorMessage(sp.error);
 
   return (
     <EnterpriseShell>
@@ -52,9 +75,9 @@ export default async function LoginPage({
               </p>
             </div>
 
-            {sp.error && (
+            {errorText && (
               <p className="e-login-error" role="alert">
-                Sign-in failed. Try Google again, or use your verified email and password.
+                {errorText}
               </p>
             )}
 
@@ -64,7 +87,7 @@ export default async function LoginPage({
                   id="google-auto-signin"
                   action={async () => {
                     "use server";
-                    await signIn("google", { redirectTo: callbackUrl });
+                    await safeGoogleSignIn({ callbackUrl });
                   }}
                 >
                   <GoogleAutoStart enabled formId="google-auto-signin" />
@@ -82,7 +105,7 @@ export default async function LoginPage({
                   "use server";
                   const email = String(fd.get("email") || "");
                   const password = String(fd.get("password") || "");
-                  await signIn("credentials", { email, password, redirectTo: callbackUrl });
+                  await safeCredentialsSignIn({ email, password, callbackUrl });
                 }}
                 className="e-form"
               >

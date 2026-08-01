@@ -87,39 +87,45 @@ providers.push(
       password: { label: "Password", type: "password" },
     },
     async authorize(credentials) {
-      const email = String(credentials?.email || "").trim().toLowerCase();
-      const password = String(credentials?.password || "");
-      if (!email || !password) return null;
-      if (await isLoginBlocked(email)) {
-        writeAudit({
-          user: email,
-          action: "login_failed",
-          ip: "auth",
-          result: "denied",
-          detail: "brute-force lockout",
-        });
+      try {
+        const email = String(credentials?.email || "").trim().toLowerCase();
+        const password = String(credentials?.password || "");
+        if (!email || !password) return null;
+        if (await isLoginBlocked(email)) {
+          writeAudit({
+            user: email,
+            action: "login_failed",
+            ip: "auth",
+            result: "denied",
+            detail: "brute-force lockout",
+          });
+          return null;
+        }
+        const account = await authenticatePassword(email, password);
+        if (!account) {
+          await recordLoginFailure(email, "auth");
+          writeAudit({
+            user: email,
+            action: "login_failed",
+            ip: "auth",
+            result: "denied",
+            detail: "invalid credentials or unverified email",
+          });
+          return null;
+        }
+        await clearLoginFailures(email);
+        const role = resolveRole(email);
+        return {
+          id: account.id,
+          name: account.name,
+          email: account.email,
+          role,
+        };
+      } catch (e) {
+        // Never let store/cache faults become an unhandled 500 on /login.
+        console.error("[auth] credentials authorize failed", e instanceof Error ? e.message : e);
         return null;
       }
-      const account = await authenticatePassword(email, password);
-      if (!account) {
-        await recordLoginFailure(email, "auth");
-        writeAudit({
-          user: email,
-          action: "login_failed",
-          ip: "auth",
-          result: "denied",
-          detail: "invalid credentials or unverified email",
-        });
-        return null;
-      }
-      await clearLoginFailures(email);
-      const role = resolveRole(email);
-      return {
-        id: account.id,
-        name: account.name,
-        email: account.email,
-        role,
-      };
     },
   })
 );
@@ -130,37 +136,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   callbacks: {
     async signIn({ user, account }) {
-      const email = (user.email || "").toLowerCase();
-      if (!email) return false;
-      if (await isLoginBlocked(email)) return false;
-      if (account?.provider === "google") {
-        await upsertOAuthAccount({ email, name: user.name });
+      try {
+        const email = (user.email || "").toLowerCase();
+        if (!email) return false;
+        if (await isLoginBlocked(email)) return false;
+        if (account?.provider === "google") {
+          await upsertOAuthAccount({ email, name: user.name });
+        }
+        return true;
+      } catch (e) {
+        console.error("[auth] signIn callback failed", e instanceof Error ? e.message : e);
+        return false;
       }
-      return true;
     },
     async jwt({ token, user, trigger }) {
-      if (user) {
-        const email = (user.email || "").toLowerCase();
-        token.role = resolveRole(email, (user as { role?: string }).role);
-        token.email = email;
-        if (user.image) token.picture = user.image;
-        if (email) {
-          await cacheSet(CacheKeys.session(email), String(token.role || "customer"), 60 * 60 * 8);
+      try {
+        if (user) {
+          const email = (user.email || "").toLowerCase();
+          token.role = resolveRole(email, (user as { role?: string }).role);
+          token.email = email;
+          if (user.image) token.picture = user.image;
+          if (email) {
+            await cacheSet(CacheKeys.session(email), String(token.role || "customer"), 60 * 60 * 8);
+          }
+          writeAudit({
+            user: email || "unknown",
+            action: "login",
+            ip: "auth",
+            result: "success",
+            detail: `provider login · role=${token.role}`,
+          });
         }
-        writeAudit({
-          user: email || "unknown",
-          action: "login",
-          ip: "auth",
-          result: "success",
-          detail: `provider login · role=${token.role}`,
-        });
-      }
-      if (!token.role && token.email) {
-        token.role = resolveRole(String(token.email));
-      }
-      if (!token.role) token.role = "customer";
-      if (trigger === "update" && token.email) {
-        await cacheSet(CacheKeys.session(String(token.email)), String(token.role), 60 * 60 * 8);
+        if (!token.role && token.email) {
+          token.role = resolveRole(String(token.email));
+        }
+        if (!token.role) token.role = "customer";
+        if (trigger === "update" && token.email) {
+          await cacheSet(CacheKeys.session(String(token.email)), String(token.role), 60 * 60 * 8);
+        }
+      } catch (e) {
+        console.error("[auth] jwt callback failed", e instanceof Error ? e.message : e);
+        if (!token.role) token.role = "customer";
       }
       return token;
     },
