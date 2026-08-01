@@ -32,15 +32,17 @@ Provide Authenticode certificate; authorize signed Setup rebuild.
 
 ## 3. Resend — verify `thegoldmind.ai`
 
-**Status:** Waiting for Owner  
+**Status:** Waiting for Owner (interim cutover active)  
 
-On the **existing** Resend account, add/verify `thegoldmind.ai` (SPF/DKIM).  
-Set Production:
+**Live-test unblock (2026-08-01):** `RESEND_API_KEY` is now on Vercel Production.  
+Outbound From temporarily uses verified infra `noreply@rtasstudio.com` with display name **THE GOLD MIND PROFESSIONAL** so Gmail can receive mail before brand DNS exists. Details: `EMAIL_AND_SAFE_BROWSING.md`.
+
+When ready, on the **existing** Resend account, add/verify `thegoldmind.ai` (SPF/DKIM), then set Production:
 
 - `RESEND_FROM_EMAIL=THE GOLD MIND PROFESSIONAL <noreply@thegoldmind.ai>`
 - `SUPPORT_EMAIL` / `SUPPORT_INBOX_EMAIL=support@thegoldmind.ai`
 
-Do not send customer mail from another product’s domain.
+After brand domain verify, remove the rtasstudio.com cutover From.
 
 ---
 

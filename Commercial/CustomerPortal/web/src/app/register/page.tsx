@@ -14,10 +14,17 @@ export const metadata: Metadata = {
 export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; sent?: string; email?: string; verify?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    sent?: string;
+    email?: string;
+    verify?: string;
+    mailed?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const openSignup = process.env.PORTAL_OPEN_SIGNUP !== "false";
+  const emailDelivered = sp.mailed === "1";
 
   return (
     <EnterpriseShell>
@@ -43,10 +50,19 @@ export default async function RegisterPage({
             ) : sp.sent === "1" ? (
               <div className="e-glass-card">
                 <h2 style={{ marginTop: 0 }}>Confirm your email</h2>
-                <p>
-                  We prepared a confirmation for <strong>{sp.email || "your email"}</strong>. Open the verification
-                  link to activate your account, then sign in.
-                </p>
+                {emailDelivered ? (
+                  <p>
+                    A confirmation email was sent to <strong>{sp.email || "your email"}</strong>. Open the
+                    verification link to activate your account, then sign in. Check Spam/Promotions if it is not
+                    in Primary.
+                  </p>
+                ) : (
+                  <p>
+                    Account created for <strong>{sp.email || "your email"}</strong>, but the confirmation email
+                    could not be delivered automatically. Use the verification link below to activate your
+                    account, then sign in.
+                  </p>
+                )}
                 {sp.verify ? (
                   <p style={{ fontSize: 13, wordBreak: "break-all" }}>
                     Verification link:{" "}
@@ -54,13 +70,16 @@ export default async function RegisterPage({
                       {sp.verify}
                     </a>
                   </p>
-                ) : (
+                ) : null}
+                {!sp.verify && emailDelivered ? (
                   <p style={{ fontSize: 13, color: "var(--e-text-muted)" }}>
-                    Check your inbox (and spam). After confirmation, use <Link href="/login">Sign in</Link>.
+                    After confirmation, use <Link href="/login">Sign in</Link>.
                   </p>
-                )}
+                ) : null}
                 <p style={{ fontSize: 13, marginBottom: 0 }}>
                   Already confirmed? <Link href="/login">Sign in</Link>
+                  {" · "}
+                  Or use <Link href="/login">Google Sign-In</Link> for an instant verified account.
                 </p>
               </div>
             ) : (
@@ -76,7 +95,11 @@ export default async function RegisterPage({
                   if (!result.ok) {
                     redirect(`/register?error=${encodeURIComponent(result.error)}`);
                   }
-                  const q = new URLSearchParams({ sent: "1", email: result.email });
+                  const q = new URLSearchParams({
+                    sent: "1",
+                    email: result.email,
+                    mailed: result.emailSent ? "1" : "0",
+                  });
                   if (result.verifyUrl) q.set("verify", result.verifyUrl);
                   redirect(`/register?${q.toString()}`);
                 }}

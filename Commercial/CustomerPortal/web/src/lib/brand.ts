@@ -173,12 +173,14 @@ export const brand = {
     partners: partnersEmail,
   },
 
-  /** Resend / transactional From header (must use brand domain when set). */
+  /**
+   * Resend / transactional From header.
+   * Prefer RESEND_FROM_EMAIL when set (ops may use a verified cutover domain
+   * until thegoldmind.ai DNS + Resend verification are complete).
+   */
   resendFrom: (() => {
     const fromEnv = env("RESEND_FROM_EMAIL");
-    if (fromEnv && fromEnv.toLowerCase().includes(`@${brandDomain.toLowerCase()}`)) {
-      return fromEnv;
-    }
+    if (fromEnv) return fromEnv;
     return `${productName} <${noreplyEmail}>`;
   })(),
 
