@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
-import path from "path";
 
 const nextConfig: NextConfig = {
-  // Monorepo: silence incorrect workspace-root inference when multiple lockfiles exist
-  outputFileTracingRoot: path.join(__dirname, "../../.."),
   poweredByHeader: false,
   compress: true,
   images: {
