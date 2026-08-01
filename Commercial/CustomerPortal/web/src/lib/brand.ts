@@ -226,6 +226,8 @@ export const brand = {
     og: "/brand/the-gold-mind-og-1200x630.png",
     twitter: "/brand/the-gold-mind-twitter-1200x600.png",
     footer: "/brand/footer-gold-mind.png",
+    footerRtasGroup: "/brand/footer-rtas-group.png",
+    footerRtasDigital: "/brand/footer-rtas-digital.png",
     favicon: "/favicon.ico",
   },
 } as const;

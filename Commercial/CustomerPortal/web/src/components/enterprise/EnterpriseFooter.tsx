@@ -42,11 +42,32 @@ export function EnterpriseFooter() {
       <div className="e-container">
         <div className="e-footer-grid e-footer-grid--compact">
           <div className="e-footer-brand">
-            <div className="e-footer-logos e-footer-logos--brand" aria-label={`${brand.brandName} brand`}>
+            <div
+              className="e-footer-logos e-footer-logos--brand"
+              aria-label={`${brand.brandName}, RTAS Group, and RTAS Digital logos`}
+            >
               <div className="e-footer-logo-cell">
                 <Image
                   src={brand.assets.footer}
                   alt={`${brand.brandName} ${brand.tagline}`}
+                  width={88}
+                  height={88}
+                  className="e-footer-logo-img"
+                />
+              </div>
+              <div className="e-footer-logo-cell">
+                <Image
+                  src={brand.assets.footerRtasGroup}
+                  alt="RTAS Group of Companies"
+                  width={88}
+                  height={88}
+                  className="e-footer-logo-img"
+                />
+              </div>
+              <div className="e-footer-logo-cell">
+                <Image
+                  src={brand.assets.footerRtasDigital}
+                  alt="RTAS Digital Marketing Company"
                   width={88}
                   height={88}
                   className="e-footer-logo-img"
