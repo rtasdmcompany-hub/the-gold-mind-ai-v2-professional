@@ -286,6 +286,12 @@ export function activateLicense(input: {
   deviceFingerprint: string;
   /** Skip Resend delivery (seed / internal). */
   skipEmail?: boolean;
+  /**
+   * Desktop installer path: when the only seat is already taken (portal soft-activate
+   * or a previous PC), replace that seat instead of returning DEVICE_LIMIT_REACHED.
+   * Never used for multi-seat paid licenses without an explicit transfer.
+   */
+  replaceSingleSeat?: boolean;
 }): ActivateResult {
   const email = input.customerEmail.trim().toLowerCase();
   const key = input.plaintextKey.trim().toUpperCase();
@@ -322,15 +328,18 @@ export function activateLicense(input: {
     });
   } else {
     const portalSeat = activeDevices.find((d) => d.fingerprintHash === portalBrowserFpHash);
-    // Real installer/device fingerprint replaces the portal soft-activate seat (1-seat trials).
-    if (
-      portalSeat &&
-      input.deviceFingerprint.trim() !== PORTAL_BROWSER_FP &&
-      activeDevices.length >= lic.seatsMax
-    ) {
-      deviceId = portalSeat.id;
+    const canReplaceSingle =
+      Boolean(input.replaceSingleSeat) &&
+      lic.seatsMax === 1 &&
+      activeDevices.length >= 1 &&
+      input.deviceFingerprint.trim() !== PORTAL_BROWSER_FP;
+    const seatToReplace = portalSeat || (canReplaceSingle ? activeDevices[0] : null);
+
+    // Real installer fingerprint replaces portal soft-activate (or the only 1-seat device).
+    if (seatToReplace && activeDevices.length >= lic.seatsMax) {
+      deviceId = seatToReplace.id;
       mutateStore((store) => {
-        const d = store.devices.find((x) => x.id === portalSeat.id);
+        const d = store.devices.find((x) => x.id === seatToReplace.id);
         if (d) {
           d.fingerprintHash = fpHash;
           d.name = input.deviceName || d.name;
@@ -342,7 +351,9 @@ export function activateLicense(input: {
           action: "device.registered",
           entityType: "device",
           entityId: deviceId,
-          detail: `Portal soft-activate seat replaced by real device on license ${lic!.id}`,
+          detail: portalSeat
+            ? `Portal soft-activate seat replaced by real device on license ${lic!.id}`
+            : `Single-seat license transferred to new device on license ${lic!.id}`,
         });
       });
     } else if (activeDevices.length >= lic.seatsMax) {

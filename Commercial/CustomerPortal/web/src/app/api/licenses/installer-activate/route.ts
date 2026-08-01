@@ -33,6 +33,9 @@ export async function POST(req: Request) {
       customerEmail,
       deviceName,
       deviceFingerprint,
+      // Setup must finish on the customer's PC even if portal soft-activate
+      // or a previous machine already used the only seat.
+      replaceSingleSeat: true,
     });
 
     if (!result.ok) {
