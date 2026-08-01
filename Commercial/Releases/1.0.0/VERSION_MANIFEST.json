@@ -1,37 +1,45 @@
-﻿{
-    "product":  "THE GOLD MIND PROFESSIONAL",
-    "version":  "1.0.0",
-    "channel":  "stable",
-    "releasedAt":  "2026-07-30T20:26:29.7525726Z",
-    "core":  {
-                 "mq5":  "Experts/TheGoldMindAI_Professional.mq5",
-                 "ex5Sha256":  "890e22254ef44f86e82bc3700cd2b0dd0eaddf57c3ce91ff0f801b999c347535",
-                 "frozen":  true,
-                 "mq5Sha256":  "1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e"
-             },
-    "artifacts":  {
-                      "setupExe":  {
-                                       "sha256":  "f48f3698a5401a66869481c7cb615505067fd4f64699b87f484db6afdfd29b07",
-                                       "file":  "installer/Setup.exe"
-                                   },
-                      "checksums":  "SHA256SUMS.txt",
-                      "sbom":  "SBOM.json",
-                      "professionalZip":  {
-                                              "sha256":  "e61120628ba0d43d9d0f84d931cb0cd863890fa95a0e997b04d13a951d83229a",
-                                              "file":  "TGM_PROFESSIONAL_1.0.0_stable.zip"
-                                          },
-                      "theGoldMindSetupExe":  {
-                                                  "sha256":  "f48f3698a5401a66869481c7cb615505067fd4f64699b87f484db6afdfd29b07",
-                                                  "file":  "installer/TheGoldMindSetup.exe"
-                                              }
-                  },
-    "installer":  {
-                      "mt5DeployPath":  "MQL5/Experts/The Gold Mind/TheGoldMindAI_Professional.ex5",
-                      "uninstallRegistry":  "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\TheGoldMindProfessional",
-                      "licenseActivation":  true,
-                      "desktopShortcut":  true,
-                      "googleLoginOptional":  true,
-                      "startMenu":  true
-                  },
-    "signMode":  "unsigned"
+{
+  "product": "THE GOLD MIND PROFESSIONAL",
+  "version": "1.0.0",
+  "channel": "stable",
+  "releasedAt": "2026-08-01T07:49:02Z",
+  "core": {
+    "mq5": "Experts/TheGoldMindAI_Professional.mq5",
+    "ex5Sha256": "890e22254ef44f86e82bc3700cd2b0dd0eaddf57c3ce91ff0f801b999c347535",
+    "frozen": true,
+    "mq5Sha256": "1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e",
+    "note": "UI panel controls only; trading logic unchanged. EX5 rebuild pending Owner MetaEditor compile for panel binary."
+  },
+  "artifacts": {
+    "setupExe": {
+      "file": "installer/Setup.exe",
+      "sha256": "db387c8b97c6c833f7a7c06f2fa128f888982626016262e63adabd60300071fb"
+    },
+    "professionalZip": {
+      "file": "TGM_PROFESSIONAL_1.0.0_stable.zip",
+      "sha256": "b33753bb0289b6838c3d5ccaa2b0df152b3b7c2cc0c2b84565586a4a132f21f0",
+      "bytes": 862711
+    },
+    "checksums": "SHA256SUMS.txt",
+    "sbom": "SBOM.json"
+  },
+  "installer": {
+    "mt5DeployPath": "MQL5/Experts/The Gold Mind/TheGoldMindAI_Professional.ex5",
+    "uninstallRegistry": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\TheGoldMindProfessional",
+    "licenseActivation": true,
+    "licenseRequiredBeforeFinish": true,
+    "desktopShortcut": true,
+    "googleLoginOptional": true,
+    "startMenu": true
+  },
+  "signMode": "unsigned",
+  "canonicalLayout": [
+    "installer/Setup.exe",
+    "TGM_PROFESSIONAL_1.0.0_stable.zip",
+    "SHA256SUMS.txt",
+    "VERSION_MANIFEST.json",
+    "SBOM.json",
+    "RELEASE_NOTES.md",
+    "RELEASE_CANDIDATE.md"
+  ]
 }

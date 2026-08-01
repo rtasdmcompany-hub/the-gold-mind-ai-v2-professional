@@ -15,8 +15,8 @@ export const STABLE_BUILD_NUMBER = product.buildNumber;
 export const STABLE_PACKAGE_FILE = product.installer.zipName;
 /** Known SHA-256 of Commercial/Releases/1.0.0/TGM_PROFESSIONAL_1.0.0_stable.zip */
 export const STABLE_SHA256 =
-  "e61120628ba0d43d9d0f84d931cb0cd863890fa95a0e997b04d13a951d83229a";
-export const STABLE_SIZE_BYTES = 863_565;
+  "b33753bb0289b6838c3d5ccaa2b0df152b3b7c2cc0c2b84565586a4a132f21f0";
+export const STABLE_SIZE_BYTES = 862_711;
 export const STABLE_RELEASED_AT = "2026-07-30T20:26:30.4594198Z";
 
 const FAKE_SEED_IDS = new Set(["rel_200_stable", "rel_201_rc", "rel_dev_nightly"]);
@@ -76,7 +76,6 @@ export function commercialZipCandidates(packageFile = STABLE_PACKAGE_FILE): stri
   if (envPath) list.push(path.resolve(envPath));
   if (envDir) {
     list.push(path.join(path.resolve(envDir), packageFile));
-    list.push(path.join(path.resolve(envDir), "github-assets", packageFile));
   }
 
   // Bundled static asset (CustomerPortal/web/public/releases)
@@ -85,12 +84,10 @@ export function commercialZipCandidates(packageFile = STABLE_PACKAGE_FILE): stri
   // CustomerPortal/web → ../../Releases/<version>
   const fromWeb = path.resolve(cwd, "..", "..", "Releases", versionDir);
   list.push(path.join(fromWeb, packageFile));
-  list.push(path.join(fromWeb, "github-assets", packageFile));
 
   // Repo root (if cwd is monorepo root)
   const fromRoot = path.resolve(cwd, "Commercial", "Releases", versionDir);
   list.push(path.join(fromRoot, packageFile));
-  list.push(path.join(fromRoot, "github-assets", packageFile));
 
   // Always include known 1.0.0 path as fallback for current production package
   if (packageFile !== STABLE_PACKAGE_FILE) {

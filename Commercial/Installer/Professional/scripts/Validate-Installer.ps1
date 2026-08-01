@@ -24,30 +24,24 @@ $size = (Get-Item $SetupExe).Length
 if ($size -lt 350KB) { throw "Setup.exe suspiciously small ($size bytes)" }
 Write-Host "  Size: $size bytes - OK"
 
-Write-Step "Payload zip structural check"
-$payloadZip = Join-Path (Split-Path $SetupExe -Parent) "..\..\..\Installer\Professional\tools\setup\payload.zip"
-# Resolve relative from Releases/1.0.0/installer -> Commercial/Installer/...
-$cand = @(
-  (Join-Path (Split-Path $SetupExe -Parent) "..\..\..\Installer\Professional\tools\setup\payload.zip"),
-  (Join-Path $PSScriptRoot "..\tools\setup\payload.zip")
-)
-$pz = $null
-foreach ($c in $cand) {
+Write-Step "Payload structural check (canonical inno/payload — not a staged payload.zip copy)"
+$payloadRoot = $null
+foreach ($c in @(
+    (Join-Path $PSScriptRoot "..\inno\payload"),
+    (Join-Path (Split-Path $SetupExe -Parent) "..\..\..\Installer\Professional\inno\payload")
+  )) {
   $r = Resolve-Path $c -EA SilentlyContinue
-  if ($r) { $pz = $r.Path; break }
+  if ($r -and (Test-Path (Join-Path $r.Path "ea\TheGoldMindAI_Professional.ex5"))) { $payloadRoot = $r.Path; break }
 }
-if (-not $pz) { throw "payload.zip NOT FOUND for structural validation" }
-if (Test-Path $InstallRoot) { Remove-Item $InstallRoot -Recurse -Force }
-New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::ExtractToDirectory($pz, $InstallRoot)
-$ea = Join-Path $InstallRoot "ea\TheGoldMindAI_Professional.ex5"
-$launcher = Join-Path $InstallRoot "bin\TGM-Professional-Launcher.exe"
+if (-not $payloadRoot) { throw "Canonical payload root NOT FOUND (Installer/Professional/inno/payload)" }
+$ea = Join-Path $payloadRoot "ea\TheGoldMindAI_Professional.ex5"
+$launcher = Join-Path $payloadRoot "bin\TGM-Professional-Launcher.exe"
 if (-not (Test-Path $ea)) { throw "EA missing in payload" }
 if (-not (Test-Path $launcher)) { throw "Launcher missing in payload" }
 foreach ($s in @("Deploy-EA-To-MT5.ps1", "Activate-License.ps1", "PostInstall-Wizard.ps1", "Update-TheGoldMindProfessional.ps1")) {
-  if (-not (Test-Path (Join-Path $InstallRoot "scripts\$s"))) { throw "Missing script: $s" }
+  if (-not (Test-Path (Join-Path $payloadRoot "scripts\$s"))) { throw "Missing script: $s" }
 }
+Write-Host "  Payload root OK: $payloadRoot" -ForegroundColor Green
 $portalCfg = Join-Path $InstallRoot "config\portal.json"
 if (-not (Test-Path $portalCfg)) { throw "portal.json missing after install" }
 $pb = (Get-Content $portalCfg -Raw | ConvertFrom-Json).portalBase

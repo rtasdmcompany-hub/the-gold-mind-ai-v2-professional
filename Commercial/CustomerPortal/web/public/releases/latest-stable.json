@@ -1,27 +1,18 @@
 {
-    "id": "rel_100_stable",
-    "product": "THE GOLD MIND PROFESSIONAL",
-    "version": "1.0.0",
-    "buildNumber": "26211",
-    "channel": "stable",
-    "status": "published",
-    "releasedAt": "2026-07-30T20:26:30.4594198Z",
-    "packageFile": "TGM_PROFESSIONAL_1.0.0_stable.zip",
-    "packageUrl": "https://the-gold-mind-ai-v2-professional.vercel.app/api/releases/download/rel_100_stable",
-    "externalAssetUrl": "https://the-gold-mind-ai-v2-professional.vercel.app/releases/TGM_PROFESSIONAL_1.0.0_stable.zip",
-    "packageSizeBytes": 863565,
-    "sha256": "e61120628ba0d43d9d0f84d931cb0cd863890fa95a0e997b04d13a951d83229a",
-    "signatureRequired": false,
-    "signatureSubject": "Code signing pending",
-    "signatureStatus": "pending_code_sign",
-    "releaseNotes": "Commercial packaging release 1.0.0 - extract ZIP, run Setup.exe, activate with existing license email/key.",
-    "compatibility": {
-        "coreTag": "1.0.0",
-        "coreFrozen": true,
-        "mt5": "build 3800+",
-        "os": [
-            "Windows 10",
-            "Windows 11"
-        ]
-    }
+  "id": "rel_100_stable",
+  "product": "THE GOLD MIND PROFESSIONAL",
+  "version": "1.0.0",
+  "buildNumber": "26211",
+  "channel": "stable",
+  "status": "published",
+  "releasedAt": "2026-08-01T07:49:02Z",
+  "packageFile": "TGM_PROFESSIONAL_1.0.0_stable.zip",
+  "packageUrl": "https://the-gold-mind-ai-v2-professional.vercel.app/api/releases/download/rel_100_stable",
+  "externalAssetUrl": "https://the-gold-mind-ai-v2-professional.vercel.app/releases/TGM_PROFESSIONAL_1.0.0_stable.zip",
+  "packageSizeBytes": 862711,
+  "sha256": "b33753bb0289b6838c3d5ccaa2b0df152b3b7c2cc0c2b84565586a4a132f21f0",
+  "signatureRequired": false,
+  "signatureSubject": "Code signing pending",
+  "signatureStatus": "pending_code_sign",
+  "releaseNotes": "1.0.0 \u2014 strict Setup license activation (portal Active required). Extract ZIP or run Setup.exe; paste portal email + key during install."
 }

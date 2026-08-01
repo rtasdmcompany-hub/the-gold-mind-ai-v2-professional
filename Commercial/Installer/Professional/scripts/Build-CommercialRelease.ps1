@@ -170,23 +170,37 @@ function New-PayloadZip {
 }
 
 function Build-SetupCsc {
-  Write-Banner "Build Setup.exe (csc + embedded payload)"
+  Write-Banner "Build Setup.exe (single canonical binary — no alias copies)"
   New-Item -ItemType Directory -Force -Path $InstallerOut | Out-Null
   $src = Join-Path $Tools "setup\Program.net48.cs"
   $zip = Join-Path $Tools "setup\payload.zip"
   $out = Join-Path $InstallerOut "Setup.exe"
-  $refs = @(
-    "/reference:System.dll",
-    "/reference:System.Core.dll",
-    "/reference:System.Windows.Forms.dll",
-    "/reference:System.Drawing.dll",
-    "/reference:System.IO.Compression.dll",
-    "/reference:System.IO.Compression.FileSystem.dll"
-  )
-  & $Csc /nologo /target:winexe /platform:anycpu /out:$out /resource:"$zip,payload.zip" @refs $src
-  if ($LASTEXITCODE -ne 0) { throw "Setup.exe csc build failed." }
+  # Remove prior installer outputs so old/alias binaries cannot linger
+  Get-ChildItem $InstallerOut -File -ErrorAction SilentlyContinue | Remove-Item -Force
+  if (Test-Path $Csc) {
+    $refs = @(
+      "/reference:System.dll",
+      "/reference:System.Core.dll",
+      "/reference:System.Windows.Forms.dll",
+      "/reference:System.Drawing.dll",
+      "/reference:System.IO.Compression.dll",
+      "/reference:System.IO.Compression.FileSystem.dll"
+    )
+    & $Csc /nologo /target:winexe /platform:anycpu /out:$out /resource:"$zip,payload.zip" @refs $src
+    if ($LASTEXITCODE -ne 0) { throw "Setup.exe csc build failed." }
+  } else {
+    $mcs = Get-Command mcs -ErrorAction SilentlyContinue
+    if (-not $mcs) { throw "Neither csc.exe nor mcs found — cannot build Setup.exe." }
+    Write-Host "  Using mono mcs (non-Windows build host)" -ForegroundColor Yellow
+    & mcs -sdk:4.5 -target:winexe -platform:anycpu -out:$out `
+      -r:System.dll -r:System.Core.dll -r:System.Windows.Forms.dll -r:System.Drawing.dll `
+      -r:System.IO.Compression.dll -r:System.IO.Compression.FileSystem.dll `
+      "-resource:$zip,payload.zip" $src
+    if ($LASTEXITCODE -ne 0) { throw "Setup.exe mcs build failed." }
+  }
   if (-not (Test-Path $out)) { throw "Setup.exe NOT FOUND after compile." }
-  Copy-Item -Force $out (Join-Path $InstallerOut "TheGoldMindSetup.exe")
+  # Discard staging payload.zip — never keep a second copy next to sources
+  if (Test-Path $zip) { Remove-Item $zip -Force }
   Write-Host "  Output: $out" -ForegroundColor Green
   Write-Host "  Bytes: $((Get-Item $out).Length)"
 }
@@ -285,19 +299,19 @@ function New-Manifests([string]$zipPath, [string]$setupPath) {
       frozen    = $true
     }
     artifacts  = @{
-      setupExe              = @{ file = "installer/Setup.exe"; sha256 = $setupHash }
-      theGoldMindSetupExe   = @{ file = "installer/TheGoldMindSetup.exe"; sha256 = $setupHash }
-      professionalZip       = @{ file = (Split-Path $zipPath -Leaf); sha256 = $zipHash }
-      sbom                  = "SBOM.json"
-      checksums             = "SHA256SUMS.txt"
+      setupExe        = @{ file = "installer/Setup.exe"; sha256 = $setupHash }
+      professionalZip = @{ file = (Split-Path $zipPath -Leaf); sha256 = $zipHash }
+      sbom            = "SBOM.json"
+      checksums       = "SHA256SUMS.txt"
     }
     installer  = @{
-      desktopShortcut     = $true
-      startMenu           = $true
-      uninstallRegistry   = "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\TheGoldMindProfessional"
-      mt5DeployPath       = "MQL5/Experts/The Gold Mind/TheGoldMindAI_Professional.ex5"
-      licenseActivation   = $true
-      googleLoginOptional = $true
+      desktopShortcut            = $true
+      startMenu                  = $true
+      uninstallRegistry          = "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\TheGoldMindProfessional"
+      mt5DeployPath              = "MQL5/Experts/The Gold Mind/TheGoldMindAI_Professional.ex5"
+      licenseActivation          = $true
+      licenseRequiredBeforeFinish = $true
+      googleLoginOptional        = $true
     }
     signMode   = $SignMode
   }
@@ -310,23 +324,24 @@ function New-Manifests([string]$zipPath, [string]$setupPath) {
 $Channel
 
 ## What's included
-- Windows Setup.exe / TheGoldMindSetup.exe commercial installer
+- Windows Setup.exe (single canonical installer — no alias copies)
 - Desktop + Start Menu shortcuts
 - Add/Remove Programs uninstall entry
 - MetaTrader 5 detection and EA deploy to MQL5/Experts/The Gold Mind/
-- License activation wizard (email + key, optional Google login via portal)
+- Strict license activation (email + key required; portal Active before finish)
 - Professional ZIP, SHA-256 checksums, SBOM
 
 ## Core Trading Engine
 - File: TheGoldMindAI_Professional.mq5 / .ex5
 - SHA-256 (mq5): $CertSha
-- Status: FROZEN - not modified by this packaging release
+- Status: FROZEN trading logic - packaging/UI only
 
 ## Install
-1. Run installer/Setup.exe
-2. Activate license
-3. Confirm EA in MT5 Navigator -> The Gold Mind
-4. Attach to chart
+1. Generate license key in Customer Portal
+2. Run installer/Setup.exe
+3. Paste same portal email + key (required)
+4. Confirm EA in MT5 Navigator -> The Gold Mind
+5. Attach to chart
 
 ## Signing
 Sign mode for this build: $SignMode
@@ -394,38 +409,32 @@ signtool verify /pa /v path\Setup.exe
     Where-Object { $_.FullName -match '\\x64\\' } | Select-Object -First 1
   if (-not $signtool) { throw "signtool.exe NOT FOUND. Install Windows SDK." }
 
-  foreach ($t in @($setupPath, (Join-Path $InstallerOut "TheGoldMindSetup.exe"))) {
-    if ($SignThumbprint) {
-      & $signtool.FullName sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $SignThumbprint $t
-    } elseif ($SignCertPath) {
-      & $signtool.FullName sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /f $SignCertPath /p $SignCertPassword $t
-    } else {
-      throw "SignMode=$SignMode requires -SignThumbprint or -SignCertPath"
-    }
-    if ($LASTEXITCODE -ne 0) { throw "Signing failed for $t" }
-    & $signtool.FullName verify /pa $t
+  $t = $setupPath
+  if ($SignThumbprint) {
+    & $signtool.FullName sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /sha1 $SignThumbprint $t
+  } elseif ($SignCertPath) {
+    & $signtool.FullName sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /f $SignCertPath /p $SignCertPassword $t
+  } else {
+    throw "SignMode=$SignMode requires -SignThumbprint or -SignCertPath"
   }
+  if ($LASTEXITCODE -ne 0) { throw "Signing failed for $t" }
+  & $signtool.FullName verify /pa $t
 }
 
 function Publish-GitHubAssets {
-  Write-Banner "GitHub Release assets folder"
-  New-Item -ItemType Directory -Force -Path $GhAssets | Out-Null
-  Copy-Item -Force (Join-Path $InstallerOut "Setup.exe") $GhAssets
-  Copy-Item -Force (Join-Path $InstallerOut "TheGoldMindSetup.exe") $GhAssets
-  Copy-Item -Force (Join-Path $OutDir "TGM_PROFESSIONAL_${Version}_${Channel}.zip") $GhAssets
-  Copy-Item -Force (Join-Path $OutDir "SHA256SUMS.txt") $GhAssets
-  Copy-Item -Force (Join-Path $OutDir "SBOM.json") $GhAssets
-  Copy-Item -Force (Join-Path $OutDir "VERSION_MANIFEST.json") $GhAssets
-  Copy-Item -Force (Join-Path $OutDir "RELEASE_NOTES.md") $GhAssets
-  Get-ChildItem $InstallerOut -Filter "*.sha256" -EA SilentlyContinue | Copy-Item -Destination $GhAssets -Force
-  Get-ChildItem $OutDir -Filter "*.sha256" -EA SilentlyContinue | Copy-Item -Destination $GhAssets -Force
-
+  Write-Banner "GitHub Release notes (no mirror folder — use canonical Releases/$Version paths)"
+  # Discipline: do not keep a second copy of binaries under github-assets/
+  if (Test-Path $GhAssets) { Remove-Item $GhAssets -Recurse -Force }
   $gh = @"
 # GitHub Release $Version
 
-gh release create v$Version --title "THE GOLD MIND PROFESSIONAL $Version" --notes-file RELEASE_NOTES.md Setup.exe TheGoldMindSetup.exe TGM_PROFESSIONAL_${Version}_${Channel}.zip SHA256SUMS.txt SBOM.json VERSION_MANIFEST.json
+Upload from ``Commercial/Releases/$Version/`` (canonical — no duplicates):
+
+``````
+gh release create v$Version --title "THE GOLD MIND PROFESSIONAL $Version" --notes-file RELEASE_NOTES.md installer/Setup.exe TGM_PROFESSIONAL_${Version}_${Channel}.zip SHA256SUMS.txt SBOM.json VERSION_MANIFEST.json
+``````
 "@
-  Set-Content (Join-Path $GhAssets "GITHUB_RELEASE.md") -Value $gh -Encoding UTF8
+  Set-Content (Join-Path $OutDir "GITHUB_RELEASE.md") -Value $gh -Encoding UTF8
 }
 
 function Publish-PortalReleaseAsset([string]$zipPath) {
@@ -520,15 +529,14 @@ Installer copies the certified ``.ex5`` only. Trading engine logic is never modi
 ## Contents
 | Artifact | Purpose |
 |----------|---------|
-| ``installer/Setup.exe`` | Windows installer |
-| ``installer/TheGoldMindSetup.exe`` | Alias copy of Setup |
+| ``installer/Setup.exe`` | Windows installer (single canonical) |
 | ``TGM_PROFESSIONAL_${Version}_${Channel}.zip`` | Full professional ZIP |
 | ``SHA256SUMS.txt`` | Checksums |
 | ``SBOM.json`` | Software Bill of Materials |
 | ``VERSION_MANIFEST.json`` | Version + Core SHA metadata |
 | ``RELEASE_NOTES.md`` | Notes |
+| ``GITHUB_RELEASE.md`` | gh release upload commands |
 | ``SIGNING_WORKFLOW.md`` | Authenticode modes |
-| ``github-assets/`` | Files ready for ``gh release`` |
 
 ## Core
 - mq5 SHA-256: ``$CertSha`` (frozen)
@@ -538,9 +546,10 @@ Installer copies the certified ``.ex5`` only. Trading engine logic is never modi
 # BUILD_GUIDE.md
 
 ## Prerequisite
-- Windows ``csc.exe`` (.NET Framework 4.x) - used automatically
+- Windows ``csc.exe`` (.NET Framework 4.x) **or** Linux ``mcs`` (mono) - used automatically
 - Certified ``Experts/TheGoldMindAI_Professional.ex5`` present
 - Core mq5 SHA must equal ``$CertSha``
+- No duplicate alias installers / no ``github-assets/`` mirror in git
 
 ## Build (unsigned / default)
 ``````powershell
@@ -579,7 +588,7 @@ New-PayloadZip | Out-Null
 Build-SetupCsc
 $setup = Join-Path $InstallerOut "Setup.exe"
 $zip = New-ProfessionalZip
-New-Checksums @($setup, (Join-Path $InstallerOut "TheGoldMindSetup.exe"), $zip) | Out-Null
+New-Checksums @($setup, $zip) | Out-Null
 New-Sbom | Out-Null
 New-Manifests -zipPath $zip -setupPath $setup
 Invoke-Sign -setupPath $setup

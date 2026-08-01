@@ -81,14 +81,14 @@ Owner must merge PR #1 / redeploy Production, then confirm commit SHA match to `
 | 9 | Temporary scripts removed | **N/A** — sprint scripts retained (wired in `package.json`); `export-brand.mjs` required |
 | 10 | Dev-only assets removed | **N/A** — no safe orphan assets identified without risking tests/packaging |
 
-### Certified artifact fingerprints
+### Certified artifact fingerprints (canonical — updated in place)
 
 | Artifact | SHA-256 |
 |----------|---------|
 | MQ5 | `1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e` |
 | EX5 | `890e22254ef44f86e82bc3700cd2b0dd0eaddf57c3ce91ff0f801b999c347535` |
-| ZIP | `e61120628ba0d43d9d0f84d931cb0cd863890fa95a0e997b04d13a951d83229a` |
-| Setup.exe | `f48f3698a5401a66869481c7cb615505067fd4f64699b87f484db6afdfd29b07` |
+| ZIP | `b33753bb0289b6838c3d5ccaa2b0df152b3b7c2cc0c2b84565586a4a132f21f0` |
+| Setup.exe | `db387c8b97c6c833f7a7c06f2fa128f888982626016262e63adabd60300071fb` |
 
 Core cert constants remain aligned to frozen MQ5 above.
 
