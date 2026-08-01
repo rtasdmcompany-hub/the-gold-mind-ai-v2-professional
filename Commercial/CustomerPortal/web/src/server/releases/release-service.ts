@@ -182,9 +182,6 @@ export async function getPackageBytes(
   if (!isSafePackageId(packageId)) return null;
   const pkg = readReleaseStore().packages.find((p) => p.id === packageId);
   if (!pkg || pkg.status !== "published") return null;
-  try {
-    return await ensurePackageArtifact(pkg);
-  } catch {
-    return null;
-  }
+  // Let ensurePackageArtifact errors propagate so the download route can report PACKAGE_UNAVAILABLE.
+  return ensurePackageArtifact(pkg);
 }

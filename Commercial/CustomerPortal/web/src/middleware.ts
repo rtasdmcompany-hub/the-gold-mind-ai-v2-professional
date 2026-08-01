@@ -67,11 +67,14 @@ export default auth((req) => {
     path.startsWith("/api/releases/check") ||
     path.startsWith("/api/releases/download") ||
     path.startsWith("/api/releases/report") ||
-    path === "/api/licenses/installer-activate" ||
     path === "/api/licenses/ready" ||
+    path === "/api/licenses/installer-activate" ||
     path === "/api/notifications/trade-closed" ||
     path === "/api/trading/sync" ||
     path === "/api/partners/click" ||
+    // Bundled installer ZIP + catalog seed (Setup still requires portal license key).
+    path === "/releases/latest-stable.json" ||
+    (path.startsWith("/releases/") && path.endsWith(".zip")) ||
     isInternalReleaseAssetFetch(req, path) ||
     path.startsWith("/brand/") ||
     path.startsWith("/media/") ||

@@ -61,6 +61,9 @@ export default async function DownloadsPage() {
             <a className="btn btn-primary" href={`/api/releases/download/${latest.id}`}>
               Download Installer ZIP
             </a>
+            <a className="btn" href={`/releases/${latest.packageFile}`} download={latest.packageFile}>
+              Direct ZIP link
+            </a>
             <Link className="btn" href="/portal/updates">
               Check for updates
             </Link>

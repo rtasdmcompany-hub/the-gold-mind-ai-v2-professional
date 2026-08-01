@@ -16,6 +16,7 @@ import {
   STABLE_SHA256,
   STABLE_SIZE_BYTES,
 } from "./commercial-source";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
@@ -115,11 +116,17 @@ export function sha256Buffer(buf: Buffer): string {
 }
 
 function artifactsDir(): string {
-  const dir =
-    process.env.RELEASE_ARTIFACTS_DIR ||
-    path.join(process.env.RELEASE_DATA_DIR || path.join(process.cwd(), ".data", "releases"), "artifacts");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  return dir;
+  if (process.env.RELEASE_ARTIFACTS_DIR) {
+    const dir = process.env.RELEASE_ARTIFACTS_DIR;
+    try {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      return dir;
+    } catch {
+      /* fall through to serverless-safe root */
+    }
+  }
+  // Never use process.cwd()/.data on Vercel (read-only) — commercialDataRoot → /tmp.
+  return commercialDataRoot("releases", "artifacts");
 }
 
 export function artifactPath(packageId: string): string {
@@ -222,12 +229,20 @@ async function ensureCommercialStableArtifact(
       );
     }
     buffer = loaded.buffer;
-    fs.writeFileSync(p, buffer);
+    try {
+      fs.writeFileSync(p, buffer);
+    } catch {
+      // Cache write is optional — still serve bytes (serverless FS may be read-only).
+    }
   }
 
   const hash = sha256Buffer(buffer);
-  const refreshed = syncPackageMeta(pkg, hash, buffer.length);
-  return { buffer, package: refreshed };
+  try {
+    const refreshed = syncPackageMeta(pkg, hash, buffer.length);
+    return { buffer, package: refreshed };
+  } catch {
+    return { buffer, package: { ...pkg, sha256: hash, packageSizeBytes: buffer.length } };
+  }
 }
 
 /**

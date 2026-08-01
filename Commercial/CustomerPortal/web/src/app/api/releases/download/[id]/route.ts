@@ -19,9 +19,22 @@ export async function GET(
     return NextResponse.json({ error: "INVALID_PACKAGE_ID" }, { status: 400 });
   }
 
-  const packed = await getPackageBytes(id);
+  let packed: Awaited<ReturnType<typeof getPackageBytes>> = null;
+  let loadError: string | undefined;
+  try {
+    packed = await getPackageBytes(id);
+  } catch (e) {
+    loadError = e instanceof Error ? e.message : "PACKAGE_LOAD_FAILED";
+  }
   if (!packed) {
-    return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    return NextResponse.json(
+      {
+        error: loadError ? "PACKAGE_UNAVAILABLE" : "NOT_FOUND",
+        message: loadError || "Release package was not found in the catalog.",
+        id,
+      },
+      { status: 404 }
+    );
   }
   const { buffer, package: pkg } = packed;
 
