@@ -45,6 +45,7 @@ export default auth((req) => {
     path === "/login" ||
     path === "/register" ||
     path === "/verify-email" ||
+    path === "/resend-verification" ||
     path === "/forgot-password" ||
     path === "/reset-password" ||
     path === "/pricing" ||
