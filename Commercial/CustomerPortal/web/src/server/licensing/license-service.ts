@@ -186,7 +186,7 @@ export function createLicense(input: {
     if (existing) {
       assertNotTampered(existing, existing.customerEmail);
       const lic = refreshLicenseState(existing);
-      let plaintextKey = resolveTrialPlaintext(lic, email);
+      const plaintextKey = resolveTrialPlaintext(lic, email);
       if (!plaintextKey) {
         // Legacy random trial without envelope — keep dates/keyHash; cannot mint a second trial.
         mutateStore((store) => {
