@@ -669,16 +669,34 @@
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--e-space-xl);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  gap: clamp(24px, 3vw, 48px);
   align-items: center;
   width: min(var(--e-container-wide), 100% - 48px);
   margin-inline: auto;
   padding: var(--e-space-xl) 0;
 }
 
+/* Center copy in the free space between left edge and the video panel */
 .e-hero-content {
-  max-width: 36rem;
+  max-width: 34rem;
+  width: 100%;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.e-hero-content .e-lead {
+  margin-inline: auto;
+}
+
+.e-hero-content .e-btn-group {
+  justify-content: center;
+}
+
+.e-hero-grid > .e-reveal:first-child {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 /* ── Dashboard panel (portrait Live phone) ── */
@@ -712,7 +730,7 @@
 
 .e-dashboard-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: 10px;
   padding: 2px 4px 10px;
@@ -725,21 +743,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--e-gold);
-}
-
-.e-dashboard-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #6ecf9a;
-  box-shadow: 0 0 0 0 rgba(110, 207, 154, 0.55);
-  animation: e-live-pulse 1.8s ease-out infinite;
-}
-
-@keyframes e-live-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(110, 207, 154, 0.55); }
-  70% { box-shadow: 0 0 0 8px rgba(110, 207, 154, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(110, 207, 154, 0); }
+  font-weight: 600;
 }
 
 .e-dashboard-video-frame {
@@ -764,6 +768,36 @@
 
 .e-dashboard-video--ready {
   opacity: 1;
+}
+
+.e-dashboard-mute-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  border: 1px solid rgba(198, 168, 86, 0.55);
+  background: rgba(8, 8, 8, 0.72);
+  color: #f3e6c0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.e-dashboard-mute-btn:hover {
+  background: rgba(198, 168, 86, 0.2);
+  border-color: rgba(247, 198, 65, 0.85);
+  color: #fff8e7;
+}
+
+.e-dashboard-mute-btn[aria-pressed="true"] {
+  background: rgba(198, 168, 86, 0.28);
+  color: #fff;
 }
 
 .e-dashboard-video-caption {
