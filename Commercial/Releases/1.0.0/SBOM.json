@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-01T07:49:02Z",
+    "timestamp": "2026-08-01T18:25:00Z",
     "component": {
       "type": "application",
       "name": "THE GOLD MIND PROFESSIONAL",
@@ -18,7 +18,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "db387c8b97c6c833f7a7c06f2fa128f888982626016262e63adabd60300071fb"
+          "content": "94b3ff155dad5ae41caa505080361e44fe875f86383a28b1cd07f8bac3903722"
         }
       ]
     },
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "b33753bb0289b6838c3d5ccaa2b0df152b3b7c2cc0c2b84565586a4a132f21f0"
+          "content": "08a391eab307fe4e95bcfe48efcb650dab48ebca79fdf5e3d8c30976aa012e69"
         }
       ]
     },

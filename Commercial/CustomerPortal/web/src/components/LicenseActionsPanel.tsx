@@ -102,6 +102,9 @@ export function LicenseActionsPanel({ allowPaidSelfServe }: Props) {
           <button type="submit" className="btn btn-primary" disabled={pending}>
             Activate in portal
           </button>
+          <p className="meta" style={{ marginTop: 8 }}>
+            Soft activate only — Windows Setup will replace this seat with your PC automatically.
+          </p>
         </form>
       </div>
       {message && <p className="meta">{message}</p>}

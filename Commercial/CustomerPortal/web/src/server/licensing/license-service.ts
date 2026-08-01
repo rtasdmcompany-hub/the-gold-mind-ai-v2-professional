@@ -303,6 +303,9 @@ export function activateLicense(input: {
   }
 
   const fpHash = sha256(input.deviceFingerprint.trim());
+  /** Soft seat used by portal "Activate in portal" — must not block real Windows Setup. */
+  const PORTAL_BROWSER_FP = "portal-browser-fingerprint";
+  const portalBrowserFpHash = sha256(PORTAL_BROWSER_FP);
   const data = readStore();
   const activeDevices = data.devices.filter((d) => d.licenseId === lic!.id && d.status === "active");
   const existing = activeDevices.find((d) => d.fingerprintHash === fpHash);
@@ -318,30 +321,55 @@ export function activateLicense(input: {
       }
     });
   } else {
-    if (activeDevices.length >= lic.seatsMax) {
+    const portalSeat = activeDevices.find((d) => d.fingerprintHash === portalBrowserFpHash);
+    // Real installer/device fingerprint replaces the portal soft-activate seat (1-seat trials).
+    if (
+      portalSeat &&
+      input.deviceFingerprint.trim() !== PORTAL_BROWSER_FP &&
+      activeDevices.length >= lic.seatsMax
+    ) {
+      deviceId = portalSeat.id;
+      mutateStore((store) => {
+        const d = store.devices.find((x) => x.id === portalSeat.id);
+        if (d) {
+          d.fingerprintHash = fpHash;
+          d.name = input.deviceName || d.name;
+          d.lastActiveAt = nowIso();
+          d.transferRequestedAt = null;
+        }
+        appendAudit(store, {
+          actorEmail: email,
+          action: "device.registered",
+          entityType: "device",
+          entityId: deviceId,
+          detail: `Portal soft-activate seat replaced by real device on license ${lic!.id}`,
+        });
+      });
+    } else if (activeDevices.length >= lic.seatsMax) {
       return { ok: false, error: "DEVICE_LIMIT_REACHED" };
+    } else {
+      deviceId = `dev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+      mutateStore((store) => {
+        store.devices.push({
+          id: deviceId,
+          licenseId: lic!.id,
+          customerEmail: email,
+          name: input.deviceName || "Unnamed device",
+          fingerprintHash: fpHash,
+          status: "active",
+          activationDate: nowIso(),
+          lastActiveAt: nowIso(),
+          transferRequestedAt: null,
+        });
+        appendAudit(store, {
+          actorEmail: email,
+          action: "device.registered",
+          entityType: "device",
+          entityId: deviceId,
+          detail: `Device registered on license ${lic!.id}`,
+        });
+      });
     }
-    deviceId = `dev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-    mutateStore((store) => {
-      store.devices.push({
-        id: deviceId,
-        licenseId: lic!.id,
-        customerEmail: email,
-        name: input.deviceName || "Unnamed device",
-        fingerprintHash: fpHash,
-        status: "active",
-        activationDate: nowIso(),
-        lastActiveAt: nowIso(),
-        transferRequestedAt: null,
-      });
-      appendAudit(store, {
-        actorEmail: email,
-        action: "device.registered",
-        entityType: "device",
-        entityId: deviceId,
-        detail: `Device registered on license ${lic!.id}`,
-      });
-    });
   }
 
   const activated: LicenseRecord = {

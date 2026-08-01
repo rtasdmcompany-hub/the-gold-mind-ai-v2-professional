@@ -2,17 +2,17 @@
   "id": "rel_100_stable",
   "product": "THE GOLD MIND PROFESSIONAL",
   "version": "1.0.0",
-  "buildNumber": "26211",
+  "buildNumber": "26212",
   "channel": "stable",
   "status": "published",
-  "releasedAt": "2026-08-01T18:15:00Z",
+  "releasedAt": "2026-08-01T18:25:00Z",
   "packageFile": "TGM_PROFESSIONAL_1.0.0_stable.zip",
   "packageUrl": "https://the-gold-mind-ai-v2-professional.vercel.app/api/releases/download/rel_100_stable",
   "externalAssetUrl": "https://the-gold-mind-ai-v2-professional.vercel.app/releases/TGM_PROFESSIONAL_1.0.0_stable.zip",
-  "packageSizeBytes": 862629,
-  "sha256": "77f44cd5b7ddb138242c9ee89f80a37f0a61c09fa7324a90555d8d02cb8ae7e5",
+  "packageSizeBytes": 861612,
+  "sha256": "08a391eab307fe4e95bcfe48efcb650dab48ebca79fdf5e3d8c30976aa012e69",
   "signatureRequired": false,
   "signatureSubject": "Code signing pending",
   "signatureStatus": "pending_code_sign",
-  "releaseNotes": "1.0.0 \u2014 Get Key opens My Licenses after login; strict Setup license activation."
+  "releaseNotes": "1.0.0 — Setup clears portal soft-activate seat; clearer license activation errors."
 }

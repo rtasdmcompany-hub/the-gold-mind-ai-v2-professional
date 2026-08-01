@@ -295,6 +295,11 @@ namespace TgmProfessionalSetup
                     respText = wc.UploadString(uri, "POST", body);
                 }
             }
+            catch (WebException wex)
+            {
+                string detail = FormatActivationHttpError(wex);
+                throw new InvalidOperationException("License activation failed: " + detail, wex);
+            }
             catch (Exception ex)
             {
                 throw new InvalidOperationException("License activation failed: " + ex.Message, ex);
@@ -311,9 +316,12 @@ namespace TgmProfessionalSetup
                        || respText.IndexOf("\"ok\": true", StringComparison.OrdinalIgnoreCase) >= 0;
             if (!okFlag || (status != "active" && status != "grace"))
             {
+                string msg = ExtractJsonString(respText, "message");
                 string err = ExtractJsonString(respText, "error");
-                throw new InvalidOperationException(
-                    "License activation failed: " + (string.IsNullOrEmpty(err) ? ("status=" + status) : err));
+                string detail = !string.IsNullOrEmpty(msg)
+                    ? msg
+                    : (!string.IsNullOrEmpty(err) ? HumanizeActivationError(err) : ("status=" + status));
+                throw new InvalidOperationException("License activation failed: " + detail);
             }
 
             string deviceId = ExtractJsonString(respText, "deviceId");
@@ -340,6 +348,57 @@ namespace TgmProfessionalSetup
         {
             if (s == null) return "";
             return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "").Replace("\n", " ");
+        }
+
+        static string HumanizeActivationError(string code)
+        {
+            if (string.IsNullOrEmpty(code)) return "Unknown activation error.";
+            switch (code)
+            {
+                case "DEVICE_LIMIT_REACHED":
+                    return "This license is already active on the maximum number of devices. Open Portal → Devices, deactivate a device, then try again.";
+                case "LICENSE_EMAIL_MISMATCH":
+                    return "Email does not match this license. Use the same email shown on My Licenses.";
+                case "LICENSE_NOT_FOUND":
+                    return "License key not found. Generate a new key in Portal → My Licenses.";
+                case "LICENSE_EXPIRED":
+                    return "This license has expired.";
+                case "LICENSE_REVOKED":
+                    return "This license has been revoked.";
+                case "LICENSE_CANCELLED":
+                    return "This license was cancelled.";
+                case "MISSING_FIELDS":
+                    return "License key and customer email are required.";
+                default:
+                    return code;
+            }
+        }
+
+        static string FormatActivationHttpError(WebException wex)
+        {
+            try
+            {
+                var resp = wex.Response as HttpWebResponse;
+                if (resp != null)
+                {
+                    using (var stream = resp.GetResponseStream())
+                    {
+                        if (stream != null)
+                        {
+                            using (var reader = new StreamReader(stream, Encoding.UTF8))
+                            {
+                                string errBody = reader.ReadToEnd();
+                                string msg = ExtractJsonString(errBody, "message");
+                                if (!string.IsNullOrEmpty(msg)) return msg;
+                                string err = ExtractJsonString(errBody, "error");
+                                if (!string.IsNullOrEmpty(err)) return HumanizeActivationError(err);
+                            }
+                        }
+                    }
+                }
+            }
+            catch { /* fall through to WebException text */ }
+            return wex.Message;
         }
 
         static string ExtractJsonString(string json, string key)

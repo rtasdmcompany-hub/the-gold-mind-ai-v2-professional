@@ -47,6 +47,13 @@ Trial and lifetime use the **same** Active rule.
 
 ---
 
+## If Setup shows `(400) Bad Request`
+
+Usually **DEVICE_LIMIT_REACHED**: trial seat (1) was already taken by portal **Activate in portal** (`portal-browser-fingerprint`).  
+**Fix (server):** Setup activation now **replaces** that soft seat with the real Windows PC. Redeploy portal, then retry Setup with the same email + key.  
+**Manual fallback:** Portal → **Devices** → Deactivate the portal device → run Setup again.  
+New Setup.exe also shows the real API error text instead of bare “Bad Request”.
+
 ## Correct customer flow (after new Setup.exe)
 
 1. Create account + login on Customer Portal  

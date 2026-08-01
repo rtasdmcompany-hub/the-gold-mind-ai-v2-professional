@@ -36,7 +36,19 @@ export async function POST(req: Request) {
     });
 
     if (!result.ok) {
-      return NextResponse.json(result, { status: 400 });
+      const messages: Record<string, string> = {
+        MISSING_FIELDS: "License key, customer email, and device fingerprint are required.",
+        LICENSE_NOT_FOUND: "License key not found. Generate a new key in Portal → My Licenses.",
+        LICENSE_EMAIL_MISMATCH:
+          "Email does not match this license. Use the same email shown on My Licenses.",
+        LICENSE_REVOKED: "This license has been revoked.",
+        LICENSE_EXPIRED: "This license has expired. Renew or create a new trial/subscription.",
+        LICENSE_CANCELLED: "This license was cancelled.",
+        DEVICE_LIMIT_REACHED:
+          "This license is already active on the maximum number of devices. Open Portal → Devices, deactivate a device (or request transfer), then try Setup again.",
+      };
+      const message = messages[result.error] || result.error;
+      return NextResponse.json({ ...result, message }, { status: 400 });
     }
 
     await flushStoreVerified();

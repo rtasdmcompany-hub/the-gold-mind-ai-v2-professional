@@ -15,9 +15,9 @@ export const STABLE_BUILD_NUMBER = product.buildNumber;
 export const STABLE_PACKAGE_FILE = product.installer.zipName;
 /** Known SHA-256 of Commercial/Releases/1.0.0/TGM_PROFESSIONAL_1.0.0_stable.zip */
 export const STABLE_SHA256 =
-  "77f44cd5b7ddb138242c9ee89f80a37f0a61c09fa7324a90555d8d02cb8ae7e5";
-export const STABLE_SIZE_BYTES = 862_629;
-export const STABLE_RELEASED_AT = "2026-07-30T20:26:30.4594198Z";
+  "08a391eab307fe4e95bcfe48efcb650dab48ebca79fdf5e3d8c30976aa012e69";
+export const STABLE_SIZE_BYTES = 861_612;
+export const STABLE_RELEASED_AT = "2026-08-01T18:25:00Z";
 
 const FAKE_SEED_IDS = new Set(["rel_200_stable", "rel_201_rc", "rel_dev_nightly"]);
 
