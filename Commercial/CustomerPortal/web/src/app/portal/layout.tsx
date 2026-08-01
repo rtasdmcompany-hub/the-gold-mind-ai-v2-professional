@@ -25,10 +25,19 @@ export default async function PortalLayout({
   if (!session?.user) redirect("/login");
   const role = (session.user as { role?: string }).role;
   const showAdmin = canAccessAdminConsole(role) || isDevAdminBypass(session.user.email);
-  // Beta Onboarding stays out of the default customer nav — only invited/enrolled participants see it.
-  const showBeta = !!(session.user.email && getParticipantByEmail(session.user.email));
-  // Partner Portal stays out of the default customer nav — only enrolled partners see it.
-  const showPartner = !!(session.user.email && getPartnerByEmail(session.user.email.toLowerCase()));
+  // Beta / Partner nav extras must never crash the whole portal if their local stores fail.
+  let showBeta = false;
+  let showPartner = false;
+  try {
+    showBeta = !!(session.user.email && getParticipantByEmail(session.user.email));
+  } catch {
+    showBeta = false;
+  }
+  try {
+    showPartner = !!(session.user.email && getPartnerByEmail(session.user.email.toLowerCase()));
+  } catch {
+    showPartner = false;
+  }
 
   return (
     <div className="shell portal-shell">

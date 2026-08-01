@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 
 const ALGO = "aes-256-gcm";
 
@@ -37,10 +38,17 @@ export function ensureDir(dir: string): void {
 }
 
 export function launchDataDir(subdir: string): string {
-  const root = process.env.LAUNCH_DATA_DIR || path.join(process.cwd(), ".data", "launch");
-  const dir = path.join(root, subdir);
-  ensureDir(dir);
-  return dir;
+  // Serverless-safe commercial root (/tmp on Vercel) — never process.cwd()/.data.
+  if (process.env.LAUNCH_DATA_DIR) {
+    const dir = path.join(process.env.LAUNCH_DATA_DIR, subdir);
+    try {
+      ensureDir(dir);
+      return dir;
+    } catch {
+      /* fall through to commercial root */
+    }
+  }
+  return commercialDataRoot("launch", subdir);
 }
 
 export function newId(prefix: string): string {

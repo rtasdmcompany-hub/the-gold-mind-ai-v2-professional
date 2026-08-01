@@ -4,6 +4,7 @@
 import fs from "fs";
 import path from "path";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
+import { commercialDataRoot } from "@/server/cloud/data-root";
 import type {
   AttributionEvent,
   CommissionLedgerEntry,
@@ -45,10 +46,18 @@ function decryptJson<T>(blob: string): T {
 }
 
 export function partnerDataDir(subdir = ""): string {
-  const root = process.env.PARTNER_DATA_DIR || path.join(process.cwd(), ".data", "partners");
-  const dir = subdir ? path.join(root, subdir) : root;
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  return dir;
+  if (process.env.PARTNER_DATA_DIR) {
+    const dir = subdir
+      ? path.join(process.env.PARTNER_DATA_DIR, subdir)
+      : process.env.PARTNER_DATA_DIR;
+    try {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      return dir;
+    } catch {
+      /* fall through */
+    }
+  }
+  return subdir ? commercialDataRoot("partners", subdir) : commercialDataRoot("partners");
 }
 
 export function newId(prefix: string): string {
