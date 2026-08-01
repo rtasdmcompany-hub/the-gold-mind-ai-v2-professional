@@ -5,14 +5,14 @@
   "buildNumber": "26211",
   "channel": "stable",
   "status": "published",
-  "releasedAt": "2026-08-01T07:49:02Z",
+  "releasedAt": "2026-08-01T18:15:00Z",
   "packageFile": "TGM_PROFESSIONAL_1.0.0_stable.zip",
   "packageUrl": "https://the-gold-mind-ai-v2-professional.vercel.app/api/releases/download/rel_100_stable",
   "externalAssetUrl": "https://the-gold-mind-ai-v2-professional.vercel.app/releases/TGM_PROFESSIONAL_1.0.0_stable.zip",
-  "packageSizeBytes": 862711,
-  "sha256": "b33753bb0289b6838c3d5ccaa2b0df152b3b7c2cc0c2b84565586a4a132f21f0",
+  "packageSizeBytes": 862629,
+  "sha256": "77f44cd5b7ddb138242c9ee89f80a37f0a61c09fa7324a90555d8d02cb8ae7e5",
   "signatureRequired": false,
   "signatureSubject": "Code signing pending",
   "signatureStatus": "pending_code_sign",
-  "releaseNotes": "1.0.0 \u2014 strict Setup license activation (portal Active required). Extract ZIP or run Setup.exe; paste portal email + key during install."
+  "releaseNotes": "1.0.0 \u2014 Get Key opens My Licenses after login; strict Setup license activation."
 }

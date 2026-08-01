@@ -4,8 +4,8 @@
 
 | Artifact | Bytes | SHA-256 |
 |----------|------:|---------|
-| `installer/Setup.exe` | 457728 | `db387c8b97c6c833f7a7c06f2fa128f888982626016262e63adabd60300071fb` |
-| `TGM_PROFESSIONAL_1.0.0_stable.zip` | 862711 | `b33753bb0289b6838c3d5ccaa2b0df152b3b7c2cc0c2b84565586a4a132f21f0` |
+| `installer/Setup.exe` | 457216 | `8458f4abfbb2ae9e7139046d0e4b05d2008166bd358529c544a65cb0c028382a` |
+| `TGM_PROFESSIONAL_1.0.0_stable.zip` | 862629 | `77f44cd5b7ddb138242c9ee89f80a37f0a61c09fa7324a90555d8d02cb8ae7e5` |
 | `TheGoldMindAI_Professional.ex5` | 251018 | `890e22254ef44f86e82bc3700cd2b0dd0eaddf57c3ce91ff0f801b999c347535` |
 | mq5 (packaging gate) | — | `1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e` |
 

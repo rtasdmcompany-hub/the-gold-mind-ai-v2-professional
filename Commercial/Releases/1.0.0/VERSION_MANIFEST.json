@@ -13,11 +13,11 @@
   "artifacts": {
     "setupExe": {
       "file": "installer/Setup.exe",
-      "sha256": "db387c8b97c6c833f7a7c06f2fa128f888982626016262e63adabd60300071fb"
+      "sha256": "8458f4abfbb2ae9e7139046d0e4b05d2008166bd358529c544a65cb0c028382a"
     },
     "professionalZip": {
       "file": "TGM_PROFESSIONAL_1.0.0_stable.zip",
-      "sha256": "b33753bb0289b6838c3d5ccaa2b0df152b3b7c2cc0c2b84565586a4a132f21f0",
+      "sha256": "77f44cd5b7ddb138242c9ee89f80a37f0a61c09fa7324a90555d8d02cb8ae7e5",
       "bytes": 862711
     },
     "checksums": "SHA256SUMS.txt",
@@ -30,7 +30,9 @@
     "licenseRequiredBeforeFinish": true,
     "desktopShortcut": true,
     "googleLoginOptional": true,
-    "startMenu": true
+    "startMenu": true,
+    "sha256": "8458f4abfbb2ae9e7139046d0e4b05d2008166bd358529c544a65cb0c028382a",
+    "bytes": 457216
   },
   "signMode": "unsigned",
   "canonicalLayout": [

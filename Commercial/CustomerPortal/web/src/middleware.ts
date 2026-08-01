@@ -105,7 +105,12 @@ export default auth((req) => {
   }
 
   if (isLoggedIn && path === "/login") {
-    return applySecurityHeaders(NextResponse.redirect(new URL("/portal", req.nextUrl.origin)));
+    const cb = req.nextUrl.searchParams.get("callbackUrl") || "";
+    const dest =
+      cb.startsWith("/") && !cb.startsWith("//") && !cb.includes("://")
+        ? cb
+        : "/portal";
+    return applySecurityHeaders(NextResponse.redirect(new URL(dest, req.nextUrl.origin)));
   }
 
   return applySecurityHeaders(NextResponse.next());

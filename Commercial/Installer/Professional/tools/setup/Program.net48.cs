@@ -20,7 +20,8 @@ namespace TgmProfessionalSetup
         internal const string Version = "1.0.0";
         internal const string Publisher = "THE GOLD MIND";
         internal const string PortalBase = "https://the-gold-mind-ai-v2-professional.vercel.app";
-        internal const string PortalLoginGoogle = PortalBase + "/login?provider=google&callbackUrl=%2Fportal%2Flicenses";
+        /** Opens My Licenses; if not signed in, portal login returns here after auth. */
+        internal const string PortalGetKeyUrl = PortalBase + "/portal/licenses";
 
         [STAThread]
         static int Main(string[] args)
@@ -748,11 +749,11 @@ namespace TgmProfessionalSetup
                     "2) Generate a license key on My Licenses\n" +
                     "3) Paste the same portal email + key below. Setup cannot finish until status is Active."
             };
-            var openPortal = MakeBtn("Open Portal", true);
-            openPortal.Left = 0; openPortal.Top = 78; openPortal.Width = 140;
-            openPortal.Click += (s, e) =>
+            var getKey = MakeBtn("Get Key", true);
+            getKey.Left = 0; getKey.Top = 78; getKey.Width = 140;
+            getKey.Click += (s, e) =>
             {
-                try { Process.Start(new ProcessStartInfo(Program.PortalLoginGoogle) { UseShellExecute = true }); } catch { }
+                try { Process.Start(new ProcessStartInfo(Program.PortalGetKeyUrl) { UseShellExecute = true }); } catch { }
             };
             var emailLbl = new Label { Text = "Customer email (portal login)", AutoSize = true, Top = 124, Left = 0 };
             _licenseEmail = new TextBox
@@ -777,7 +778,7 @@ namespace TgmProfessionalSetup
                 Text = "Without a valid key, installation will not complete and the EA will not be deployed."
             };
             _body.Controls.Add(hint);
-            _body.Controls.Add(openPortal);
+            _body.Controls.Add(getKey);
             _body.Controls.Add(emailLbl);
             _body.Controls.Add(_licenseEmail);
             _body.Controls.Add(keyLbl);
