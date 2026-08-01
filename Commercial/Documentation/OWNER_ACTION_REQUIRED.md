@@ -22,6 +22,22 @@ Production host is live but still on an older `main` revision. Agent has **no Ve
 
 ---
 
+## 1b. Local disk auto-sync (H: drive)
+
+**Status:** Waiting for Owner (one-time)  
+
+Cloud/GitHub/Vercel updates do **not** rewrite your Windows folder by themselves.  
+On the PC that holds the project, run **once**:
+
+```powershell
+.\Commercial\Scripts\Install-LocalGitAutoSync.ps1
+```
+
+Details: `Commercial/Documentation/LOCAL_GITHUB_AUTO_SYNC.md`  
+Manual sync: `Commercial\Scripts\Sync-Now.cmd`
+
+---
+
 ## 2. Code Signing Certificate
 
 **Status:** Waiting for Owner  

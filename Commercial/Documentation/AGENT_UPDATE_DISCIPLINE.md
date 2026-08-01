@@ -10,7 +10,9 @@ When any update ships, the agent **finishes A→Z** without leaving parallel/old
 4. **Sync all consumers** — `Commercial/Releases/1.0.0/`, `public/releases/`, checksums, SBOM, portal `STABLE_SHA256` / size, CORE mq5 SHA, RELEASE notes.  
 5. **Push** the branch after the update.  
 6. **Deploy** production when Vercel auth is available; otherwise record **OWNER ACTION** clearly (never pretend deploy succeeded).  
-7. **Neat tree** — only working artifacts and required docs; delete obsolete duplicates created by the change.
+7. **Neat tree** — only working artifacts and required docs; delete obsolete duplicates created by the change.  
+8. **Local Windows drive** is **not** writable from cloud agents. Owner keeps `H:` (or any clone) current via  
+   `Commercial/Scripts/Install-LocalGitAutoSync.ps1` (Scheduled Task pulls `origin/main`). See `LOCAL_GITHUB_AUTO_SYNC.md`.
 
 ## Canonical 1.0.0 layout
 
