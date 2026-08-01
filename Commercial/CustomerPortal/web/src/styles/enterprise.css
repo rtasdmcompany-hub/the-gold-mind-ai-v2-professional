@@ -677,9 +677,9 @@
   padding: var(--e-space-xl) 0;
 }
 
-/* Center copy in the free space between left edge and the video panel */
+/* Keep original hero type styles; center the block in the left column */
 .e-hero-content {
-  max-width: 34rem;
+  max-width: 36rem;
   width: 100%;
   margin-inline: auto;
   text-align: center;
@@ -696,7 +696,16 @@
 .e-hero-grid > .e-reveal:first-child {
   width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+}
+
+/* Video panel stays on the right (original side) */
+.e-hero-grid > .e-reveal:last-child {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 /* ── Dashboard panel (portrait Live phone) ── */
