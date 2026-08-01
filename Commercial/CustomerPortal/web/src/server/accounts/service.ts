@@ -10,6 +10,7 @@ import {
 } from "./store";
 import { sendTransactionalEmail } from "./mailer";
 import { brand } from "@/lib/brand";
+import { cacheIncr, CacheKeys } from "@/server/cloud/cache";
 
 function baseUrl(): string {
   return (
@@ -19,8 +20,39 @@ function baseUrl(): string {
   ).replace(/\/$/, "");
 }
 
+function exposeVerifyLink(emailSent: boolean): boolean {
+  return (
+    !emailSent ||
+    process.env.NODE_ENV !== "production" ||
+    process.env.PORTAL_EXPOSE_VERIFY_LINK === "true"
+  );
+}
+
+async function issueVerificationEmail(account: AccountRecord): Promise<{
+  emailSent: boolean;
+  verifyUrl: string;
+}> {
+  const token = newVerifyToken();
+  const expires = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
+  account.verifyTokenHash = hashToken(token);
+  account.verifyTokenExpiresAt = expires;
+  account.updatedAt = new Date().toISOString();
+  await saveAccount(account);
+
+  const verifyUrl = `${baseUrl()}/verify-email?token=${token}&email=${encodeURIComponent(account.email)}`;
+  const subject = `Confirm your email — ${brand.productName}`;
+  const text = `Confirm your ${brand.productName} account:\n\n${verifyUrl}\n\nThis link expires in 24 hours.`;
+  const html = `<p>Confirm your <strong>${brand.productName}</strong> account.</p><p><a href="${verifyUrl}">Verify email address</a></p><p>This link expires in 24 hours.</p>`;
+  const sent = await sendTransactionalEmail({ to: account.email, subject, html, text });
+  return { emailSent: sent.ok, verifyUrl };
+}
+
 export type SignupResult =
   | { ok: true; email: string; emailSent: boolean; verifyUrl?: string }
+  | { ok: false; error: string };
+
+export type ResendVerificationResult =
+  | { ok: true; email: string; emailSent: boolean; verifyUrl?: string; alreadyVerified?: boolean }
   | { ok: false; error: string };
 
 export async function registerAccount(input: {
@@ -41,41 +73,70 @@ export async function registerAccount(input: {
     return { ok: false, error: "An account with this email already exists. Please sign in." };
   }
 
-  const token = newVerifyToken();
   const now = new Date().toISOString();
-  const expires = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
-
   const account: AccountRecord = {
     id: existing?.id || newAccountId(),
     email,
     name,
     passwordHash: hashPassword(password),
     emailVerifiedAt: null,
-    verifyTokenHash: hashToken(token),
-    verifyTokenExpiresAt: expires,
+    verifyTokenHash: null,
+    verifyTokenExpiresAt: null,
     provider: "credentials",
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };
   await saveAccount(account);
 
-  const verifyUrl = `${baseUrl()}/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
-  const subject = `Confirm your email — ${brand.productName}`;
-  const text = `Confirm your ${brand.productName} account:\n\n${verifyUrl}\n\nThis link expires in 24 hours.`;
-  const html = `<p>Confirm your <strong>${brand.productName}</strong> account.</p><p><a href="${verifyUrl}">Verify email address</a></p><p>This link expires in 24 hours.</p>`;
-
-  const sent = await sendTransactionalEmail({ to: email, subject, html, text });
-  // If outbound email is not configured, still return the verify link so signup can complete.
-  const expose =
-    !sent.ok ||
-    process.env.NODE_ENV !== "production" ||
-    process.env.PORTAL_EXPOSE_VERIFY_LINK === "true";
-
+  const issued = await issueVerificationEmail(account);
   return {
     ok: true,
     email,
-    emailSent: sent.ok,
-    verifyUrl: expose ? verifyUrl : undefined,
+    emailSent: issued.emailSent,
+    verifyUrl: exposeVerifyLink(issued.emailSent) ? issued.verifyUrl : undefined,
+  };
+}
+
+/**
+ * Resend signup confirmation. Rate-limited per email (3 / 15 min).
+ * Does not reveal whether an account exists when none is found.
+ */
+export async function resendVerificationEmail(emailRaw: string): Promise<ResendVerificationResult> {
+  const email = emailRaw.trim().toLowerCase();
+  if (!email || !email.includes("@")) {
+    return { ok: false, error: "Please enter a valid email." };
+  }
+
+  const n = await cacheIncr(CacheKeys.rateLimit(`verify-resend:${email}`), 15 * 60);
+  if (n > 3) {
+    return {
+      ok: false,
+      error: "Too many resend attempts. Please wait about 15 minutes and try again.",
+    };
+  }
+
+  const account = await getAccountByEmail(email);
+  if (!account) {
+    // Anti-enumeration: same success shape, no mail.
+    return { ok: true, email, emailSent: false };
+  }
+  if (account.emailVerifiedAt) {
+    return { ok: true, email, emailSent: false, alreadyVerified: true };
+  }
+  if (!account.passwordHash) {
+    // Google-only — no email/password verification pending.
+    return {
+      ok: false,
+      error: "This account uses Google Sign-In. Please sign in with Google instead.",
+    };
+  }
+
+  const issued = await issueVerificationEmail(account);
+  return {
+    ok: true,
+    email,
+    emailSent: issued.emailSent,
+    verifyUrl: exposeVerifyLink(issued.emailSent) ? issued.verifyUrl : undefined,
   };
 }
 

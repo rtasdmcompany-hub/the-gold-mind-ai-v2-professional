@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
-import { registerAccount } from "@/server/accounts/service";
+import { registerAccount, resendVerificationEmail } from "@/server/accounts/service";
 import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
@@ -20,11 +20,13 @@ export default async function RegisterPage({
     email?: string;
     verify?: string;
     mailed?: string;
+    resent?: string;
   }>;
 }) {
   const sp = await searchParams;
   const openSignup = process.env.PORTAL_OPEN_SIGNUP !== "false";
   const emailDelivered = sp.mailed === "1";
+  const justResent = sp.resent === "1";
 
   return (
     <EnterpriseShell>
@@ -50,7 +52,12 @@ export default async function RegisterPage({
             ) : sp.sent === "1" ? (
               <div className="e-glass-card">
                 <h2 style={{ marginTop: 0 }}>Confirm your email</h2>
-                {emailDelivered ? (
+                {justResent && emailDelivered ? (
+                  <p role="status">
+                    A new confirmation email was sent to <strong>{sp.email || "your email"}</strong>. Open the
+                    latest link, then sign in. Check Spam/Promotions if needed.
+                  </p>
+                ) : emailDelivered ? (
                   <p>
                     A confirmation email was sent to <strong>{sp.email || "your email"}</strong>. Open the
                     verification link to activate your account, then sign in. Check Spam/Promotions if it is not
@@ -60,7 +67,7 @@ export default async function RegisterPage({
                   <p>
                     Account created for <strong>{sp.email || "your email"}</strong>, but the confirmation email
                     could not be delivered automatically. Use the verification link below to activate your
-                    account, then sign in.
+                    account, then sign in — or tap Resend below.
                   </p>
                 )}
                 {sp.verify ? (
@@ -76,7 +83,47 @@ export default async function RegisterPage({
                     After confirmation, use <Link href="/login">Sign in</Link>.
                   </p>
                 ) : null}
-                <p style={{ fontSize: 13, marginBottom: 0 }}>
+                {sp.email ? (
+                  <form
+                    className="e-form"
+                    style={{ marginTop: 16 }}
+                    action={async () => {
+                      "use server";
+                      const email = String(sp.email || "");
+                      const result = await resendVerificationEmail(email);
+                      if (!result.ok) {
+                        redirect(
+                          `/register?sent=1&email=${encodeURIComponent(email)}&mailed=${emailDelivered ? "1" : "0"}&error=${encodeURIComponent(result.error)}${sp.verify ? `&verify=${encodeURIComponent(sp.verify)}` : ""}`
+                        );
+                      }
+                      if (result.alreadyVerified) {
+                        redirect(`/login?error=Verification`);
+                      }
+                      const q = new URLSearchParams({
+                        sent: "1",
+                        email: result.email,
+                        mailed: result.emailSent ? "1" : "0",
+                      });
+                      if (result.verifyUrl) q.set("verify", result.verifyUrl);
+                      if (result.emailSent) q.set("resent", "1");
+                      redirect(`/register?${q.toString()}`);
+                    }}
+                  >
+                    {sp.error ? (
+                      <p className="e-login-error" role="alert">
+                        {sp.error}
+                      </p>
+                    ) : null}
+                    <button type="submit" className="e-btn e-btn-ghost e-btn--full">
+                      Resend verification email
+                    </button>
+                  </form>
+                ) : (
+                  <p style={{ fontSize: 13, marginTop: 16 }}>
+                    <Link href="/resend-verification">Resend verification email</Link>
+                  </p>
+                )}
+                <p style={{ fontSize: 13, marginBottom: 0, marginTop: 12 }}>
                   Already confirmed? <Link href="/login">Sign in</Link>
                   {" · "}
                   Or use <Link href="/login">Google Sign-In</Link> for an instant verified account.

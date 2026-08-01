@@ -132,6 +132,8 @@ export default async function LoginPage({
 
               <p className="e-login-oauth-note" style={{ textAlign: "center" }}>
                 <Link href="/forgot-password">Forgot password?</Link>
+                {" · "}
+                <Link href="/resend-verification">Resend verification email</Link>
               </p>
 
               <p className="e-login-oauth-note" style={{ textAlign: "center" }}>
