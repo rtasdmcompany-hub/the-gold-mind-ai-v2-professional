@@ -8,8 +8,8 @@ All public website assets for THE GOLD MIND Customer Portal / marketing site liv
 
 | File | Used for | Path |
 |------|----------|------|
-| `live-ad-16x9.mp4` | Homepage right panel ad — **16:9** (audio; UI starts muted) | `public/media/live-ad-16x9.mp4` |
-| `live-ad-16x9-poster.jpg` | Poster / reduced-motion fallback for panel | `public/media/live-ad-16x9-poster.jpg` |
+| `live-ad-portrait.mp4` | Homepage right **Live** portrait panel ad | `public/media/live-ad-portrait.mp4` |
+| `live-ad-portrait-poster.jpg` | Poster / reduced-motion fallback for Live panel | `public/media/live-ad-portrait-poster.jpg` |
 | `hero-institutional.mp4` | Full-bleed hero background (desktop) | `public/media/hero-institutional.mp4` |
 | `hero-institutional.webm` | Hero background (WebM fallback) | `public/media/hero-institutional.webm` |
 
