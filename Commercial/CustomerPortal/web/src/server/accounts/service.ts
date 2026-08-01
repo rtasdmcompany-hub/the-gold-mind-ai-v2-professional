@@ -9,6 +9,11 @@ import {
   type AccountRecord,
 } from "./store";
 import { sendTransactionalEmail } from "./mailer";
+import {
+  buildEmailVerificationMail,
+  buildPasswordResetMail,
+  newVerificationCode,
+} from "./email-templates";
 import { brand } from "@/lib/brand";
 import { cacheIncr, CacheKeys } from "@/server/cloud/cache";
 
@@ -33,17 +38,27 @@ async function issueVerificationEmail(account: AccountRecord): Promise<{
   verifyUrl: string;
 }> {
   const token = newVerifyToken();
+  const code = newVerificationCode();
   const expires = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
   account.verifyTokenHash = hashToken(token);
+  account.verifyCodeHash = hashToken(code);
   account.verifyTokenExpiresAt = expires;
   account.updatedAt = new Date().toISOString();
   await saveAccount(account);
 
   const verifyUrl = `${baseUrl()}/verify-email?token=${token}&email=${encodeURIComponent(account.email)}`;
-  const subject = `Confirm your email — ${brand.productName}`;
-  const text = `Confirm your ${brand.productName} account:\n\n${verifyUrl}\n\nThis link expires in 24 hours.`;
-  const html = `<p>Confirm your <strong>${brand.productName}</strong> account.</p><p><a href="${verifyUrl}">Verify email address</a></p><p>This link expires in 24 hours.</p>`;
-  const sent = await sendTransactionalEmail({ to: account.email, subject, html, text });
+  const mail = buildEmailVerificationMail({
+    email: account.email,
+    code,
+    verifyUrl,
+    expiresHours: 24,
+  });
+  const sent = await sendTransactionalEmail({
+    to: account.email,
+    subject: mail.subject,
+    html: mail.html,
+    text: mail.text,
+  });
   return { emailSent: sent.ok, verifyUrl };
 }
 
@@ -81,6 +96,7 @@ export async function registerAccount(input: {
     passwordHash: hashPassword(password),
     emailVerifiedAt: null,
     verifyTokenHash: null,
+    verifyCodeHash: null,
     verifyTokenExpiresAt: null,
     provider: "credentials",
     createdAt: existing?.createdAt || now,
@@ -140,23 +156,35 @@ export async function resendVerificationEmail(emailRaw: string): Promise<ResendV
   };
 }
 
-export async function verifyAccountEmail(emailRaw: string, token: string): Promise<{ ok: boolean; error?: string }> {
+export async function verifyAccountEmail(
+  emailRaw: string,
+  tokenOrCode: string
+): Promise<{ ok: boolean; error?: string }> {
   const email = emailRaw.trim().toLowerCase();
+  const secret = tokenOrCode.trim();
   const account = await getAccountByEmail(email);
   if (!account) return { ok: false, error: "Account not found." };
   if (account.emailVerifiedAt) return { ok: true };
-  if (!account.verifyTokenHash || !account.verifyTokenExpiresAt) {
+  if (!account.verifyTokenExpiresAt) {
     return { ok: false, error: "No pending verification for this account." };
   }
   if (new Date(account.verifyTokenExpiresAt).getTime() < Date.now()) {
-    return { ok: false, error: "Verification link expired. Please register again." };
+    return { ok: false, error: "Verification expired. Please request a new confirmation email." };
   }
-  if (hashToken(token) !== account.verifyTokenHash) {
-    return { ok: false, error: "Invalid verification link." };
+  if (!secret) {
+    return { ok: false, error: "Enter the verification code from your email, or open the confirm link." };
+  }
+
+  const hashed = hashToken(secret);
+  const tokenOk = !!account.verifyTokenHash && hashed === account.verifyTokenHash;
+  const codeOk = !!account.verifyCodeHash && hashed === account.verifyCodeHash;
+  if (!tokenOk && !codeOk) {
+    return { ok: false, error: "Invalid verification code or link." };
   }
 
   account.emailVerifiedAt = new Date().toISOString();
   account.verifyTokenHash = null;
+  account.verifyCodeHash = null;
   account.verifyTokenExpiresAt = null;
   account.updatedAt = new Date().toISOString();
   await saveAccount(account);
@@ -264,15 +292,14 @@ export async function requestPasswordReset(emailRaw: string): Promise<PasswordRe
   await saveAccount(account);
 
   const resetUrl = `${baseUrl()}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
-  const subject = `Reset your password — ${brand.productName}`;
-  const text = `A password reset was requested for your ${brand.productName} account:\n\n${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`;
-  const html = `<p>A password reset was requested for your <strong>${brand.productName}</strong> account.</p><p><a href="${resetUrl}">Reset password</a></p><p>This link expires in 1 hour. If you did not request this, you can ignore this email.</p>`;
-
-  const sent = await sendTransactionalEmail({ to: email, subject, html, text });
-  const expose =
-    !sent.ok ||
-    process.env.NODE_ENV !== "production" ||
-    process.env.PORTAL_EXPOSE_VERIFY_LINK === "true";
+  const mail = buildPasswordResetMail({ email, resetUrl, expiresHours: 1 });
+  const sent = await sendTransactionalEmail({
+    to: email,
+    subject: mail.subject,
+    html: mail.html,
+    text: mail.text,
+  });
+  const expose = exposeVerifyLink(sent.ok);
 
   return { ok: true, emailSent: sent.ok, resetUrl: expose ? resetUrl : undefined };
 }

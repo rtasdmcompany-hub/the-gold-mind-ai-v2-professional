@@ -19,6 +19,8 @@ export type AccountRecord = {
   emailVerifiedAt: string | null;
   verifyTokenHash: string | null;
   verifyTokenExpiresAt: string | null;
+  /** SHA-256 of 6-digit email verification code (optional companion to link token). */
+  verifyCodeHash?: string | null;
   resetTokenHash?: string | null;
   resetTokenExpiresAt?: string | null;
   provider: "credentials" | "google" | "both";
