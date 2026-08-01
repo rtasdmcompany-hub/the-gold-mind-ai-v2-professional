@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { brand } from "@/lib/brand";
 
 /**
- * Homepage right-side portrait panel with product video ad.
- * Replace: public/media/live-ad-portrait.mp4 (+ poster JPG).
+ * Homepage right-side 16:9 panel with product video ad.
+ * Replace: public/media/live-ad-16x9.mp4 (+ live-ad-16x9-poster.jpg).
  */
 export function HeroDashboard() {
   const videoRef = useRef<HTMLVideoElement>(null);
