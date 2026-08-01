@@ -8,7 +8,7 @@
     "ex5Sha256": "890e22254ef44f86e82bc3700cd2b0dd0eaddf57c3ce91ff0f801b999c347535",
     "frozen": true,
     "mq5Sha256": "1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e",
-    "note": "UI panel controls only; trading logic unchanged. EX5 rebuild pending Owner MetaEditor compile for panel binary."
+    "note": "UI panel controls only (AI panel 11E.2 drag/min/max in Include Phase11E). Trading logic unchanged. EX5 rebuild still requires Owner MetaEditor compile — packaged ex5 predates 11E.2 UI."
   },
   "artifacts": {
     "setupExe": {

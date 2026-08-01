@@ -8,13 +8,21 @@
 #property copyright "Copyright 2026, RTAS Group of Companies"
 #property link      "https://rtas.group"
 
-#define GM_P11E_VERSION              "11E.1.0"
+#define GM_P11E_VERSION              "11E.2.0"
 #define GM_P11E_LABEL                "PHASE11E_DYNAMIC_PRE_ACTIVATION_ENGINE"
 #define GM_P11E_UI_PREFIX            "TGM_AI_"
 #define GM_P11E_PANEL_WIDTH          280
-#define GM_P11E_PANEL_HEIGHT_FULL    286
-#define GM_P11E_PANEL_HEIGHT_MIN     32
-#define GM_P11E_HEADER_H             22
+#define GM_P11E_PANEL_HEIGHT_FULL    300
+#define GM_P11E_PANEL_HEIGHT_MIN     36
+#define GM_P11E_HEADER_H             32
+#define GM_P11E_BTN_W                30
+#define GM_P11E_BTN_H                24
+#define GM_P11E_UI_Z_BG              100
+#define GM_P11E_UI_Z_HEADER          120
+#define GM_P11E_UI_Z_LABEL           130
+#define GM_P11E_UI_Z_BUTTON          200
+#define GM_P11E_POS_GV_X             "TGM_P11E_PANEL_X"
+#define GM_P11E_POS_GV_Y             "TGM_P11E_PANEL_Y"
 #define GM_P11E_LEARN_FILE           "GM_P11E_EXEC_LEARN.csv"
 #define GM_P11E_THROTTLE_MS          500
 #define GM_P11E_SCHEDULE_SEC         5

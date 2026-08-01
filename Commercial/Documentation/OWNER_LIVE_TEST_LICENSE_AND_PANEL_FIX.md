@@ -21,7 +21,7 @@
 | Setup wizard (`Program.net48.cs` only) | New **License Activation** step — email + key **required**; portal must return **Active/grace** before install completes; EA deploy blocked otherwise; `/SILENT` requires `TGM_LICENSE_EMAIL` + `TGM_LICENSE_KEY` |
 | `Deploy-EA-To-MT5.ps1` | Refuses deploy without `config\license-activation.json` Active/grace |
 | Portal `LicenseActionsPanel` | Clarifies Setup is the primary path; `router.refresh()` after create/activate |
-| AI Dynamic Engine panel | Movable (drag header) + minimize/maximize `[-]` / `[+]` (UI only) |
+| AI Dynamic Engine panel | Movable (drag header) + minimize/maximize `[-]` / `[+]` (UI only) — see `AI_PANEL_MOVE_MINMAX_RECOMPILE.md`; title must show **11E.2** after MetaEditor compile |
 
 Trial and lifetime use the **same** Active rule.
 
