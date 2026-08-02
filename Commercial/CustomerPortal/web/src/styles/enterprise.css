@@ -709,28 +709,85 @@
   padding-right: clamp(40px, 7vw, 110px);
 }
 
-/* ── Dashboard panel (portrait Live phone) ── */
+/* ── Dashboard panel (iPhone-style portrait display) ── */
 .e-dashboard {
-  background: linear-gradient(160deg, rgba(24, 24, 24, 0.92), rgba(13, 13, 13, 0.98));
-  border: 1px solid rgba(198, 168, 86, 0.35);
-  border-radius: 22px;
-  padding: 4px;
-  backdrop-filter: blur(24px);
+  position: relative;
+  background: #0b0b0d;
+  border: 0;
+  border-radius: 44px;
+  padding: 10px;
+  backdrop-filter: none;
   box-shadow:
-    0 32px 64px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 28px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   animation: e-float 8s ease-in-out infinite;
 }
 
-.e-dashboard--portrait {
-  width: min(360px, 100%);
-  max-width: 360px;
+.e-dashboard--portrait,
+.e-phone {
+  width: min(300px, 100%);
+  max-width: 300px;
   margin-inline: auto;
-  aspect-ratio: 9 / 16;
-  max-height: min(78vh, 640px);
+  aspect-ratio: 9 / 19.5;
+  max-height: min(78vh, 620px);
   display: flex;
   flex-direction: column;
   justify-self: end;
+}
+
+.e-phone-bezel {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.e-phone-island {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 92px;
+  height: 26px;
+  border-radius: 20px;
+  background: #050505;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.e-phone-btn {
+  position: absolute;
+  background: linear-gradient(180deg, #2a2a2e, #121214);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.e-phone-btn--silent {
+  left: -2px;
+  top: 96px;
+  width: 3px;
+  height: 22px;
+}
+
+.e-phone-btn--vol-up {
+  left: -2px;
+  top: 140px;
+  width: 3px;
+  height: 36px;
+}
+
+.e-phone-btn--vol-down {
+  left: -2px;
+  top: 186px;
+  width: 3px;
+  height: 36px;
+}
+
+.e-phone-btn--power {
+  right: -2px;
+  top: 160px;
+  width: 3px;
+  height: 56px;
 }
 
 @keyframes e-float {
@@ -756,13 +813,14 @@
   font-weight: 600;
 }
 
-.e-dashboard-video-frame {
+.e-dashboard-video-frame,
+.e-phone-screen {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  border-radius: 18px;
+  border-radius: 36px;
   overflow: hidden;
-  background: #0a0a0a;
+  background: #000;
   border: 0;
 }
 
@@ -782,49 +840,38 @@
 
 .e-dashboard-mute-btn {
   position: absolute;
-  top: 12px;
+  top: 48px;
   right: 12px;
   z-index: 3;
-  border: 1px solid rgba(198, 168, 86, 0.55);
-  background: rgba(8, 8, 8, 0.72);
-  color: #f3e6c0;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 8px 12px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: grid;
+  place-items: center;
   border-radius: 999px;
   cursor: pointer;
   backdrop-filter: blur(8px);
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+}
+
+.e-dashboard-mute-btn--icon {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .e-dashboard-mute-btn:hover {
-  background: rgba(198, 168, 86, 0.2);
-  border-color: rgba(247, 198, 65, 0.85);
-  color: #fff8e7;
+  background: rgba(0, 0, 0, 0.72);
+  transform: scale(1.04);
 }
 
-.e-dashboard-mute-btn[aria-pressed="true"] {
-  background: rgba(198, 168, 86, 0.28);
-  color: #fff;
+.e-dashboard-mute-btn.is-muted {
+  opacity: 0.95;
 }
 
 .e-dashboard-video-caption {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 12px;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.72));
-  pointer-events: none;
+  display: none;
 }
 
 /* Legacy landscape helpers (unused by portrait Live panel; kept for safety) */
@@ -1181,10 +1228,11 @@
     justify-content: center;
     padding-right: 0;
   }
-  .e-dashboard--portrait {
+  .e-dashboard--portrait,
+  .e-phone {
     justify-self: center;
-    max-width: 320px;
-    max-height: min(70vh, 580px);
+    max-width: 280px;
+    max-height: min(70vh, 560px);
   }
   .e-grid-3, .e-grid-4, .e-trust-grid { grid-template-columns: repeat(2, 1fr); }
   .e-footer-grid { grid-template-columns: repeat(2, 1fr); }
