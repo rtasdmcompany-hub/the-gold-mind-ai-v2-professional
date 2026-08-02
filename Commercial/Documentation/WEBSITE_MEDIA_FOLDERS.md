@@ -4,20 +4,51 @@ All public website assets for THE GOLD MIND Customer Portal / marketing site liv
 
 `Commercial/CustomerPortal/web/public/`
 
-## Videos
+## Phone panel rotating ads (homepage iPhone)
+
+**Folder:** `public/media/phone-ads/`  
+**Config:** `public/media/phone-ads/ads.json`  
+**Component:** `src/components/enterprise/HeroDashboard.tsx`
+
+Each ad can have its own video, poster, short details line, and clickable link.
+
+### Current MQL5 Market ad
+
+- Video: `public/media/phone-ads/mql5-market.mp4`
+- Poster: `public/media/phone-ads/mql5-market-poster.jpg`
+- Click opens: [MQL5 Market product 183685](https://www.mql5.com/en/market/product/183685?source=Site+Market+MT5+Search+Rating007%3athe+gold+mind)
+
+### Add another rotating ad
+
+1. Copy `your-ad.mp4` + `your-ad-poster.jpg` into `public/media/phone-ads/`
+2. Append to `ads.json`:
+
+```json
+{
+  "id": "your-ad",
+  "enabled": true,
+  "title": "Campaign title",
+  "details": "Short line on the phone (or \"\")",
+  "href": "https://your-landing-page.example",
+  "video": "/media/phone-ads/your-ad.mp4",
+  "poster": "/media/phone-ads/your-ad-poster.jpg"
+}
+```
+
+3. Commit, push, redeploy Vercel.
+
+Enabled ads play in list order; when a video ends, the next one starts. Set `"enabled": false` to skip an ad without deleting it. Leave `"details": ""` to hide the bottom line.
+
+See also: `public/media/phone-ads/README.md`
+
+## Other videos
 
 | File | Used for | Path |
 |------|----------|------|
-| `live-ad-portrait.mp4` | Homepage right **Live** portrait panel ad | `public/media/live-ad-portrait.mp4` |
-| `live-ad-portrait-poster.jpg` | Poster / reduced-motion fallback for Live panel | `public/media/live-ad-portrait-poster.jpg` |
 | `hero-institutional.mp4` | Full-bleed hero background (desktop) | `public/media/hero-institutional.mp4` |
 | `hero-institutional.webm` | Hero background (WebM fallback) | `public/media/hero-institutional.webm` |
+| `live-ad-portrait.mp4` | Legacy copy (kept for reference) | `public/media/live-ad-portrait.mp4` |
 
-**To replace the Live panel ad:** overwrite  
-`Commercial/CustomerPortal/web/public/media/live-ad-portrait.mp4`  
-(prefer portrait ~9:16, H.264, under ~3–5 MB). Also refresh the poster JPG if the first frame changes.
-
-Component: `src/components/enterprise/HeroDashboard.tsx`  
 Hero background video: `src/components/enterprise/HeroBackground.tsx`
 
 ## Brand images / logos
@@ -38,4 +69,3 @@ Examples:
 
 1. Commit + push (or sync to GitHub).  
 2. Redeploy Vercel production so `public/` assets go live.  
-3. Hard-refresh the browser (Ctrl+F5) — videos/images are often cached.

@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { brand } from "@/lib/brand";
+import {
+  DEFAULT_PHONE_ADS,
+  normalizePhoneAds,
+  PHONE_ADS_MANIFEST_URL,
+  type PhoneAd,
+} from "@/content/phone-ads";
 
 function SpeakerIcon({ muted }: { muted: boolean }) {
   if (muted) {
@@ -25,14 +30,36 @@ function SpeakerIcon({ muted }: { muted: boolean }) {
 }
 
 /**
- * Homepage right-side portrait panel with product video ad.
- * Styled as an iPhone display. Replace: public/media/live-ad-portrait.mp4 (+ poster JPG).
+ * Homepage iPhone panel — rotating clickable video ads.
+ * Add videos + links in: public/media/phone-ads/ads.json
  */
 export function HeroDashboard() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [ads, setAds] = useState<PhoneAd[]>(DEFAULT_PHONE_ADS);
+  const [index, setIndex] = useState(0);
   const [ready, setReady] = useState(false);
   const [loadVideo, setLoadVideo] = useState(false);
   const [muted, setMuted] = useState(true);
+  const [rotateOnEnd, setRotateOnEnd] = useState(true);
+
+  const ad = ads[index] || ads[0];
+  const multi = ads.length > 1;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(PHONE_ADS_MANIFEST_URL, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (cancelled || !json) return;
+        setRotateOnEnd(json.rotateOnEnd !== false);
+        setAds(normalizePhoneAds(json));
+        setIndex(0);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -42,14 +69,15 @@ export function HeroDashboard() {
   }, []);
 
   useEffect(() => {
-    if (!loadVideo || !videoRef.current) return;
+    setReady(false);
+    if (!loadVideo || !videoRef.current || !ad) return;
     const v = videoRef.current;
-    v.muted = true;
+    v.muted = muted;
     v.load();
     const play = () => v.play().catch(() => undefined);
     if (v.readyState >= 2) play();
     else v.addEventListener("canplay", play, { once: true });
-  }, [loadVideo]);
+  }, [loadVideo, ad?.id, ad?.video]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -61,11 +89,17 @@ export function HeroDashboard() {
     }
   }, [muted]);
 
+  const advance = () => {
+    if (!multi || !rotateOnEnd) return;
+    setIndex((i) => (i + 1) % ads.length);
+  };
+
+  if (!ad) return null;
+
+  const details = (ad.details || "").trim();
+
   return (
-    <div
-      className="e-dashboard e-dashboard--portrait e-phone"
-      aria-label={`${brand.brandName} product preview`}
-    >
+    <div className="e-dashboard e-dashboard--portrait e-phone" aria-label={ad.title}>
       <div className="e-phone-bezel" aria-hidden="true">
         <span className="e-phone-island" />
         <span className="e-phone-btn e-phone-btn--silent" />
@@ -75,40 +109,63 @@ export function HeroDashboard() {
       </div>
 
       <div className="e-dashboard-video-frame e-phone-screen">
-        {loadVideo ? (
-          <video
-            ref={videoRef}
-            className={`e-dashboard-video ${ready ? "e-dashboard-video--ready" : ""}`}
-            muted={muted}
-            loop
-            playsInline
-            autoPlay
-            preload="auto"
-            poster="/media/live-ad-portrait-poster.jpg"
-            onPlaying={() => setReady(true)}
-            onError={() => setReady(false)}
-          >
-            <source src="/media/live-ad-portrait.mp4" type="video/mp4" />
-          </video>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            className="e-dashboard-video e-dashboard-video--ready"
-            src="/media/live-ad-portrait-poster.jpg"
-            alt=""
-          />
-        )}
+        <a
+          className="e-phone-ad-link"
+          href={ad.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${ad.title} — open link`}
+        >
+          {loadVideo ? (
+            <video
+              ref={videoRef}
+              className={`e-dashboard-video ${ready ? "e-dashboard-video--ready" : ""}`}
+              muted={muted}
+              loop={!multi || !rotateOnEnd}
+              playsInline
+              autoPlay
+              preload="auto"
+              poster={ad.poster}
+              onPlaying={() => setReady(true)}
+              onError={() => setReady(false)}
+              onEnded={advance}
+            >
+              <source src={ad.video} type="video/mp4" />
+            </video>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="e-dashboard-video e-dashboard-video--ready" src={ad.poster} alt="" />
+          )}
+        </a>
 
         <button
           type="button"
           className={`e-dashboard-mute-btn e-dashboard-mute-btn--icon${muted ? " is-muted" : ""}`}
-          onClick={() => setMuted((m) => !m)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setMuted((m) => !m);
+          }}
           aria-pressed={!muted}
           aria-label={muted ? "Unmute video" : "Mute video"}
           title={muted ? "Unmute" : "Mute"}
         >
           <SpeakerIcon muted={muted} />
         </button>
+
+        {details ? (
+          <div className="e-phone-ad-details" aria-hidden="true">
+            <span>{details}</span>
+          </div>
+        ) : null}
+
+        {multi ? (
+          <div className="e-phone-ad-dots" aria-hidden="true">
+            {ads.map((item, i) => (
+              <span key={item.id} className={i === index ? "is-active" : undefined} />
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   );
