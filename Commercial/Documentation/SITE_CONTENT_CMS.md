@@ -4,7 +4,22 @@ Public entry (footer **Admin** button): **`/admin`**
 CMS path: **`/portal/admin/site-content`**  
 Permission: `admin.launch.read` (view) · `admin.launch.write` (edit/upload)
 
-Footer → **Admin** → admin email/password → Site Content CMS. Non-admin accounts are blocked.
+Footer → **Admin Only** → `/admin` email/password form → Site Content CMS.
+
+### Who can enter
+The signed-in email must appear in Vercel Production env (comma-separated):
+
+```bash
+PORTAL_SUPER_ADMIN_EMAILS=atiqvilog@gmail.com,your-other-admin@gmail.com
+# or
+PORTAL_ADMIN_EMAILS=...
+```
+
+After changing the env, redeploy (or wait for the next deploy). Then open `/admin`, sign out if a customer session is active, and sign in with that admin email + password.
+
+If the account is Google-only, either:
+- add that Google email to `PORTAL_SUPER_ADMIN_EMAILS` and use User Portal Google sign-in then open Admin, or
+- set a password on the account and use the Admin Email / Password form.
 
 Edit without redeploying:
 

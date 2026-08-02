@@ -25,20 +25,19 @@ function envList(name: string, fallback = ""): string[] {
 }
 
 function resolveRole(email: string, explicit?: string): CloudRole {
+  const e = (email || "").toLowerCase().trim();
+  // Env roster always wins for elevation (even if JWT/session previously said "customer").
+  if (e && envList("PORTAL_SUPER_ADMIN_EMAILS").includes(e)) return "super_admin";
+  if (e && envList("PORTAL_ADMIN_EMAILS").includes(e)) return "super_admin";
+  if (e && envList("PORTAL_COMMERCIAL_MANAGER_EMAILS").includes(e)) return "commercial_manager";
+  if (e && envList("PORTAL_FINANCE_EMAILS").includes(e)) return "finance_manager";
+  if (e && envList("PORTAL_QA_EMAILS").includes(e)) return "qa_manager";
+  if (e && envList("PORTAL_AUDITOR_EMAILS").includes(e)) return "auditor";
+  if (e && envList("PORTAL_SUPPORT_EMAILS").includes(e)) return "support_agent";
   if (explicit) {
     const n = normalizeAdminRole(explicit);
     if (n !== "customer") return n as CloudRole;
-    if (explicit === "customer") return "customer";
   }
-  const e = email.toLowerCase();
-  // No fallback default: an empty/unset env var means no email-based admin elevation.
-  if (envList("PORTAL_SUPER_ADMIN_EMAILS").includes(e)) return "super_admin";
-  if (envList("PORTAL_ADMIN_EMAILS").includes(e)) return "super_admin";
-  if (envList("PORTAL_COMMERCIAL_MANAGER_EMAILS").includes(e)) return "commercial_manager";
-  if (envList("PORTAL_FINANCE_EMAILS").includes(e)) return "finance_manager";
-  if (envList("PORTAL_QA_EMAILS").includes(e)) return "qa_manager";
-  if (envList("PORTAL_AUDITOR_EMAILS").includes(e)) return "auditor";
-  if (envList("PORTAL_SUPPORT_EMAILS").includes(e)) return "support_agent";
   return "customer";
 }
 
@@ -151,14 +150,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async jwt({ token, user, trigger }) {
       try {
+        const email = ((user?.email || token.email || "") as string).toLowerCase();
+        if (email) token.email = email;
+        if (user?.image) token.picture = user.image;
+
+        // Re-resolve on every token pass so Vercel admin-roster env changes apply
+        // without forcing a full re-login after deploy.
+        const previous = String(token.role || "");
+        token.role = email
+          ? resolveRole(email, user ? (user as { role?: string }).role : undefined)
+          : "customer";
+
         if (user) {
-          const email = (user.email || "").toLowerCase();
-          token.role = resolveRole(email, (user as { role?: string }).role);
-          token.email = email;
-          if (user.image) token.picture = user.image;
-          if (email) {
-            await cacheSet(CacheKeys.session(email), String(token.role || "customer"), 60 * 60 * 8);
-          }
           writeAudit({
             user: email || "unknown",
             action: "login",
@@ -167,13 +170,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             detail: `provider login · role=${token.role}`,
           });
         }
-        if (!token.role && token.email) {
-          token.role = resolveRole(String(token.email));
+
+        if (email && (user || trigger === "update" || previous !== String(token.role))) {
+          await cacheSet(CacheKeys.session(email), String(token.role || "customer"), 60 * 60 * 8);
         }
         if (!token.role) token.role = "customer";
-        if (trigger === "update" && token.email) {
-          await cacheSet(CacheKeys.session(String(token.email)), String(token.role), 60 * 60 * 8);
-        }
       } catch (e) {
         console.error("[auth] jwt callback failed", e instanceof Error ? e.message : e);
         if (!token.role) token.role = "customer";
