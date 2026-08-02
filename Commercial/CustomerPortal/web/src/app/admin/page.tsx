@@ -96,9 +96,9 @@ export default async function AdminEntryPage({
             <div className="e-login-brand">
               <BrandLogo variant="login" priority className="e-brand-logo e-brand-logo--login" />
               <p className="e-login-eyebrow">{brand.brandName}</p>
-              <h1 className="e-login-title">Admin Console</h1>
+              <h1 className="e-login-title">Admin Only</h1>
               <p className="e-login-sub">
-                Sign in with your admin email and password to open the Site Content CMS.
+                Enter your admin email and password below to open the Site Content CMS.
               </p>
             </div>
 
@@ -123,12 +123,12 @@ export default async function AdminEntryPage({
                 className="e-form"
               >
                 <div className="e-field">
-                  <label htmlFor="admin-email">Admin email</label>
+                  <label htmlFor="admin-email">Admin Email</label>
                   <input
                     id="admin-email"
                     name="email"
                     type="email"
-                    placeholder="admin@company.com"
+                    placeholder="Admin Email"
                     required
                     autoComplete="username"
                   />
@@ -139,14 +139,14 @@ export default async function AdminEntryPage({
                     id="admin-password"
                     name="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Password"
                     required
                     minLength={8}
                     autoComplete="current-password"
                   />
                 </div>
                 <button type="submit" className="e-btn e-btn-primary e-btn--full">
-                  Enter Site Content CMS
+                  Sign In to CMS
                 </button>
               </form>
 
