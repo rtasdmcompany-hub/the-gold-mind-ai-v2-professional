@@ -11,7 +11,7 @@ const LINKS = [
   { href: "/about", label: "About" },
   { href: "/pricing", label: "Pricing" },
   { href: "/docs", label: "Docs" },
-  { href: "/developers", label: "Developers" },
+  { href: "/portal/downloads", label: "Download" },
   { href: "/contact", label: "Contact" },
   { href: "/register", label: "Register" },
 ];
@@ -44,7 +44,7 @@ export function EnterpriseNav({ transparent = false }: { transparent?: boolean }
           <BrandLogo variant="header" priority className="e-brand-logo e-brand-logo--header" />
           <span className="e-brand-wordmark">
             <span className="e-brand-wordmark-title">{brand.brandName}</span>
-            <span className="e-brand-wordmark-sub">AI v2.0 PROFESSIONAL</span>
+            <span className="e-brand-wordmark-sub">Professional</span>
           </span>
         </Link>
         <nav>
@@ -53,7 +53,13 @@ export function EnterpriseNav({ transparent = false }: { transparent?: boolean }
               <li key={l.href}>
                 <Link
                   href={l.href}
-                  className={pathname === l.href ? "e-active" : ""}
+                  className={
+                    l.href === "/portal/downloads"
+                      ? `e-nav-download${pathname.startsWith("/portal/downloads") ? " e-active" : ""}`
+                      : pathname === l.href
+                        ? "e-active"
+                        : ""
+                  }
                   onClick={() => setMenuOpen(false)}
                 >
                   {l.label}
@@ -62,7 +68,7 @@ export function EnterpriseNav({ transparent = false }: { transparent?: boolean }
             ))}
             <li>
               <Link href="/login" className="e-nav-cta" onClick={() => setMenuOpen(false)}>
-                Customer Portal
+                User Portal
               </Link>
             </li>
           </ul>

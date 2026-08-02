@@ -11,9 +11,8 @@ const FOOTER = {
     { href: "/docs", label: "Documentation" },
   ],
   portal: [
-    { href: "/login", label: "Customer Portal" },
-    { href: "/portal/downloads", label: "Downloads" },
-    { href: "/developers", label: "Developers" },
+    { href: "/login", label: "User Portal" },
+    { href: "/portal/downloads", label: "Download" },
     { href: "/contact", label: "Contact" },
   ],
   legal: [
@@ -75,10 +74,10 @@ export function EnterpriseFooter() {
               </div>
             </div>
             <p className="e-footer-desc">
-              {brand.productFullName} — institutional automated trading software for MetaTrader 5.
+              {brand.brandName} Professional — institutional automated trading software for MetaTrader 5.
             </p>
             {social.length > 0 ? (
-              <ul className="e-footer-social" style={{ listStyle: "none", padding: 0, display: "flex", gap: 12, marginTop: 12 }}>
+              <ul className="e-footer-social" style={{ listStyle: "none", padding: 0, display: "flex", gap: 12, marginTop: 8 }}>
                 {social.map((s) => (
                   <li key={s.href}>
                     <a href={s.href} rel="noopener noreferrer" target="_blank">
@@ -122,8 +121,11 @@ export function EnterpriseFooter() {
         </div>
 
         <hr className="e-divider-glass" />
-        <div className="e-footer-bottom">
-          <span>{brand.copyrightProduct}</span>
+        <div className="e-footer-bottom e-footer-bottom--legal">
+          <span className="e-footer-copy">
+            © {brand.copyrightYear} RTAS Digital Marketing Company. All rights reserved. RTAS Studio AI is
+            developed and operated by RTAS Digital Marketing Company. Part of the RTAS brand ecosystem.
+          </span>
           <span className="e-footer-risk">{brand.riskLine}</span>
         </div>
       </div>

@@ -68,7 +68,7 @@ export default function HomePage() {
                 View Pricing
               </Link>
               <Link href="/login" className="e-btn e-btn-ghost">
-                Customer Portal
+                User Portal
               </Link>
             </div>
           </ScrollReveal>

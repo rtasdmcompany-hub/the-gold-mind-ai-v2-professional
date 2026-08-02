@@ -210,53 +210,44 @@
 .e-brand-wordmark {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  line-height: 1.05;
+  gap: 3px;
+  line-height: 1.1;
   min-width: 0;
 }
 
 .e-brand-wordmark-title {
   font-family: var(--e-font-serif);
-  font-size: clamp(15px, 1.6vw, 20px);
+  font-size: clamp(17px, 1.8vw, 22px);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   white-space: nowrap;
-  background: var(--e-gold-shine);
-  background-size: 220% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter:
-    drop-shadow(0 1px 0 rgba(255, 244, 194, 0.65))
-    drop-shadow(0 2px 0 rgba(140, 100, 20, 0.9))
-    drop-shadow(0 3px 0 rgba(60, 40, 8, 0.95))
-    drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+  color: #f0d78a;
+  -webkit-text-fill-color: #f0d78a;
+  background: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  filter: none;
 }
 
 .e-brand-wordmark-sub {
   display: block;
-  width: 100%;
-  font-size: clamp(10px, 0.95vw, 12px);
-  letter-spacing: 0.14em;
+  width: auto;
+  font-size: clamp(11px, 1vw, 13px);
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   white-space: nowrap;
-  text-align: justify;
-  text-align-last: justify;
-  background: var(--e-gold-shine);
-  background-size: 220% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter:
-    drop-shadow(0 1px 0 rgba(255, 244, 194, 0.45))
-    drop-shadow(0 2px 0 rgba(120, 90, 20, 0.85))
-    drop-shadow(0 4px 8px rgba(0, 0, 0, 0.55));
+  text-align: left;
+  text-align-last: left;
+  color: rgba(232, 208, 140, 0.88);
+  -webkit-text-fill-color: rgba(232, 208, 140, 0.88);
+  background: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  filter: none;
 }
 
 @media (max-width: 720px) {
-  .e-brand-wordmark-title { font-size: 14px; letter-spacing: 0.04em; }
-  .e-brand-wordmark-sub { font-size: 9px; letter-spacing: 0.08em; }
+  .e-brand-wordmark-title { font-size: 15px; letter-spacing: 0.04em; }
+  .e-brand-wordmark-sub { font-size: 10px; letter-spacing: 0.12em; }
 }
 
 .e-nav-links {
@@ -283,6 +274,28 @@
 .e-nav-links a.e-active {
   color: var(--e-text);
   background: rgba(255, 255, 255, 0.04);
+}
+
+.e-nav-download,
+.e-nav-links a.e-nav-download {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--e-gold) !important;
+  border: 1px solid rgba(247, 198, 65, 0.45);
+  border-radius: 8px;
+  background: rgba(247, 198, 65, 0.08) !important;
+}
+
+.e-nav-download:hover,
+.e-nav-links a.e-nav-download:hover,
+.e-nav-links a.e-nav-download.e-active {
+  color: #fff8e7 !important;
+  background: rgba(247, 198, 65, 0.18) !important;
+  border-color: rgba(247, 198, 65, 0.7);
 }
 
 .e-nav-cta,
@@ -1540,7 +1553,7 @@
   display: block;
 }
 
-.e-brand-logo--header { max-height: 62px; width: auto; }
+.e-brand-logo--header { max-height: 78px; width: auto; }
 .e-brand-logo--login { max-height: 72px; margin-inline: auto; }
 .e-brand-logo--footer { max-height: 36px; }
 .e-brand-logo--badge { mix-blend-mode: lighten; opacity: 0.95; }
@@ -1571,8 +1584,28 @@
   border-top: 1px solid rgba(184, 155, 95, 0.08);
 }
 
+.e-footer--compact {
+  padding: 28px 0 16px;
+}
+
 .e-footer--compact .e-divider-glass {
-  margin: 18px 0 12px;
+  margin: 12px 0 10px;
+}
+
+.e-footer--compact .e-footer-logos {
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
+.e-footer--compact .e-footer-logo-cell {
+  width: 64px;
+  height: 64px;
+  flex-basis: 64px;
+}
+
+.e-footer--compact .e-footer-logo-img {
+  width: 64px !important;
+  height: 64px !important;
 }
 
 .e-footer-top {
@@ -1589,9 +1622,14 @@
 }
 
 .e-footer--compact .e-footer-desc {
-  margin-top: 10px;
+  margin-top: 6px;
   font-size: 12px;
-  line-height: 1.55;
+  line-height: 1.45;
+  max-width: 34rem;
+}
+
+.e-footer--compact .e-footer-grid--compact {
+  gap: 18px;
 }
 
 .e-footer--compact .e-footer-badges {
@@ -1614,7 +1652,23 @@
 
 .e-footer--compact .e-footer-bottom {
   font-size: 11px;
-  padding-top: 4px;
+  padding-top: 2px;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.e-footer-bottom--legal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 20px;
+}
+
+.e-footer-copy {
+  flex: 1 1 280px;
+  max-width: 52rem;
+  line-height: 1.45;
+  color: var(--e-text-muted);
 }
 
 .e-footer-badges {
