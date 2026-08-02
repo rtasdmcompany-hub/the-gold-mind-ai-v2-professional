@@ -1,40 +1,15 @@
 # Phone panel rotating ads
 
-Homepage iPhone video panel reads this folder.
+**Preferred:** edit ads in the portal admin — **`/portal/admin/site-content`** (Site Content Manager).  
+Uploads and URLs saved there apply live (no redeploy) when Upstash is configured.
 
-## Add a new ad
+This folder is the **built-in fallback** if the CMS store is empty.
+
+## Manual fallback (optional)
 
 1. Put files here, for example:
    - `my-campaign.mp4` (portrait ~9:16, H.264, keep under ~5 MB)
-   - `my-campaign-poster.jpg` (first-frame / fallback image)
-2. Edit `ads.json` and append an entry:
+   - `my-campaign-poster.jpg`
+2. Edit `ads.json` and append an entry, then commit + redeploy — **or** paste the same paths/URLs into Site Content and Save.
 
-```json
-{
-  "id": "my-campaign",
-  "enabled": true,
-  "title": "Short title",
-  "details": "One short line shown on the phone (optional)",
-  "href": "https://example.com/landing",
-  "video": "/media/phone-ads/my-campaign.mp4",
-  "poster": "/media/phone-ads/my-campaign-poster.jpg"
-}
-```
-
-3. Commit + push + redeploy Vercel.
-
-## Fields
-
-| Field | Required | Meaning |
-|-------|----------|---------|
-| `id` | yes | Unique key |
-| `enabled` | yes | `false` skips this ad |
-| `title` | yes | Accessibility / link label |
-| `details` | no | Short line under the video (leave `""` to hide) |
-| `href` | yes | Click opens this URL (new tab) |
-| `video` | yes | Public path to mp4 |
-| `poster` | yes | Public path to poster image |
-
-## Rotation
-
-When more than one enabled ad is listed, the panel plays them in order and advances when each video ends (`rotateOnEnd: true`).
+See `Commercial/Documentation/SITE_CONTENT_CMS.md`.

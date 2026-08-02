@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
-import { brand } from "@/lib/brand";
+import { useSiteContent } from "./SiteContentProvider";
 
 const LINKS = [
   { href: "/", label: "Home" },
@@ -18,6 +18,7 @@ const LINKS = [
 
 export function EnterpriseNav({ transparent = false }: { transparent?: boolean }) {
   const pathname = usePathname();
+  const site = useSiteContent();
   const [scrolled, setScrolled] = useState(false);
   const [shrunk, setShrunk] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,10 +42,15 @@ export function EnterpriseNav({ transparent = false }: { transparent?: boolean }
     >
       <div className="e-nav-inner">
         <Link href="/" className="e-brand-lockup" onClick={() => setMenuOpen(false)}>
-          <BrandLogo variant="header" priority className="e-brand-logo e-brand-logo--header" />
+          <BrandLogo
+            variant="header"
+            priority
+            className="e-brand-logo e-brand-logo--header"
+            src={site.logos.header}
+          />
           <span className="e-brand-wordmark">
-            <span className="e-brand-wordmark-title">{brand.brandName}</span>
-            <span className="e-brand-wordmark-sub">Professional</span>
+            <span className="e-brand-wordmark-title">{site.header.brandName}</span>
+            <span className="e-brand-wordmark-sub">{site.header.brandSub}</span>
           </span>
         </Link>
         <nav>
@@ -67,8 +73,12 @@ export function EnterpriseNav({ transparent = false }: { transparent?: boolean }
               </li>
             ))}
             <li>
-              <Link href="/login" className="e-nav-cta" onClick={() => setMenuOpen(false)}>
-                User Portal
+              <Link
+                href={site.header.ctaHref || "/login"}
+                className="e-nav-cta"
+                onClick={() => setMenuOpen(false)}
+              >
+                {site.header.ctaLabel || "User Portal"}
               </Link>
             </li>
           </ul>
@@ -80,7 +90,9 @@ export function EnterpriseNav({ transparent = false }: { transparent?: boolean }
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((o) => !o)}
         >
-          {menuOpen ? "✕" : "☰"}
+          <span />
+          <span />
+          <span />
         </button>
       </div>
     </header>

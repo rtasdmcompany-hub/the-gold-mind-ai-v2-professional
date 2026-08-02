@@ -42,22 +42,28 @@ export function BrandLogo({
   href,
   priority = false,
   className,
+  src,
 }: {
   variant?: Variant;
   href?: string;
   priority?: boolean;
   className?: string;
+  /** Optional override (Site Content CMS / admin upload). */
+  src?: string;
 }) {
   const cfg = SRC[variant];
+  const resolved = (src || "").trim() || cfg.src;
+  const remote = /^https?:\/\//i.test(resolved) || resolved.startsWith("/api/site-content/media/");
   const img = (
     <Image
-      src={cfg.src}
+      src={resolved}
       alt={cfg.alt}
       width={cfg.width}
       height={cfg.height}
       priority={priority}
       className={className ?? "e-brand-logo"}
       style={{ width: "auto", height: "auto", maxWidth: "100%", objectFit: "contain" }}
+      unoptimized={remote}
     />
   );
   if (!href) return img;

@@ -1,11 +1,9 @@
 /**
  * Homepage iPhone panel ads.
  *
- * Videos + posters live in: public/media/phone-ads/
- * Manifest (owner-editable): public/media/phone-ads/ads.json
- *
- * This module also exports a typed fallback so the panel always has the
- * MQL5 Market ad even if ads.json fails to load.
+ * Preferred editor: /portal/admin/site-content (Site Content CMS).
+ * Fallback files: public/media/phone-ads/ (+ ads.json).
+ * Runtime source: GET /api/site-content/public → phoneAds.
  */
 
 export type PhoneAd = {

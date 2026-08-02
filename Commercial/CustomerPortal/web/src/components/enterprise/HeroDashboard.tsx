@@ -1,12 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  DEFAULT_PHONE_ADS,
-  normalizePhoneAds,
-  PHONE_ADS_MANIFEST_URL,
-  type PhoneAd,
-} from "@/content/phone-ads";
+import { DEFAULT_PHONE_ADS, type PhoneAd } from "@/content/phone-ads";
+import { useSiteContent } from "./SiteContentProvider";
 
 function SpeakerIcon({ muted }: { muted: boolean }) {
   if (muted) {
@@ -29,37 +25,26 @@ function SpeakerIcon({ muted }: { muted: boolean }) {
   );
 }
 
-/**
- * Homepage iPhone panel — rotating clickable video ads.
- * Add videos + links in: public/media/phone-ads/ads.json
- */
+/** Homepage iPhone panel — rotating clickable video ads (editable in Admin → Site Content). */
 export function HeroDashboard() {
+  const site = useSiteContent();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [ads, setAds] = useState<PhoneAd[]>(DEFAULT_PHONE_ADS);
+  const [ads, setAds] = useState<PhoneAd[]>(site.phoneAds.ads?.length ? site.phoneAds.ads : DEFAULT_PHONE_ADS);
   const [index, setIndex] = useState(0);
   const [ready, setReady] = useState(false);
   const [loadVideo, setLoadVideo] = useState(false);
   const [muted, setMuted] = useState(true);
-  const [rotateOnEnd, setRotateOnEnd] = useState(true);
+  const [rotateOnEnd, setRotateOnEnd] = useState(site.phoneAds.rotateOnEnd !== false);
+
+  useEffect(() => {
+    const next = site.phoneAds.ads?.length ? site.phoneAds.ads : DEFAULT_PHONE_ADS;
+    setAds(next);
+    setRotateOnEnd(site.phoneAds.rotateOnEnd !== false);
+    setIndex(0);
+  }, [site.phoneAds]);
 
   const ad = ads[index] || ads[0];
   const multi = ads.length > 1;
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(PHONE_ADS_MANIFEST_URL, { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        if (cancelled || !json) return;
-        setRotateOnEnd(json.rotateOnEnd !== false);
-        setAds(normalizePhoneAds(json));
-        setIndex(0);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -72,13 +57,12 @@ export function HeroDashboard() {
     setReady(false);
     if (!loadVideo || !videoRef.current || !ad) return;
     const v = videoRef.current;
-    v.muted = true; // start muted; mute state effect syncs after user toggle
+    v.muted = true;
     v.load();
     const play = () => v.play().catch(() => undefined);
     if (v.readyState >= 2) play();
     else v.addEventListener("canplay", play, { once: true });
-    // Reload only when the active ad media changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- ad object identity changes each fetch
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload on media identity
   }, [loadVideo, ad?.id, ad?.video]);
 
   useEffect(() => {
@@ -99,6 +83,7 @@ export function HeroDashboard() {
   if (!ad) return null;
 
   const details = (ad.details || "").trim();
+  const videoType = ad.video.toLowerCase().endsWith(".webm") ? "video/webm" : "video/mp4";
 
   return (
     <div className="e-dashboard e-dashboard--portrait e-phone" aria-label={ad.title}>
@@ -132,7 +117,7 @@ export function HeroDashboard() {
               onError={() => setReady(false)}
               onEnded={advance}
             >
-              <source src={ad.video} type="video/mp4" />
+              <source src={ad.video} type={videoType} />
             </video>
           ) : (
             // eslint-disable-next-line @next/next/no-img-element

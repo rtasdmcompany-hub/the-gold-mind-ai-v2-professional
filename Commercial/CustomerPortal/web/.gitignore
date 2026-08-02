@@ -48,5 +48,10 @@ next-env.d.ts
 # licensing encrypted store (commercial)
 .data/
 
+# Site Content CMS local uploads (keep folder)
+/public/uploads/**
+!/public/uploads/.gitkeep
+
+
 .vercel
 .env*

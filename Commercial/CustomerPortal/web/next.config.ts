@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 180, 256],
     remotePatterns: [
       { protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" },
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/**" },
+      { protocol: "https", hostname: "*.blob.vercel-storage.com", pathname: "/**" },
     ],
   },
   experimental: {

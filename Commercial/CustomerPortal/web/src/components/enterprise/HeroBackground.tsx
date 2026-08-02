@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSiteContent } from "./SiteContentProvider";
 
 export function HeroBackground() {
+  const { hero } = useSiteContent();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
@@ -15,13 +17,14 @@ export function HeroBackground() {
   }, []);
 
   useEffect(() => {
+    setVideoReady(false);
     if (!shouldLoadVideo || !videoRef.current) return;
     const v = videoRef.current;
     v.load();
     const play = () => v.play().catch(() => undefined);
     if (v.readyState >= 2) play();
     else v.addEventListener("canplay", play, { once: true });
-  }, [shouldLoadVideo]);
+  }, [shouldLoadVideo, hero.backgroundMp4, hero.backgroundWebm]);
 
   return (
     <div className="e-hero-bg" aria-hidden="true">
@@ -35,12 +38,12 @@ export function HeroBackground() {
           playsInline
           autoPlay
           preload="auto"
-          poster="/brand/the-gold-mind-square.png"
+          poster={hero.poster || "/brand/the-gold-mind-square.png"}
           onPlaying={() => setVideoReady(true)}
           onError={() => setVideoReady(false)}
         >
-          <source src="/media/hero-institutional.mp4" type="video/mp4" />
-          <source src="/media/hero-institutional.webm" type="video/webm" />
+          {hero.backgroundMp4 ? <source src={hero.backgroundMp4} type="video/mp4" /> : null}
+          {hero.backgroundWebm ? <source src={hero.backgroundWebm} type="video/webm" /> : null}
         </video>
       )}
       <div className="e-hero-overlay e-hero-overlay--video" />

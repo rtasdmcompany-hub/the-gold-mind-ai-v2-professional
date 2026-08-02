@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
+import { useSiteContent } from "./SiteContentProvider";
 
 const FOOTER = {
   product: [
@@ -26,7 +29,34 @@ const FOOTER = {
   ],
 };
 
+function MediaImage({
+  src,
+  alt,
+  width,
+  height,
+  className,
+}: {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  className?: string;
+}) {
+  const remote = /^https?:\/\//i.test(src);
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      unoptimized={remote || src.startsWith("/api/site-content/media/")}
+    />
+  );
+}
+
 export function EnterpriseFooter() {
+  const site = useSiteContent();
   const social = [
     brand.social.x || brand.social.twitter
       ? { href: brand.social.x || brand.social.twitter, label: "X" }
@@ -43,20 +73,20 @@ export function EnterpriseFooter() {
           <div className="e-footer-brand">
             <div
               className="e-footer-logos e-footer-logos--brand"
-              aria-label={`${brand.brandName}, RTAS Group, and RTAS Digital logos`}
+              aria-label={`${site.header.brandName || brand.brandName}, RTAS Group, and RTAS Digital logos`}
             >
               <div className="e-footer-logo-cell">
-                <Image
-                  src={brand.assets.footer}
-                  alt={`${brand.brandName} ${brand.tagline}`}
+                <MediaImage
+                  src={site.logos.footerGoldMind || brand.assets.footer}
+                  alt={`${site.header.brandName || brand.brandName} ${brand.tagline}`}
                   width={88}
                   height={88}
                   className="e-footer-logo-img"
                 />
               </div>
               <div className="e-footer-logo-cell">
-                <Image
-                  src={brand.assets.footerRtasGroup}
+                <MediaImage
+                  src={site.logos.footerRtasGroup || brand.assets.footerRtasGroup}
                   alt="RTAS Group of Companies"
                   width={88}
                   height={88}
@@ -64,8 +94,8 @@ export function EnterpriseFooter() {
                 />
               </div>
               <div className="e-footer-logo-cell">
-                <Image
-                  src={brand.assets.footerRtasDigital}
+                <MediaImage
+                  src={site.logos.footerRtasDigital || brand.assets.footerRtasDigital}
                   alt="RTAS Digital Marketing Company"
                   width={88}
                   height={88}
@@ -73,11 +103,12 @@ export function EnterpriseFooter() {
                 />
               </div>
             </div>
-            <p className="e-footer-desc">
-              {brand.brandName} Professional — institutional automated trading software for MetaTrader 5.
-            </p>
+            <p className="e-footer-desc">{site.footer.description}</p>
             {social.length > 0 ? (
-              <ul className="e-footer-social" style={{ listStyle: "none", padding: 0, display: "flex", gap: 12, marginTop: 8 }}>
+              <ul
+                className="e-footer-social"
+                style={{ listStyle: "none", padding: 0, display: "flex", gap: 12, marginTop: 8 }}
+              >
                 {social.map((s) => (
                   <li key={s.href}>
                     <a href={s.href} rel="noopener noreferrer" target="_blank">
@@ -122,11 +153,8 @@ export function EnterpriseFooter() {
 
         <hr className="e-divider-glass" />
         <div className="e-footer-bottom e-footer-bottom--legal">
-          <span className="e-footer-copy">
-            © {brand.copyrightYear} RTAS Digital Marketing Company. All rights reserved. RTAS Studio AI is
-            developed and operated by RTAS Digital Marketing Company. Part of the RTAS brand ecosystem.
-          </span>
-          <span className="e-footer-risk">{brand.riskLine}</span>
+          <span className="e-footer-copy">{site.footer.copyrightLine}</span>
+          <span className="e-footer-risk">{site.footer.riskLine}</span>
         </div>
       </div>
     </footer>

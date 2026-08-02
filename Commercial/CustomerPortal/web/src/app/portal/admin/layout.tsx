@@ -48,6 +48,7 @@ const ADMIN_LINKS: { href: string; label: string; permission: AdminPermission }[
   { href: "/portal/admin/go-no-go", label: "Go / No-Go", permission: "admin.launch.read" },
   { href: "/portal/admin/executive-scorecard", label: "Exec Scorecard", permission: "admin.launch.read" },
   { href: "/portal/admin/website-launch", label: "Website Launch", permission: "admin.launch.read" },
+  { href: "/portal/admin/site-content", label: "Site Content", permission: "admin.launch.read" },
   { href: "/portal/admin/customer-journey", label: "Customer Journey", permission: "admin.launch.read" },
   { href: "/portal/admin/commercial-workflows", label: "Commercial Workflows", permission: "admin.launch.read" },
   { href: "/portal/admin/production-deployment", label: "Prod Deployment", permission: "admin.launch.read" },

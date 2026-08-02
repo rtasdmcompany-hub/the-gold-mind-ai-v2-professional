@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { EnterpriseShell } from "@/components/enterprise/EnterpriseShell";
 import { HeroBackground } from "@/components/enterprise/HeroBackground";
+import { HeroCopy } from "@/components/enterprise/HeroCopy";
 import { HeroDashboard } from "@/components/enterprise/HeroDashboard";
 import { ScrollReveal } from "@/components/enterprise/ScrollReveal";
 import { SoftwareShowcase } from "@/components/enterprise/SoftwareShowcase";
@@ -57,20 +58,7 @@ export default function HomePage() {
         <HeroBackground />
         <div className="e-hero-grid">
           <ScrollReveal className="e-hero-content">
-            <p className="e-eyebrow">{brand.productFullName}</p>
-            <h1 className="e-hero-title">Institutional AI Trading Software</h1>
-            <p className="e-lead">
-              Systematic MetaTrader 5 automation with certified Core integrity, enterprise licensing, and global
-              infrastructure.
-            </p>
-            <div className="e-btn-group">
-              <Link href="/pricing" className="e-btn e-btn-primary">
-                View Pricing
-              </Link>
-              <Link href="/login" className="e-btn e-btn-ghost">
-                User Portal
-              </Link>
-            </div>
+            <HeroCopy />
           </ScrollReveal>
           <ScrollReveal delay={2}>
             <HeroDashboard />

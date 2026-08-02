@@ -4,10 +4,18 @@ All public website assets for THE GOLD MIND Customer Portal / marketing site liv
 
 `Commercial/CustomerPortal/web/public/`
 
+## Preferred: Site Content Manager (admin)
+
+**URL:** `/portal/admin/site-content`  
+**Docs:** `Commercial/Documentation/SITE_CONTENT_CMS.md`
+
+Upload or paste URLs for phone ads, hero background, logos, and header/footer lines — no redeploy when Upstash is configured. For production video files on Vercel, set `BLOB_READ_WRITE_TOKEN`.
+
 ## Phone panel rotating ads (homepage iPhone)
 
-**Folder:** `public/media/phone-ads/`  
-**Config:** `public/media/phone-ads/ads.json`  
+**Admin:** Site Content → iPhone video panel ads  
+**Fallback folder:** `public/media/phone-ads/`  
+**Fallback config:** `public/media/phone-ads/ads.json`  
 **Component:** `src/components/enterprise/HeroDashboard.tsx`
 
 Each ad can have its own video, poster, short details line, and clickable link.
