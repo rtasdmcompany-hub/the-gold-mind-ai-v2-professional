@@ -1,5 +1,6 @@
 "use client";
 
+import { upload } from "@vercel/blob/client";
 import { useMemo, useState } from "react";
 import type { PhoneAd } from "@/content/phone-ads";
 import type { SiteContentData } from "@/server/site-content/types";
@@ -11,38 +12,79 @@ import {
   actionSavePhoneAds,
 } from "@/server/site-content/actions";
 
+async function uploadViaServerApi(file: File): Promise<string> {
+  const fd = new FormData();
+  fd.set("file", file);
+  const res = await fetch("/api/site-content/upload", { method: "POST", body: fd });
+  let json: { ok?: boolean; url?: string; error?: string } = {};
+  try {
+    json = (await res.json()) as typeof json;
+  } catch {
+    throw new Error(
+      res.status === 413
+        ? "File too large for server upload (use Blob / smaller file)."
+        : `Upload failed (HTTP ${res.status}).`
+    );
+  }
+  if (!res.ok || !json.ok || !json.url) {
+    throw new Error(json.error || `Upload failed (HTTP ${res.status}).`);
+  }
+  return json.url;
+}
+
+async function uploadMediaFile(file: File, preferClientBlob: boolean): Promise<string> {
+  // Direct-to-Blob for larger files (avoids Vercel ~4.5MB function body limit).
+  if (preferClientBlob || file.size > 3_500_000) {
+    try {
+      const pathname = `site-content/${Date.now().toString(36)}-${file.name.replace(
+        /[^a-zA-Z0-9._-]+/g,
+        "-"
+      )}`;
+      const blob = await upload(pathname, file, {
+        access: "public",
+        handleUploadUrl: "/api/site-content/blob",
+        contentType: file.type || undefined,
+      });
+      if (blob?.url) return blob.url;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Blob upload failed";
+      // Fall back to server API for small files / misconfigured blob.
+      if (file.size > 4_200_000) throw new Error(msg);
+    }
+  }
+  return uploadViaServerApi(file);
+}
+
 function UploadField({
   label,
   value,
   onChange,
   accept,
   disabled,
+  preferClientBlob,
 }: {
   label: string;
   value: string;
   onChange: (url: string) => void;
   accept: string;
   disabled?: boolean;
+  preferClientBlob?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [okMsg, setOkMsg] = useState("");
 
   const onFile = async (file: File | null) => {
     if (!file || disabled) return;
     setBusy(true);
     setErr("");
+    setOkMsg("");
     try {
-      const fd = new FormData();
-      fd.set("file", file);
-      const res = await fetch("/api/site-content/upload", { method: "POST", body: fd });
-      const json = (await res.json()) as { ok?: boolean; url?: string; error?: string };
-      if (!res.ok || !json.ok || !json.url) {
-        setErr(json.error || "Upload failed");
-        return;
-      }
-      onChange(json.url);
-    } catch {
-      setErr("Upload failed");
+      const url = await uploadMediaFile(file, !!preferClientBlob);
+      onChange(url);
+      setOkMsg(`Uploaded (${Math.max(1, Math.round(file.size / 1024))} KB)`);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setBusy(false);
     }
@@ -65,6 +107,7 @@ function UploadField({
           onChange={(e) => void onFile(e.target.files?.[0] || null)}
         />
         {busy ? <span className="meta">Uploading…</span> : null}
+        {okMsg ? <span className="meta" style={{ color: "#1b7a3d" }}>{okMsg}</span> : null}
         {err ? <span className="meta" style={{ color: "#b00020" }}>{err}</span> : null}
       </div>
       {value ? (
@@ -95,7 +138,12 @@ export function SiteContentAdminClient({
 }: {
   initial: SiteContentData;
   canWrite: boolean;
-  uploadHints: { blobConfigured: boolean; localWritable: boolean; durableMaxMb: number };
+  uploadHints: {
+    blobConfigured: boolean;
+    localWritable: boolean;
+    durableMaxMb: number;
+    clientUpload?: boolean;
+  };
 }) {
   const [ads, setAds] = useState<PhoneAd[]>(initial.phoneAds.ads);
   const [rotateOnEnd, setRotateOnEnd] = useState(initial.phoneAds.rotateOnEnd);
@@ -103,6 +151,7 @@ export function SiteContentAdminClient({
   const [logos, setLogos] = useState(initial.logos);
   const [header, setHeader] = useState(initial.header);
   const [footer, setFooter] = useState(initial.footer);
+  const preferClientBlob = uploadHints.clientUpload !== false && uploadHints.blobConfigured;
 
   const adsJson = useMemo(() => JSON.stringify(ads), [ads]);
 
@@ -115,15 +164,15 @@ export function SiteContentAdminClient({
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Upload engine</h2>
         <p className="meta">
-          Blob token: {uploadHints.blobConfigured ? "configured ✓" : "missing — set BLOB_READ_WRITE_TOKEN on Vercel for videos"}
+          Blob: {uploadHints.blobConfigured ? "configured ✓ (direct video upload enabled)" : "missing"}
           {" · "}
-          Local FS: {uploadHints.localWritable ? "writable" : "serverless (no local public writes)"}
+          Local FS: {uploadHints.localWritable ? "writable" : "serverless"}
           {" · "}
-          Small durable images: ≤ {uploadHints.durableMaxMb}MB in Redis
+          Small durable images: ≤ {uploadHints.durableMaxMb}MB
         </p>
         <p className="meta">
-          Tip: phone/hero videos work best as public MP4 URLs or Vercel Blob uploads. You can also paste any HTTPS
-          media URL without uploading.
+          Videos upload directly to Vercel Blob (up to ~80MB). After choosing a file, click{" "}
+          <strong>Save phone ads</strong>. You can also paste any public HTTPS MP4 URL.
         </p>
       </div>
 
@@ -199,8 +248,9 @@ export function SiteContentAdminClient({
               <UploadField
                 label="Video (mp4/webm)"
                 value={ad.video}
-                accept="video/mp4,video/webm"
+                accept="video/mp4,video/webm,.mp4,.webm"
                 disabled={!canWrite}
+                preferClientBlob={preferClientBlob}
                 onChange={(url) => updateAd(idx, { video: url })}
               />
               <UploadField
@@ -208,6 +258,7 @@ export function SiteContentAdminClient({
                 value={ad.poster}
                 accept="image/*"
                 disabled={!canWrite}
+                preferClientBlob={preferClientBlob}
                 onChange={(url) => updateAd(idx, { poster: url })}
               />
             </div>
@@ -250,15 +301,17 @@ export function SiteContentAdminClient({
           <UploadField
             label="Background MP4"
             value={hero.backgroundMp4}
-            accept="video/mp4"
+            accept="video/mp4,.mp4"
             disabled={!canWrite}
+            preferClientBlob={preferClientBlob}
             onChange={(url) => setHero((h) => ({ ...h, backgroundMp4: url }))}
           />
           <UploadField
             label="Background WebM (optional)"
             value={hero.backgroundWebm}
-            accept="video/webm"
+            accept="video/webm,.webm"
             disabled={!canWrite}
+            preferClientBlob={preferClientBlob}
             onChange={(url) => setHero((h) => ({ ...h, backgroundWebm: url }))}
           />
           <UploadField
@@ -266,6 +319,7 @@ export function SiteContentAdminClient({
             value={hero.poster}
             accept="image/*"
             disabled={!canWrite}
+            preferClientBlob={preferClientBlob}
             onChange={(url) => setHero((h) => ({ ...h, poster: url }))}
           />
           {(
@@ -330,6 +384,7 @@ export function SiteContentAdminClient({
             value={logos.header}
             accept="image/*"
             disabled={!canWrite}
+            preferClientBlob={preferClientBlob}
             onChange={(url) => setLogos((l) => ({ ...l, header: url }))}
           />
           <UploadField
@@ -337,6 +392,7 @@ export function SiteContentAdminClient({
             value={logos.footerGoldMind}
             accept="image/*"
             disabled={!canWrite}
+            preferClientBlob={preferClientBlob}
             onChange={(url) => setLogos((l) => ({ ...l, footerGoldMind: url }))}
           />
           <UploadField
@@ -344,6 +400,7 @@ export function SiteContentAdminClient({
             value={logos.footerRtasGroup}
             accept="image/*"
             disabled={!canWrite}
+            preferClientBlob={preferClientBlob}
             onChange={(url) => setLogos((l) => ({ ...l, footerRtasGroup: url }))}
           />
           <UploadField
@@ -351,6 +408,7 @@ export function SiteContentAdminClient({
             value={logos.footerRtasDigital}
             accept="image/*"
             disabled={!canWrite}
+            preferClientBlob={preferClientBlob}
             onChange={(url) => setLogos((l) => ({ ...l, footerRtasDigital: url }))}
           />
         </div>

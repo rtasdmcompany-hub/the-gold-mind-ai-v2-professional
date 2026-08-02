@@ -38,11 +38,11 @@ Upload storage priority:
 
 | Mode | When | Notes |
 |------|------|--------|
-| **Vercel Blob** | `BLOB_READ_WRITE_TOKEN` set | Best for production videos |
+| **Vercel Blob (client direct)** | `BLOB_READ_WRITE_TOKEN` set | Required for production videos (bypasses 4.5MB API limit) |
 | **Local `public/uploads/`** | Non-serverless Node | Dev / self-host |
 | **Durable Redis** | Small images only (≤ ~1.4MB) | Served at `/api/site-content/media/{id}` |
 
-Without Blob on Vercel, **paste an HTTPS MP4 URL** (CDN / Blob / object storage). Large videos cannot live in Redis.
+Store linked: `tgm-site-content`. Admin UI uses `/api/site-content/blob` for direct browser → Blob upload.
 
 ## Persistence
 

@@ -40,16 +40,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Missing file field" }, { status: 400 });
   }
 
-  const buf = Buffer.from(await file.arrayBuffer());
-  const result = await uploadSiteMedia({
-    filename: file.name || "upload.bin",
-    contentType: file.type || "application/octet-stream",
-    bytes: buf,
-  });
-  await flushSiteContent();
+  try {
+    const buf = Buffer.from(await file.arrayBuffer());
+    const result = await uploadSiteMedia({
+      filename: file.name || "upload.bin",
+      contentType: file.type || "application/octet-stream",
+      bytes: buf,
+    });
+    await flushSiteContent();
 
-  if (!result.ok) {
-    return NextResponse.json(result, { status: 400 });
+    if (!result.ok) {
+      return NextResponse.json(result, { status: 400 });
+    }
+    return NextResponse.json(result);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Upload failed";
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          msg.includes("body") || msg.includes("Entity")
+            ? "File too large for server upload. Wait for Blob client uploader deploy, or use a smaller file / HTTPS URL."
+            : msg,
+      },
+      { status: 400 }
+    );
   }
-  return NextResponse.json(result);
 }
