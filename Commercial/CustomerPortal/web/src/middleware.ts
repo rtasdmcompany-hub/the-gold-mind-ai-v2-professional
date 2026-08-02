@@ -43,6 +43,7 @@ export default auth((req) => {
     path === "/infrastructure" ||
     path === "/security" ||
     path === "/login" ||
+    path === "/admin" ||
     path === "/register" ||
     path === "/verify-email" ||
     path === "/resend-verification" ||
@@ -72,6 +73,8 @@ export default auth((req) => {
     path === "/api/notifications/trade-closed" ||
     path === "/api/trading/sync" ||
     path === "/api/partners/click" ||
+    path === "/api/site-content/public" ||
+    path.startsWith("/api/site-content/media/") ||
     // Bundled installer ZIP + catalog seed (Setup still requires portal license key).
     path === "/releases/latest-stable.json" ||
     (path.startsWith("/releases/") && path.endsWith(".zip")) ||

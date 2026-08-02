@@ -1,7 +1,10 @@
 # Site Content Manager (cPanel-style)
 
-Admin path: **`/portal/admin/site-content`**  
+Public entry (footer **Admin** button): **`/admin`**  
+CMS path: **`/portal/admin/site-content`**  
 Permission: `admin.launch.read` (view) · `admin.launch.write` (edit/upload)
+
+Footer → **Admin** → admin email/password → Site Content CMS. Non-admin accounts are blocked.
 
 Edit without redeploying:
 

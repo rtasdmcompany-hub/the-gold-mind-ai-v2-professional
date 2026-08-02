@@ -103,6 +103,11 @@ export function EnterpriseFooter() {
                 />
               </div>
             </div>
+            <div className="e-footer-admin-wrap">
+              <Link href="/admin" className="e-footer-admin-btn">
+                Admin
+              </Link>
+            </div>
             <p className="e-footer-desc">{site.footer.description}</p>
             {social.length > 0 ? (
               <ul
