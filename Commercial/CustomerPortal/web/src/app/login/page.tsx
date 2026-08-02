@@ -13,7 +13,11 @@ import { safeCredentialsSignIn, safeGoogleSignIn } from "@/server/auth/safe-sign
 function loginErrorMessage(code?: string): string {
   switch ((code || "").trim()) {
     case "CredentialsSignin":
-      return "Email or password is incorrect, or the email is not verified yet. Register and confirm your email first.";
+      return "Email or password is incorrect. Use Forgot password, or register again if this is a new device session.";
+    case "AccountMissing":
+      return "No password account was found for this email. Create an account again, or use Google Sign-In.";
+    case "UseGoogle":
+      return "This account uses Google Sign-In only. Continue with Google, or register an email/password account.";
     case "AccessDenied":
       return "Sign-in was denied. If you tried too many times, wait a few minutes and try again.";
     case "Configuration":
@@ -23,7 +27,7 @@ function loginErrorMessage(code?: string): string {
     case "OAuthCallbackError":
       return "Google sign-in failed. Try again, or use your verified email and password.";
     case "Verification":
-      return "Please verify your email before signing in.";
+      return "Please verify your email before signing in. Open your confirmation email, or use Resend verification email.";
     default:
       return code
         ? "Sign-in failed. Try Google again, or use your verified email and password."

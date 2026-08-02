@@ -191,16 +191,33 @@ export async function verifyAccountEmail(
   return { ok: true };
 }
 
+export type PasswordAuthDiagnosis =
+  | { status: "ok"; account: AccountRecord }
+  | { status: "missing" }
+  | { status: "google_only" }
+  | { status: "unverified" }
+  | { status: "bad_password" };
+
+/** Diagnose email/password login without mutating lockout counters. */
+export async function diagnosePasswordLogin(
+  emailRaw: string,
+  password: string
+): Promise<PasswordAuthDiagnosis> {
+  const email = emailRaw.trim().toLowerCase();
+  const account = await getAccountByEmail(email);
+  if (!account) return { status: "missing" };
+  if (!account.passwordHash) return { status: "google_only" };
+  if (!account.emailVerifiedAt) return { status: "unverified" };
+  if (!verifyPassword(password, account.passwordHash)) return { status: "bad_password" };
+  return { status: "ok", account };
+}
+
 export async function authenticatePassword(
   emailRaw: string,
   password: string
 ): Promise<AccountRecord | null> {
-  const email = emailRaw.trim().toLowerCase();
-  const account = await getAccountByEmail(email);
-  if (!account?.passwordHash) return null;
-  if (!account.emailVerifiedAt) return null;
-  if (!verifyPassword(password, account.passwordHash)) return null;
-  return account;
+  const result = await diagnosePasswordLogin(emailRaw, password);
+  return result.status === "ok" ? result.account : null;
 }
 
 /** Google / OAuth users are treated as verified. */
@@ -271,11 +288,21 @@ export type PasswordResetRequestResult =
  * Always resolves ok:true (does not reveal account existence) unless the email is malformed.
  * Google-only accounts (no passwordHash) are silently skipped — no email is sent — but the
  * response shape is identical to avoid leaking account status to an unauthenticated caller.
+ * When a reset token is created, resetUrl is always returned so the portal can show an
+ * on-page fallback if inbox delivery fails (common on *.vercel.app / Safe Browsing hosts).
  */
 export async function requestPasswordReset(emailRaw: string): Promise<PasswordResetRequestResult> {
   const email = emailRaw.trim().toLowerCase();
   if (!email || !email.includes("@")) {
     return { ok: false, error: "Please enter a valid email." };
+  }
+
+  const n = await cacheIncr(CacheKeys.rateLimit(`password-reset:${email}`), 15 * 60);
+  if (n > 5) {
+    return {
+      ok: false,
+      error: "Too many reset attempts. Please wait about 15 minutes and try again.",
+    };
   }
 
   const account = await getAccountByEmail(email);
@@ -299,9 +326,9 @@ export async function requestPasswordReset(emailRaw: string): Promise<PasswordRe
     html: mail.html,
     text: mail.text,
   });
-  const expose = exposeVerifyLink(sent.ok);
 
-  return { ok: true, emailSent: sent.ok, resetUrl: expose ? resetUrl : undefined };
+  // Always expose the link once a token exists — recovery must not depend on inbox delivery alone.
+  return { ok: true, emailSent: sent.ok, resetUrl };
 }
 
 export async function resetPasswordWithToken(input: {
@@ -330,6 +357,13 @@ export async function resetPasswordWithToken(input: {
   account.passwordHash = hashPassword(input.newPassword);
   account.resetTokenHash = null;
   account.resetTokenExpiresAt = null;
+  // Owning the reset link proves inbox control — mark verified so login works immediately.
+  if (!account.emailVerifiedAt) {
+    account.emailVerifiedAt = new Date().toISOString();
+    account.verifyTokenHash = null;
+    account.verifyCodeHash = null;
+    account.verifyTokenExpiresAt = null;
+  }
   account.updatedAt = new Date().toISOString();
   await saveAccount(account);
   return { ok: true };

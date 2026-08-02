@@ -3,6 +3,7 @@
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
+import { diagnosePasswordLogin } from "@/server/accounts/service";
 
 function isNextRedirectError(error: unknown): boolean {
   return (
@@ -32,6 +33,34 @@ export async function safeCredentialsSignIn(input: {
   callbackUrl?: string;
 }): Promise<void> {
   const callbackUrl = sanitizeCallbackUrl(input.callbackUrl || "/portal");
+  const email = String(input.email || "").trim().toLowerCase();
+  const password = String(input.password || "");
+
+  // Clearer customer-facing codes before Auth.js collapses everything to CredentialsSignin.
+  if (email && password) {
+    try {
+      const diagnosis = await diagnosePasswordLogin(email, password);
+      if (diagnosis.status === "unverified") {
+        redirect(
+          `/login?error=Verification&callbackUrl=${encodeURIComponent(callbackUrl)}`
+        );
+      }
+      if (diagnosis.status === "google_only") {
+        redirect(
+          `/login?error=UseGoogle&callbackUrl=${encodeURIComponent(callbackUrl)}`
+        );
+      }
+      if (diagnosis.status === "missing") {
+        redirect(
+          `/login?error=AccountMissing&callbackUrl=${encodeURIComponent(callbackUrl)}`
+        );
+      }
+    } catch (error) {
+      if (isNextRedirectError(error)) throw error;
+      // Fall through to normal sign-in if diagnosis store is unavailable.
+    }
+  }
+
   try {
     await signIn("credentials", {
       email: input.email,

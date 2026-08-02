@@ -36,8 +36,29 @@ function memoryDel(key: string): void {
   memory.delete(key);
 }
 
+function isUsableEnvValue(raw: string | undefined): boolean {
+  const v = (raw || "").trim();
+  if (!v) return false;
+  const lower = v.toLowerCase();
+  if (
+    lower === "replace_if_available" ||
+    lower === "changeme" ||
+    lower === "your_token_here" ||
+    lower === "todo" ||
+    lower.startsWith("replace_")
+  ) {
+    return false;
+  }
+  return true;
+}
+
 function upstashConfigured(): boolean {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+  const url = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
+  const token = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
+  if (!isUsableEnvValue(url) || !isUsableEnvValue(token)) return false;
+  // Real Upstash REST endpoints are https://*.upstash.io
+  if (!/^https:\/\/[a-z0-9.-]+\.upstash\.io\/?/i.test(url)) return false;
+  return true;
 }
 
 export function getCacheBackend(): "upstash" | "memory" {

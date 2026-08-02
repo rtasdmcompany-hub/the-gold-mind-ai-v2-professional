@@ -1183,8 +1183,8 @@
   }
   .e-dashboard--portrait {
     justify-self: center;
-    max-width: 280px;
-    max-height: min(64vh, 520px);
+    max-width: 320px;
+    max-height: min(70vh, 580px);
   }
   .e-grid-3, .e-grid-4, .e-trust-grid { grid-template-columns: repeat(2, 1fr); }
   .e-footer-grid { grid-template-columns: repeat(2, 1fr); }

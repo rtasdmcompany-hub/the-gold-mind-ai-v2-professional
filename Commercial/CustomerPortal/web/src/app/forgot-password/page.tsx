@@ -14,9 +14,17 @@ export const metadata: Metadata = {
 export default async function ForgotPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; sent?: string; email?: string; reset?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    sent?: string;
+    email?: string;
+    reset?: string;
+    mailed?: string;
+  }>;
 }) {
   const sp = await searchParams;
+  const emailDelivered = sp.mailed === "1";
+  const hasResetLink = !!(sp.reset || "").trim();
 
   return (
     <EnterpriseShell>
@@ -34,26 +42,47 @@ export default async function ForgotPasswordPage({
           <ScrollReveal>
             {sp.sent === "1" ? (
               <div className="e-glass-card">
-                <h2 style={{ marginTop: 0 }}>Check your email</h2>
-                <p>
-                  If an account exists for <strong>{sp.email || "that address"}</strong>, we sent a password reset
-                  link. It expires in 1 hour.
-                </p>
-                {sp.reset ? (
+                <h2 style={{ marginTop: 0 }}>
+                  {hasResetLink || emailDelivered ? "Reset your password" : "Check your options"}
+                </h2>
+                {emailDelivered ? (
+                  <p>
+                    A password reset email was sent to <strong>{sp.email || "that address"}</strong>.
+                    It expires in 1 hour. Check Inbox and Spam/Promotions.
+                  </p>
+                ) : hasResetLink ? (
+                  <p>
+                    We could not deliver email automatically for{" "}
+                    <strong>{sp.email || "that address"}</strong>. Use the secure reset link below
+                    (expires in 1 hour), then sign in.
+                  </p>
+                ) : (
+                  <p>
+                    No password-reset mail could be prepared for{" "}
+                    <strong>{sp.email || "that address"}</strong>. This usually means the account is
+                    missing, uses Google Sign-In only, or the portal store was reset. Create the
+                    account again or sign in with Google.
+                  </p>
+                )}
+                {hasResetLink ? (
                   <p style={{ fontSize: 13, wordBreak: "break-all" }}>
                     Reset link:{" "}
                     <a href={sp.reset} style={{ color: "var(--e-gold)" }}>
                       {sp.reset}
                     </a>
                   </p>
-                ) : (
-                  <p style={{ fontSize: 13, color: "var(--e-text-muted)" }}>
-                    Check your inbox (and spam) for the reset link.
-                  </p>
-                )}
-                <p style={{ fontSize: 13, marginBottom: 0 }}>
-                  Remembered it? <Link href="/login">Sign in</Link>
-                </p>
+                ) : null}
+                <div className="e-btn-group" style={{ marginTop: 16, flexWrap: "wrap" }}>
+                  <Link href="/login" className="e-btn e-btn-primary">
+                    Sign In
+                  </Link>
+                  <Link href="/register" className="e-btn e-btn-ghost">
+                    Create Account
+                  </Link>
+                  <Link href="/login?provider=google" className="e-btn e-btn-ghost">
+                    Google Sign-In
+                  </Link>
+                </div>
               </div>
             ) : (
               <form
@@ -65,7 +94,11 @@ export default async function ForgotPasswordPage({
                   if (!result.ok) {
                     redirect(`/forgot-password?error=${encodeURIComponent(result.error)}`);
                   }
-                  const q = new URLSearchParams({ sent: "1", email: email.trim().toLowerCase() });
+                  const q = new URLSearchParams({
+                    sent: "1",
+                    email: email.trim().toLowerCase(),
+                    mailed: result.emailSent ? "1" : "0",
+                  });
                   if (result.resetUrl) q.set("reset", result.resetUrl);
                   redirect(`/forgot-password?${q.toString()}`);
                 }}
@@ -77,13 +110,22 @@ export default async function ForgotPasswordPage({
                 )}
                 <div className="e-field">
                   <label htmlFor="email">Account email</label>
-                  <input id="email" name="email" type="email" placeholder="you@company.com" required autoComplete="email" />
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="you@company.com"
+                    required
+                    autoComplete="email"
+                  />
                 </div>
                 <button type="submit" className="e-btn e-btn-primary">
                   Send Reset Link
                 </button>
                 <p style={{ fontSize: 13, marginBottom: 0 }}>
                   <Link href="/login">Back to sign in</Link>
+                  {" · "}
+                  <Link href="/register">Create account</Link>
                 </p>
               </form>
             )}
