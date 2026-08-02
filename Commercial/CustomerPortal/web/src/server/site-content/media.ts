@@ -12,7 +12,7 @@ import { isServerlessRuntime } from "@/server/cloud/data-root";
 import { saveStoredMedia } from "./store";
 
 const MAX_DURABLE_BYTES = 1_400_000; // stay under typical Upstash value limits
-const MAX_UPLOAD_BYTES = 80 * 1024 * 1024; // 80MB hard cap for Blob/local
+const MAX_UPLOAD_BYTES = 500 * 1024 * 1024; // 500MB CMS cap (existing exports / YouCut)
 
 const ALLOWED_EXT: Record<string, string> = {
   ".mp4": "video/mp4",

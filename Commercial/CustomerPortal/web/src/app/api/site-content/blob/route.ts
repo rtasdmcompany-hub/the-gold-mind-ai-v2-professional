@@ -60,7 +60,9 @@ export async function POST(request: Request): Promise<NextResponse> {
             "application/octet-stream",
           ],
           addRandomSuffix: true,
-          maximumSizeInBytes: 80 * 1024 * 1024,
+          // Phone/hero ads: allow large existing exports (YouCut etc.). Blob supports far more;
+          // keep a practical CMS cap so homepage media stays usable.
+          maximumSizeInBytes: 500 * 1024 * 1024,
           tokenPayload: JSON.stringify({ email: em || "admin" }),
         };
       },

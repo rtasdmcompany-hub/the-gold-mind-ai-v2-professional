@@ -32,7 +32,18 @@ async function uploadViaServerApi(file: File): Promise<string> {
   return json.url;
 }
 
+function humanMb(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 async function uploadMediaFile(file: File, preferClientBlob: boolean): Promise<string> {
+  const maxBytes = 500 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    throw new Error(
+      `This video is ${humanMb(file.size)} — CMS limit is 500 MB. Compress/export a smaller MP4 (phone ads work best under ~15–25 MB), then upload again.`
+    );
+  }
+
   // Direct-to-Blob for larger files (avoids Vercel ~4.5MB function body limit).
   if (preferClientBlob || file.size > 3_500_000) {
     try {
@@ -44,10 +55,16 @@ async function uploadMediaFile(file: File, preferClientBlob: boolean): Promise<s
         access: "public",
         handleUploadUrl: "/api/site-content/blob",
         contentType: file.type || undefined,
+        multipart: file.size > 8 * 1024 * 1024,
       });
       if (blob?.url) return blob.url;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Blob upload failed";
+      if (/too large|maximumSizeInBytes|83886080|file length/i.test(msg)) {
+        throw new Error(
+          `Video file is too large (${humanMb(file.size)}). After refresh, limit is 500 MB — or compress the MP4 and retry.`
+        );
+      }
       // Fall back to server API for small files / misconfigured blob.
       if (file.size > 4_200_000) throw new Error(msg);
     }
@@ -171,8 +188,9 @@ export function SiteContentAdminClient({
           Small durable images: ≤ {uploadHints.durableMaxMb}MB
         </p>
         <p className="meta">
-          Videos upload directly to Vercel Blob (up to ~80MB). After choosing a file, click{" "}
-          <strong>Save phone ads</strong>. You can also paste any public HTTPS MP4 URL.
+          Videos upload to Vercel Blob (max <strong>500 MB</strong> per file). This is a size limit on the
+          file you choose — not new video generation. Phone ads load best under ~15–25 MB. After upload, click{" "}
+          <strong>Save playlist</strong>.
         </p>
       </div>
 
