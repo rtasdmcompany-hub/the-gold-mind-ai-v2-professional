@@ -72,11 +72,13 @@ export function HeroDashboard() {
     setReady(false);
     if (!loadVideo || !videoRef.current || !ad) return;
     const v = videoRef.current;
-    v.muted = muted;
+    v.muted = true; // start muted; mute state effect syncs after user toggle
     v.load();
     const play = () => v.play().catch(() => undefined);
     if (v.readyState >= 2) play();
     else v.addEventListener("canplay", play, { once: true });
+    // Reload only when the active ad media changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ad object identity changes each fetch
   }, [loadVideo, ad?.id, ad?.video]);
 
   useEffect(() => {
