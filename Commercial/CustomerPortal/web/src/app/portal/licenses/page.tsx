@@ -10,10 +10,18 @@ import Link from "next/link";
 import { product } from "@/lib/product";
 
 export default async function LicensesPage() {
-  await ensureSeedData();
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
-  const licenses = listLicensesForCustomer(session.user.email);
+
+  let licenses: ReturnType<typeof listLicensesForCustomer> = [];
+  let loadError: string | null = null;
+  try {
+    await ensureSeedData();
+    licenses = listLicensesForCustomer(session.user.email);
+  } catch (e) {
+    loadError = e instanceof Error ? e.message : "LICENSE_PAGE_LOAD_FAILED";
+    console.error("[portal/licenses] load failed", loadError);
+  }
   const allowPaidSelfServe = isSelfServePaidLicenseAllowed();
 
   return (
@@ -27,6 +35,16 @@ export default async function LicensesPage() {
           <Link href="/portal/billing">Billing</Link>
         </p>
       </header>
+
+      {loadError ? (
+        <div className="card" style={{ marginBottom: 16, borderColor: "#a44" }}>
+          <h3 style={{ marginBottom: 6 }}>Could not load licenses</h3>
+          <p className="meta">
+            The license list is temporarily unavailable. You can still try generating a trial key below, or
+            refresh in a moment.
+          </p>
+        </div>
+      ) : null}
 
       <LicenseStoreBanner />
       <LicenseActionsPanel allowPaidSelfServe={allowPaidSelfServe} />

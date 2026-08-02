@@ -33,38 +33,51 @@ export async function actionCreateLicense(type: LicenseType) {
       reused: false,
     };
   }
-  assertDurableStoreForLicensing();
-  await ensureStoreLoaded();
-  const h = await headers();
-  const clientIp = clientIpFromHeaders(h);
-  const result = createLicense({
-    customerEmail: s.email,
-    customerName: s.name,
-    type,
-    actorEmail: s.email,
-    clientIp,
-  });
-  if (!result.ok) {
+  try {
+    await ensureStoreLoaded();
+    const h = await headers();
+    const clientIp = clientIpFromHeaders(h);
+    const result = createLicense({
+      customerEmail: s.email,
+      customerName: s.name,
+      type,
+      actorEmail: s.email,
+      clientIp,
+    });
+    if (!result.ok) {
+      await flushStoreVerified().catch(() => undefined);
+      revalidatePath("/portal/licenses");
+      return {
+        ok: false as const,
+        error: result.error,
+        plaintextKey: "",
+        license: result.license ?? null,
+        reused: false,
+      };
+    }
     await flushStoreVerified().catch(() => undefined);
+    revalidatePath("/portal");
     revalidatePath("/portal/licenses");
+    revalidatePath("/portal/subscriptions");
+    return {
+      ok: true as const,
+      license: result.license,
+      plaintextKey: result.plaintextKey,
+      reused: result.reused,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "LICENSE_CREATE_FAILED";
+    console.error("[licensing] actionCreateLicense failed", msg);
     return {
       ok: false as const,
-      error: result.error,
+      error: msg.includes("DURABLE_STORE")
+        ? "License storage is temporarily unavailable. Please try again shortly or contact support."
+        : msg,
       plaintextKey: "",
-      license: result.license ?? null,
+      license: null,
       reused: false,
     };
   }
-  await flushStoreVerified();
-  revalidatePath("/portal");
-  revalidatePath("/portal/licenses");
-  revalidatePath("/portal/subscriptions");
-  return {
-    ok: true as const,
-    license: result.license,
-    plaintextKey: result.plaintextKey,
-    reused: result.reused,
-  };
 }
 
 export async function actionActivateLicense(formData: FormData) {

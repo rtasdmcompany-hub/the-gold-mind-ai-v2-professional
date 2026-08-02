@@ -10,7 +10,12 @@ const ADMIN_EMAIL = "admin@goldmind.local";
  * Always loads durable store first so Vercel cold starts see real activations.
  */
 export async function ensureSeedData(): Promise<{ demoKey?: string; adminKey?: string }> {
-  await ensureStoreLoaded();
+  try {
+    await ensureStoreLoaded();
+  } catch (e) {
+    console.warn("[licensing] ensureSeedData load skipped", e instanceof Error ? e.message : e);
+    return {};
+  }
   const data = readStore();
   if (data.licenses.length > 0) return {};
 

@@ -1,6 +1,5 @@
 import fs from "fs";
 import {
-  assertDurableStoreForLicensing,
   durableGet,
   durableSet,
   isDurableStoreConfigured,
@@ -70,8 +69,13 @@ function loadRawFromDisk(): LicenseStoreData {
   try {
     const blob = fs.readFileSync(p, "utf8");
     return normalizeStoreShape(decryptJson<LicenseStoreData>(blob));
-  } catch {
-    throw new Error("LICENSE_STORE_TAMPER_OR_DECRYPT_FAIL");
+  } catch (e) {
+    // Never crash Customer Portal pages on a stale/corrupt /tmp blob.
+    console.warn(
+      "[licensing] store decrypt failed — starting empty store",
+      e instanceof Error ? e.message : e
+    );
+    return structuredClone(EMPTY);
   }
 }
 
@@ -120,7 +124,13 @@ export function readStore(): LicenseStoreData {
 }
 
 export function writeStore(data: LicenseStoreData): void {
-  assertDurableStoreForLicensing();
+  // Portal UI must remain usable even when Upstash is not configured yet.
+  // Installer activation still gates on /api/licenses/ready (durable required on Vercel).
+  if (!isDurableStoreConfigured()) {
+    console.warn(
+      "[licensing] durable store missing — writing ephemerally only (configure UPSTASH_REDIS_REST_URL/TOKEN)"
+    );
+  }
   memoryCache = data;
   const blob = encryptJson(data);
   writeChain = writeChain.then(async () => {
@@ -131,9 +141,7 @@ export function writeStore(data: LicenseStoreData): void {
     }
     if (isDurableStoreConfigured()) {
       await durableSet(DURABLE_KEY, blob);
-      return;
     }
-    // Local/dev only — file write above is enough. Production is blocked by assertDurableStoreForLicensing.
   });
 }
 

@@ -25,9 +25,9 @@ export function LicenseStoreBanner() {
         if (!cancelled) {
           setState({
             ready: !!(j.ready || j.ok),
-            durable: !!j.durable,
-            backend: String(j.backend || "unknown"),
-            message: String(j.message || ""),
+            durable: !!(j.durableConfigured ?? j.durable),
+            backend: String(j.backend || (j.durableConfigured ? "upstash" : "ephemeral")),
+            message: String(j.detail || j.message || ""),
           });
         }
       })
@@ -65,8 +65,14 @@ export function LicenseStoreBanner() {
     <div className="card" style={{ marginBottom: 16, borderColor: "#a44" }}>
       <h3 style={{ marginBottom: 6 }}>License activation temporarily unavailable</h3>
       <p className="meta">
-        We can&apos;t confirm activations right now. Please try again shortly, or contact support if this
-        persists.
+        Installer activation needs durable license storage (Upstash Redis) on this host. You can still view
+        and generate keys in the portal; Setup activation may fail until storage is configured.
+        {state.message ? (
+          <>
+            {" "}
+            <span className="mono">{state.message}</span>
+          </>
+        ) : null}
       </p>
     </div>
   );
