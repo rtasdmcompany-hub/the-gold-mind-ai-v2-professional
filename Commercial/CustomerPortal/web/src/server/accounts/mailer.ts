@@ -25,20 +25,32 @@ export async function sendTransactionalEmail(input: {
   template?: EmailTemplate;
 }): Promise<MailSendResult> {
   const template = input.template || "support_ticket";
-  const outboxId = queueCommercialEmail({
-    to: input.to,
-    template,
-    subject: input.subject,
-    body: input.text,
-    status: "queued",
-  });
+  let outboxId: string | undefined;
+  try {
+    outboxId = queueCommercialEmail({
+      to: input.to,
+      template,
+      subject: input.subject,
+      body: input.text,
+      status: "queued",
+    });
+  } catch (e) {
+    // Outbox must never block signup / reset / contact when billing durability is unavailable.
+    console.warn(
+      `[mailer] outbox queue skipped: ${e instanceof Error ? e.message : e} (to=${input.to})`
+    );
+  }
 
   const apiKey = (process.env.RESEND_API_KEY || "").trim();
   const from = brand.resendFrom.trim();
   if (!apiKey || !from) {
     const error = "Email delivery is not configured (RESEND_API_KEY / brand From missing).";
-    console.warn(`[mailer] Outbox only — ${error} (to=${input.to} outbox=${outboxId})`);
-    updateCommercialEmailStatus(outboxId, "failed", error);
+    console.warn(`[mailer] Outbox only — ${error} (to=${input.to} outbox=${outboxId || "none"})`);
+    try {
+      updateCommercialEmailStatus(outboxId, "failed", error);
+    } catch {
+      /* ignore */
+    }
     return { ok: false, mode: "outbox", error, outboxId };
   }
 
@@ -69,20 +81,32 @@ export async function sendTransactionalEmail(input: {
 
     if (!res.ok) {
       const error = `Resend ${res.status}: ${bodyText.slice(0, 180)}`;
-      console.warn(`[mailer] ${error} (to=${input.to} outbox=${outboxId})`);
-      updateCommercialEmailStatus(outboxId, "failed", error);
+      console.warn(`[mailer] ${error} (to=${input.to} outbox=${outboxId || "none"})`);
+      try {
+        updateCommercialEmailStatus(outboxId, "failed", error);
+      } catch {
+        /* ignore */
+      }
       return { ok: false, mode: "outbox", error, outboxId };
     }
 
     console.info(
-      `[mailer] Resend OK id=${providerId || "unknown"} → ${input.to} · ${input.subject} (outbox=${outboxId})`
+      `[mailer] Resend OK id=${providerId || "unknown"} → ${input.to} · ${input.subject} (outbox=${outboxId || "none"})`
     );
-    updateCommercialEmailStatus(outboxId, "sent");
+    try {
+      updateCommercialEmailStatus(outboxId, "sent");
+    } catch {
+      /* ignore */
+    }
     return { ok: true, mode: "resend", providerId, outboxId };
   } catch (e) {
     const error = e instanceof Error ? e.message : "send failed";
-    console.warn(`[mailer] Resend exception: ${error} (to=${input.to} outbox=${outboxId})`);
-    updateCommercialEmailStatus(outboxId, "failed", error);
+    console.warn(`[mailer] Resend exception: ${error} (to=${input.to} outbox=${outboxId || "none"})`);
+    try {
+      updateCommercialEmailStatus(outboxId, "failed", error);
+    } catch {
+      /* ignore */
+    }
     return { ok: false, mode: "outbox", error, outboxId };
   }
 }

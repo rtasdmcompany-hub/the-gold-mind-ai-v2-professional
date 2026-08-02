@@ -134,21 +134,39 @@ export default async function RegisterPage({
                 className="e-glass-card e-form"
                 action={async (fd) => {
                   "use server";
-                  const result = await registerAccount({
-                    name: String(fd.get("name") || ""),
-                    email: String(fd.get("email") || ""),
-                    password: String(fd.get("password") || ""),
-                  });
-                  if (!result.ok) {
-                    redirect(`/register?error=${encodeURIComponent(result.error)}`);
+                  try {
+                    const result = await registerAccount({
+                      name: String(fd.get("name") || ""),
+                      email: String(fd.get("email") || ""),
+                      password: String(fd.get("password") || ""),
+                    });
+                    if (!result.ok) {
+                      redirect(`/register?error=${encodeURIComponent(result.error)}`);
+                    }
+                    const q = new URLSearchParams({
+                      sent: "1",
+                      email: result.email,
+                      mailed: result.emailSent ? "1" : "0",
+                    });
+                    if (result.verifyUrl) q.set("verify", result.verifyUrl);
+                    redirect(`/register?${q.toString()}`);
+                  } catch (error) {
+                    // Next.js redirect() throws — must rethrow.
+                    if (
+                      typeof error === "object" &&
+                      error !== null &&
+                      "digest" in error &&
+                      String((error as { digest?: unknown }).digest || "").startsWith("NEXT_REDIRECT")
+                    ) {
+                      throw error;
+                    }
+                    console.error("[register] unexpected failure", error);
+                    redirect(
+                      `/register?error=${encodeURIComponent(
+                        "Registration hit a temporary server issue. Please try again, or use Google Sign-In."
+                      )}`
+                    );
                   }
-                  const q = new URLSearchParams({
-                    sent: "1",
-                    email: result.email,
-                    mailed: result.emailSent ? "1" : "0",
-                  });
-                  if (result.verifyUrl) q.set("verify", result.verifyUrl);
-                  redirect(`/register?${q.toString()}`);
                 }}
               >
                 {sp.error && (

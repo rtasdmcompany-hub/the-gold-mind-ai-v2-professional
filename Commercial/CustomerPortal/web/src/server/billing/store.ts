@@ -135,7 +135,13 @@ export function readBillingStore(): BillingStoreData {
 }
 
 export function writeBillingStore(data: BillingStoreData): void {
-  assertDurableStoreForBilling();
+  // Never hard-crash customer flows (register / password reset / contact) when Upstash
+  // is missing. Money-critical APIs still call assertDurableStoreForBilling() explicitly.
+  if (isDurableStoreRequired() && !isDurableStoreConfigured()) {
+    console.warn(
+      "[billing] durable store missing — persisting ephemerally only (configure UPSTASH_REDIS_REST_URL/TOKEN)"
+    );
+  }
   cache = data;
   const blob = encryptJson(data);
   writeChain = writeChain.then(async () => {
