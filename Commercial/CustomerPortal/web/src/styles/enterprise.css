@@ -679,18 +679,37 @@
 
 /* Keep original hero type styles; center the block in the left column */
 .e-hero-content {
-  max-width: 36rem;
+  max-width: 40rem;
   width: 100%;
   margin-inline: auto;
   text-align: center;
 }
 
+.e-hero-content .e-eyebrow {
+  font-size: clamp(13px, 1.5vw, 16px);
+  letter-spacing: 0.16em;
+  margin-bottom: 14px;
+}
+
+.e-hero-content .e-hero-title {
+  font-size: clamp(3.1rem, 6.4vw, 5rem);
+}
+
 .e-hero-content .e-lead {
   margin-inline: auto;
+  font-size: clamp(1.1rem, 2.2vw, 1.3rem);
+  max-width: 36rem;
+  line-height: 1.6;
 }
 
 .e-hero-content .e-btn-group {
   justify-content: center;
+  gap: 14px;
+}
+
+.e-hero-content .e-btn {
+  font-size: 16px;
+  padding: 16px 30px;
 }
 
 .e-hero-grid > .e-reveal:first-child {
