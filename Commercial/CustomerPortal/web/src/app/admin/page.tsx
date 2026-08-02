@@ -8,6 +8,7 @@ import { FinancialParticles } from "@/components/enterprise/FinancialParticles";
 import { brand } from "@/lib/brand";
 import { canAccessAdminConsole } from "@/server/admin/roles";
 import { isDevAdminBypass } from "@/server/security/dev-bypass";
+import { ensureBootstrapAdminFromEnv } from "@/server/accounts/service";
 import { safeCredentialsSignIn } from "@/server/auth/safe-signin";
 
 const CMS_PATH = "/portal/admin/site-content";
@@ -36,6 +37,13 @@ export default async function AdminEntryPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  // Ensure owner admin account exists (from Vercel bootstrap env) before login UI.
+  try {
+    await ensureBootstrapAdminFromEnv();
+  } catch {
+    /* non-fatal */
+  }
+
   let session: Session | null = null;
   try {
     session = await auth();

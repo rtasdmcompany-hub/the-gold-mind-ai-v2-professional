@@ -24,11 +24,15 @@ function envList(name: string, fallback = ""): string[] {
     .filter(Boolean);
 }
 
+/** Built-in owner fallback when Vercel roster env is missing. */
+const DEFAULT_SUPER_ADMINS = "rtasdmcompany@gmail.com";
+
 function resolveRole(email: string, explicit?: string): CloudRole {
   const e = (email || "").toLowerCase().trim();
   // Env roster always wins for elevation (even if JWT/session previously said "customer").
-  if (e && envList("PORTAL_SUPER_ADMIN_EMAILS").includes(e)) return "super_admin";
+  if (e && envList("PORTAL_SUPER_ADMIN_EMAILS", DEFAULT_SUPER_ADMINS).includes(e)) return "super_admin";
   if (e && envList("PORTAL_ADMIN_EMAILS").includes(e)) return "super_admin";
+  if (e && envList("PORTAL_BOOTSTRAP_ADMIN_EMAIL").includes(e)) return "super_admin";
   if (e && envList("PORTAL_COMMERCIAL_MANAGER_EMAILS").includes(e)) return "commercial_manager";
   if (e && envList("PORTAL_FINANCE_EMAILS").includes(e)) return "finance_manager";
   if (e && envList("PORTAL_QA_EMAILS").includes(e)) return "qa_manager";

@@ -62,6 +62,67 @@ async function issueVerificationEmail(account: AccountRecord): Promise<{
   return { emailSent: sent.ok, verifyUrl };
 }
 
+/**
+ * Ensure a verified email/password admin account exists from env.
+ * Used when durable Redis is missing (ephemeral serverless) or for owner bootstrap.
+ *
+ * Env:
+ * - PORTAL_BOOTSTRAP_ADMIN_EMAIL
+ * - PORTAL_BOOTSTRAP_ADMIN_PASSWORD
+ * - PORTAL_BOOTSTRAP_ADMIN_NAME (optional)
+ */
+export async function ensureBootstrapAdminFromEnv(): Promise<{
+  ok: boolean;
+  email?: string;
+  created?: boolean;
+  updated?: boolean;
+  reason?: string;
+}> {
+  const email = (process.env.PORTAL_BOOTSTRAP_ADMIN_EMAIL || "").trim().toLowerCase();
+  const password = process.env.PORTAL_BOOTSTRAP_ADMIN_PASSWORD || "";
+  const name =
+    (process.env.PORTAL_BOOTSTRAP_ADMIN_NAME || "").trim() ||
+    email.split("@")[0] ||
+    "Owner Admin";
+
+  if (!email || !email.includes("@")) {
+    return { ok: false, reason: "PORTAL_BOOTSTRAP_ADMIN_EMAIL unset" };
+  }
+  if (password.length < 8) {
+    return { ok: false, reason: "PORTAL_BOOTSTRAP_ADMIN_PASSWORD unset/short" };
+  }
+
+  const existing = await getAccountByEmail(email);
+  const now = new Date().toISOString();
+
+  if (existing?.passwordHash && existing.emailVerifiedAt && verifyPassword(password, existing.passwordHash)) {
+    if (existing.provider === "google") {
+      existing.provider = "both";
+      existing.updatedAt = now;
+      await saveAccount(existing);
+      return { ok: true, email, updated: true };
+    }
+    return { ok: true, email, updated: false };
+  }
+
+  const account: AccountRecord = {
+    id: existing?.id || newAccountId(),
+    email,
+    name: existing?.name || name,
+    passwordHash: hashPassword(password),
+    emailVerifiedAt: existing?.emailVerifiedAt || now,
+    verifyTokenHash: null,
+    verifyCodeHash: null,
+    verifyTokenExpiresAt: null,
+    provider: existing?.provider === "google" || existing?.provider === "both" ? "both" : "credentials",
+    tradeAlertsEnabled: existing?.tradeAlertsEnabled,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+  };
+  await saveAccount(account);
+  return { ok: true, email, created: !existing, updated: !!existing };
+}
+
 export type SignupResult =
   | { ok: true; email: string; emailSent: boolean; verifyUrl?: string }
   | { ok: false; error: string };
@@ -203,6 +264,7 @@ export async function diagnosePasswordLogin(
   emailRaw: string,
   password: string
 ): Promise<PasswordAuthDiagnosis> {
+  await ensureBootstrapAdminFromEnv();
   const email = emailRaw.trim().toLowerCase();
   const account = await getAccountByEmail(email);
   if (!account) return { status: "missing" };
@@ -216,6 +278,8 @@ export async function authenticatePassword(
   emailRaw: string,
   password: string
 ): Promise<AccountRecord | null> {
+  // Keep bootstrap admin available even on ephemeral serverless instances.
+  await ensureBootstrapAdminFromEnv();
   const result = await diagnosePasswordLogin(emailRaw, password);
   return result.status === "ok" ? result.account : null;
 }
