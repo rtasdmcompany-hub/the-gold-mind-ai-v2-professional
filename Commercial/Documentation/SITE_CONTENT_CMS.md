@@ -23,10 +23,12 @@ If the account is Google-only, either:
 
 Edit without redeploying:
 
-- iPhone panel rotating video ads
+- iPhone panel **video playlist / relay** (1→2→3… loop; add 5–6+ ads; delete only via admin)
 - Hero background video / poster + headline / CTAs
 - Header logo + brand wordmark / CTA
 - Footer logos + description / copyright / risk line
+
+Playlist items stay until admin clicks **Delete Ad** + **Save playlist**. Content JSON persists to Upstash and/or Vercel Blob.
 
 ## How video upload works
 

@@ -30,14 +30,14 @@ export default async function AdminSiteContentPage() {
       <header style={{ marginBottom: 20 }}>
         <h1 className="page-title">Site Content Manager</h1>
         <p className="page-sub">
-          cPanel-style editor for phone videos, hero media, logos, and header/footer lines · last saved{" "}
+          cPanel-style editor · phone playlist/relay, hero, logos, header/footer · last saved{" "}
           {content.updatedAt && content.updatedAt !== new Date(0).toISOString()
             ? content.updatedAt
             : "defaults (not saved yet)"}{" "}
-          · store {isSiteContentDurable() ? "durable (Upstash)" : "ephemeral / local file"}
+          · store {isSiteContentDurable() ? "durable (Upstash / Blob)" : "ephemeral / local file"}
         </p>
         <p className="meta">
-          Open sections: <a href="#phone-ads">Phone ads</a> · <a href="#hero">Hero</a> ·{" "}
+          Open sections: <a href="#phone-ads">Video playlist</a> · <a href="#hero">Hero</a> ·{" "}
           <a href="#logos">Logos</a> · <a href="#copy">Header &amp; footer</a>
         </p>
       </header>

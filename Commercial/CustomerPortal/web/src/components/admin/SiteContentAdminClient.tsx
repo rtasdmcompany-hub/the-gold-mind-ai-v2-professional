@@ -121,9 +121,9 @@ function UploadField({
 
 function emptyAd(): PhoneAd {
   return {
-    id: `ad_${Date.now().toString(36)}`,
+    id: `ad_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
     enabled: true,
-    title: "",
+    title: "New ad",
     details: "",
     href: "https://",
     video: "",
@@ -176,30 +176,61 @@ export function SiteContentAdminClient({
         </p>
       </div>
 
-      {/* Phone ads */}
+      {/* Phone ads playlist / relay */}
       <section className="card" id="phone-ads">
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div>
-            <h2 style={{ marginTop: 0 }}>iPhone video panel ads</h2>
-            <p className="meta">Rotating clickable videos on the homepage phone mockup.</p>
+            <h2 style={{ marginTop: 0 }}>iPhone video playlist (relay)</h2>
+            <p className="meta">
+              Ads play one after another (1 → 2 → 3 → … → 1). Add as many as you want (5, 6, or more).
+              Nothing is removed until you click <strong>Delete Ad</strong> and save.
+            </p>
           </div>
           {canWrite ? (
             <form action={actionResetSiteContentSection}>
               <input type="hidden" name="section" value="phoneAds" />
-              <button type="submit" className="btn">Reset ads to default</button>
+              <button type="submit" className="btn">Reset to default ad</button>
             </form>
           ) : null}
         </div>
 
-        <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
+        <p className="meta" style={{ marginBottom: 12 }}>
+          Playlist size: <strong>{ads.length}</strong> · Enabled:{" "}
+          <strong>{ads.filter((a) => a.enabled).length}</strong> · Order = play order
+        </p>
+
+        <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
           <input
             type="checkbox"
             checked={rotateOnEnd}
             disabled={!canWrite}
             onChange={(e) => setRotateOnEnd(e.target.checked)}
           />
-          Rotate to next ad when video ends
+          Relay mode — when a video ends, play the next ad (then loop)
         </label>
+
+        {canWrite ? (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setAds((p) => [...p, emptyAd()])}
+            >
+              + Add Ad
+            </button>
+            <form action={actionSavePhoneAds}>
+              <input type="hidden" name="adsJson" value={adsJson} />
+              <input type="hidden" name="rotateOnEnd" value={rotateOnEnd ? "on" : ""} />
+              <button type="submit" className="btn btn-primary">
+                Save playlist
+              </button>
+            </form>
+          </div>
+        ) : null}
+
+        {ads.length === 0 ? (
+          <p className="meta">No ads in playlist. Click <strong>+ Add Ad</strong> to create the first one.</p>
+        ) : null}
 
         {ads.map((ad, idx) => (
           <div
@@ -207,8 +238,11 @@ export function SiteContentAdminClient({
             className="card"
             style={{ marginBottom: 12, background: "var(--surface-2, #f7f7f7)" }}
           >
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-              <strong>Ad #{idx + 1}</strong>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <strong>
+                Ad #{idx + 1}
+                <span className="meta"> / {ads.length}</span>
+              </strong>
               <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <input
                   type="checkbox"
@@ -216,12 +250,58 @@ export function SiteContentAdminClient({
                   disabled={!canWrite}
                   onChange={(e) => updateAd(idx, { enabled: e.target.checked })}
                 />
-                Enabled
+                Enabled in relay
               </label>
               {canWrite ? (
-                <button type="button" className="btn" onClick={() => setAds((p) => p.filter((_, i) => i !== idx))}>
-                  Remove
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={idx === 0}
+                    onClick={() =>
+                      setAds((p) => {
+                        if (idx <= 0) return p;
+                        const next = [...p];
+                        [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                        return next;
+                      })
+                    }
+                  >
+                    ↑ Up
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={idx >= ads.length - 1}
+                    onClick={() =>
+                      setAds((p) => {
+                        if (idx >= p.length - 1) return p;
+                        const next = [...p];
+                        [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+                        return next;
+                      })
+                    }
+                  >
+                    ↓ Down
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ borderColor: "#b00020", color: "#b00020" }}
+                    onClick={() => {
+                      const label = ad.title || ad.id || `#${idx + 1}`;
+                      if (
+                        typeof window !== "undefined" &&
+                        !window.confirm(`Delete Ad #${idx + 1} (${label}) from the playlist?`)
+                      ) {
+                        return;
+                      }
+                      setAds((p) => p.filter((_, i) => i !== idx));
+                    }}
+                  >
+                    Delete Ad
+                  </button>
+                </>
               ) : null}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 10 }}>
@@ -262,19 +342,29 @@ export function SiteContentAdminClient({
                 onChange={(url) => updateAd(idx, { poster: url })}
               />
             </div>
+            {!ad.video || !ad.poster ? (
+              <p className="meta" style={{ color: "#a15c00", marginTop: 8 }}>
+                Incomplete — needs video + poster before it plays on the homepage. It stays in the playlist until you
+                delete it.
+              </p>
+            ) : null}
           </div>
         ))}
 
         {canWrite ? (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" className="btn" onClick={() => setAds((p) => [...p, emptyAd()])}>
-              + Add ad
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setAds((p) => [...p, emptyAd()])}
+            >
+              + Add Ad
             </button>
             <form action={actionSavePhoneAds}>
               <input type="hidden" name="adsJson" value={adsJson} />
               <input type="hidden" name="rotateOnEnd" value={rotateOnEnd ? "on" : ""} />
               <button type="submit" className="btn btn-primary">
-                Save phone ads
+                Save playlist
               </button>
             </form>
           </div>

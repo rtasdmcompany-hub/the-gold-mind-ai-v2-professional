@@ -12,6 +12,13 @@ import {
   isDurableStoreConfigured,
 } from "@/server/cloud/cache";
 import { DEFAULT_PHONE_ADS, type PhoneAd } from "@/content/phone-ads";
+import {
+  blobGetMediaIndex,
+  blobGetSiteContent,
+  blobSetMediaIndex,
+  blobSetSiteContent,
+  isBlobPersistConfigured,
+} from "./blob-persist";
 import { defaultSiteContent } from "./defaults";
 import type {
   MediaStoreData,
@@ -72,26 +79,28 @@ function str(v: unknown, fallback = ""): string {
   return typeof v === "string" ? v.trim() : fallback;
 }
 
-/** Admin-facing normalize that preserves disabled ads. */
+/** Admin-facing normalize — keeps playlist items until admin deletes (id required). */
 export function normalizePhoneAdsForAdmin(raw: unknown): PhoneAd[] {
   if (!raw || typeof raw !== "object") return DEFAULT_PHONE_ADS.map((a) => ({ ...a }));
   const ads = (raw as { ads?: unknown }).ads;
-  if (!Array.isArray(ads) || ads.length === 0) return DEFAULT_PHONE_ADS.map((a) => ({ ...a }));
+  // Empty array is intentional (admin cleared playlist) — do not force defaults here.
+  if (!Array.isArray(ads)) return DEFAULT_PHONE_ADS.map((a) => ({ ...a }));
   return ads
     .filter((a) => a && typeof a === "object")
-    .map((a) => {
+    .map((a, i) => {
       const row = a as Partial<PhoneAd>;
+      const id = str(row.id) || `ad_${Date.now().toString(36)}_${i}`;
       return {
-        id: str(row.id),
+        id,
         enabled: row.enabled !== false,
-        title: str(row.title) || "Product ad",
+        title: str(row.title) || `Ad ${i + 1}`,
         details: str(row.details),
-        href: str(row.href),
+        href: str(row.href) || "#",
         video: str(row.video),
         poster: str(row.poster),
       };
     })
-    .filter((a) => a.id && a.href && a.video && a.poster);
+    .filter((a) => a.id);
 }
 
 function normalizeHero(raw: unknown, base: SiteHeroContent): SiteHeroContent {
@@ -153,7 +162,8 @@ export function normalizeContent(raw: unknown): SiteContentData {
     updatedAt: str(o.updatedAt, base.updatedAt) || new Date().toISOString(),
     phoneAds: {
       rotateOnEnd: !phoneRaw || typeof phoneRaw !== "object" ? true : (phoneRaw as SitePhoneAds).rotateOnEnd !== false,
-      ads: ads.length ? ads : base.phoneAds.ads,
+      // Preserve empty playlist (admin deleted all). Defaults only when phoneAds missing.
+      ads: phoneRaw && typeof phoneRaw === "object" && Array.isArray((phoneRaw as SitePhoneAds).ads) ? ads : base.phoneAds.ads,
     },
     hero: normalizeHero(o.hero, base.hero),
     logos: normalizeLogos(o.logos, base.logos),
@@ -176,6 +186,16 @@ export async function ensureSiteContentLoaded(): Promise<void> {
         } catch {
           /* fall through */
         }
+      }
+      // Vercel Blob fallback (production has Blob but may not have Upstash).
+      try {
+        const fromBlob = await blobGetSiteContent();
+        if (fromBlob) {
+          contentCache = normalizeContent(JSON.parse(fromBlob));
+          return;
+        }
+      } catch {
+        /* fall through */
       }
       contentCache = loadContentDisk();
       if (isDurableStoreConfigured()) {
@@ -209,6 +229,16 @@ export async function ensureMediaStoreLoaded(): Promise<void> {
           /* fall through */
         }
       }
+      try {
+        const fromBlob = await blobGetMediaIndex();
+        if (fromBlob) {
+          mediaCache = JSON.parse(fromBlob) as MediaStoreData;
+          if (!mediaCache.items) mediaCache.items = {};
+          return;
+        }
+      } catch {
+        /* fall through */
+      }
       mediaCache = loadMediaDisk();
       if (isDurableStoreConfigured()) {
         try {
@@ -237,6 +267,7 @@ function persistContent(data: SiteContentData): void {
     if (isDurableStoreConfigured()) {
       await durableSet(CONTENT_KEY, blob);
     }
+    await blobSetSiteContent(blob);
   });
 }
 
@@ -252,6 +283,7 @@ function persistMedia(data: MediaStoreData): void {
     if (isDurableStoreConfigured()) {
       await durableSet(MEDIA_KEY, blob);
     }
+    await blobSetMediaIndex(blob);
   });
 }
 
@@ -262,12 +294,20 @@ export function readSiteContent(): SiteContentData {
 
 export function getPublicSiteContent(): PublicSiteContent {
   const data = readSiteContent();
-  const enabled = data.phoneAds.ads.filter((a) => a.enabled);
+  // Relay playlist: only complete, enabled ads play — order preserved.
+  const playable = data.phoneAds.ads.filter(
+    (a) =>
+      a.enabled &&
+      a.video &&
+      a.poster &&
+      a.href &&
+      a.href !== "#"
+  );
   return {
     updatedAt: data.updatedAt,
     phoneAds: {
-      rotateOnEnd: data.phoneAds.rotateOnEnd,
-      ads: enabled.length ? enabled : DEFAULT_PHONE_ADS.map((a) => ({ ...a })),
+      rotateOnEnd: data.phoneAds.rotateOnEnd !== false,
+      ads: playable.length ? playable : DEFAULT_PHONE_ADS.map((a) => ({ ...a })),
     },
     hero: data.hero,
     logos: data.logos,
@@ -314,5 +354,5 @@ export async function flushSiteContent(): Promise<void> {
 }
 
 export function isSiteContentDurable(): boolean {
-  return isDurableStoreConfigured();
+  return isDurableStoreConfigured() || isBlobPersistConfigured();
 }
