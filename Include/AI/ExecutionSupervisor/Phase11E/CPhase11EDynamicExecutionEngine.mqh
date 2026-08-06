@@ -51,15 +51,15 @@ private:
    double                 m_last_atr;
    int                    m_broker_fail_streak;
    datetime               m_panel_init;
-   double                 m_tick_buf[8];
-   int                    m_tick_idx;
    int                    m_panel_x;
    int                    m_panel_y;
-   bool                   m_minimized;
-   bool                   m_user_placed;
-   bool                   m_dragging;
-   int                    m_drag_off_x;
-   int                    m_drag_off_y;
+   bool                   m_panel_minimized;
+   bool                   m_panel_dragging;
+   int                    m_panel_drag_ox;
+   int                    m_panel_drag_oy;
+   bool                   m_panel_pos_ready;
+   double                 m_tick_buf[8];
+   int                    m_tick_idx;
 
    bool IsFinite(const double v) const { return (v == v && v != DBL_MAX && v != -DBL_MAX); }
 
@@ -830,69 +830,110 @@ private:
          ObjectSetInteger(chart, obj, OBJPROP_ANCHOR, ANCHOR_LEFT_UPPER);
          ObjectSetString(chart, obj, OBJPROP_FONT, "Arial");
          ObjectSetInteger(chart, obj, OBJPROP_SELECTABLE, false);
-         ObjectSetInteger(chart, obj, OBJPROP_HIDDEN, false);
-         ObjectSetInteger(chart, obj, OBJPROP_BACK, false);
+         ObjectSetInteger(chart, obj, OBJPROP_HIDDEN, true);
         }
       ObjectSetInteger(chart, obj, OBJPROP_XDISTANCE, x);
       ObjectSetInteger(chart, obj, OBJPROP_YDISTANCE, y);
       ObjectSetString(chart, obj, OBJPROP_TEXT, text);
       ObjectSetInteger(chart, obj, OBJPROP_COLOR, clr);
       ObjectSetInteger(chart, obj, OBJPROP_FONTSIZE, fontSize);
-      ObjectSetInteger(chart, obj, OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
      }
 
-   void EnsureMinButton(void)
+   void SetPanelBodyVisibility(const long chart, const long visibilityState)
      {
-      // Recreate like main THE GOLD MIND dashboard — guarantees a visible clickable control
+      string body[] = {"L01","V01","L02","V02","L03","V03","L04","V04","L05","V05","L06","V06",
+                       "L07","V07","L08","V08","L09","V09","L10","V10","L11","V11","L12","V12","Why","Ev"};
+      for(int i = 0; i < ArraySize(body); i++)
+         ObjectSetInteger(chart, GM_P11E_UI_PREFIX + body[i], OBJPROP_TIMEFRAMES, visibilityState);
+     }
+
+   void RenderPanelLayout(void)
+     {
       const long chart = ChartID();
-      const string obj = GM_P11E_UI_PREFIX + "BtnMin";
-      if(ObjectFind(chart, obj) >= 0)
-         ObjectDelete(chart, obj);
-      if(!ObjectCreate(chart, obj, OBJ_BUTTON, 0, 0, 0))
+      const int px = m_panel_x;
+      const int py = m_panel_y;
+      const int height = m_panel_minimized ? GM_P11E_PANEL_H_MIN : GM_P11E_PANEL_H;
+      const long bodyVis = m_panel_minimized ? OBJ_NO_PERIODS : OBJ_ALL_PERIODS;
+
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_XDISTANCE, px);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_YDISTANCE, py);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_XSIZE, GM_P11E_PANEL_W);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_YSIZE, height);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
+
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_XDISTANCE, px);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_YDISTANCE, py);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_XSIZE, GM_P11E_PANEL_W);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_YSIZE, GM_P11E_PANEL_HEADER_H);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
+
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Title", OBJPROP_XDISTANCE, px + 8);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Title", OBJPROP_YDISTANCE, py + 6);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Title", OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
+
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_XDISTANCE, px + GM_P11E_PANEL_W - 30);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_YDISTANCE, py + 6);
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_TEXT, m_panel_minimized ? "[+]" : "[-]");
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_COLOR, m_panel_minimized ? clrLime : clrSilver);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
+
+      string names[] = {"L01","V01","L02","V02","L03","V03","L04","V04","L05","V05","L06","V06",
+                        "L07","V07","L08","V08","L09","V09","L10","V10","L11","V11","L12","V12","Why","Ev"};
+      int ys[] = {36,36,52,52,68,68,84,84,100,100,116,116,132,132,148,148,164,164,180,180,196,196,212,212,232,260};
+      int xs[] = {8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,8};
+      for(int n = 0; n < ArraySize(names); n++)
         {
-         PrintFormat("TGM [P11E UI]: BtnMin create failed err=%d", GetLastError());
-         return;
+         ObjectSetInteger(chart, GM_P11E_UI_PREFIX + names[n], OBJPROP_XDISTANCE, px + xs[n]);
+         ObjectSetInteger(chart, GM_P11E_UI_PREFIX + names[n], OBJPROP_YDISTANCE, py + ys[n]);
         }
-      ObjectSetInteger(chart, obj, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(chart, obj, OBJPROP_XSIZE, GM_P11E_BTN_W);
-      ObjectSetInteger(chart, obj, OBJPROP_YSIZE, GM_P11E_BTN_H);
-      ObjectSetInteger(chart, obj, OBJPROP_BGCOLOR, C'45,38,22');
-      ObjectSetInteger(chart, obj, OBJPROP_BORDER_COLOR, C'198,168,86');
-      ObjectSetInteger(chart, obj, OBJPROP_COLOR, clrSilver);
-      ObjectSetInteger(chart, obj, OBJPROP_FONTSIZE, 10);
-      ObjectSetString(chart, obj, OBJPROP_FONT, "Arial Bold");
-      ObjectSetString(chart, obj, OBJPROP_TEXT, m_minimized ? "[+]" : "[-]");
-      ObjectSetInteger(chart, obj, OBJPROP_SELECTABLE, false);
-      ObjectSetInteger(chart, obj, OBJPROP_STATE, false);
-      ObjectSetInteger(chart, obj, OBJPROP_BACK, false);
-      ObjectSetInteger(chart, obj, OBJPROP_HIDDEN, false);
-      ObjectSetInteger(chart, obj, OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
-      ObjectSetInteger(chart, obj, OBJPROP_ZORDER, GM_P11E_UI_Z_BUTTON);
+      SetPanelBodyVisibility(chart, bodyVis);
      }
 
-   string PanelPosKey(const string axis) const
+   bool IsPointInsideAiMinButton(const int mouseX, const int mouseY) const
      {
-      return axis + "_" + _Symbol + "_" + IntegerToString((int)ChartID());
+      const int btnX = m_panel_x + GM_P11E_PANEL_W - 30;
+      const int btnY = m_panel_y + 4;
+      return (mouseX >= btnX && mouseX <= btnX + GM_P11E_PANEL_BTN_W &&
+              mouseY >= btnY && mouseY <= btnY + GM_P11E_PANEL_BTN_H);
      }
 
-   void LoadSavedPanelPos(void)
+   bool IsPointInsideAiHeader(const int mouseX, const int mouseY) const
      {
-      const string kx = PanelPosKey(GM_P11E_POS_GV_X);
-      const string ky = PanelPosKey(GM_P11E_POS_GV_Y);
-      if(GlobalVariableCheck(kx) && GlobalVariableCheck(ky))
-        {
-         m_panel_x = (int)GlobalVariableGet(kx);
-         m_panel_y = (int)GlobalVariableGet(ky);
-         if(m_panel_x < 0) m_panel_x = 0;
-         if(m_panel_y < 0) m_panel_y = 0;
-         m_user_placed = true;
-        }
+      return (mouseX >= m_panel_x && mouseX <= m_panel_x + GM_P11E_PANEL_W &&
+              mouseY >= m_panel_y && mouseY <= m_panel_y + GM_P11E_PANEL_HEADER_H);
      }
 
-   void SavePanelPos(void)
+   void RefreshPanelValues(void)
      {
-      GlobalVariableSet(PanelPosKey(GM_P11E_POS_GV_X), (double)m_panel_x);
-      GlobalVariableSet(PanelPosKey(GM_P11E_POS_GV_Y), (double)m_panel_y);
+      SGmDynamicConfidence s = m_global;
+      const long chart = ChartID();
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V01", OBJPROP_TEXT, DoubleToString(s.overall_ai_confidence, 0));
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V02", OBJPROP_TEXT,
+                      DoubleToString(s.buy_confidence, 0) + " / " + DoubleToString(s.sell_confidence, 0));
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V03", OBJPROP_TEXT,
+                      DoubleToString(s.decision_confidence, 0) + " (" + GmP11EBandName(s.band) + ")");
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V04", OBJPROP_TEXT,
+                      DoubleToString(s.trend_strength, 0) + " / " + DoubleToString(s.momentum_strength, 0));
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V05", OBJPROP_TEXT,
+                      DoubleToString(s.liquidity_score, 0) + " / " + DoubleToString(s.spread_health, 0));
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V06", OBJPROP_TEXT,
+                      DoubleToString(s.volatility_score, 0) + " / " + DoubleToString(s.news_risk, 0));
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V07", OBJPROP_TEXT, s.recommendation);
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V08", OBJPROP_TEXT, DoubleToString(s.original_lot, 2));
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V09", OBJPROP_TEXT,
+                      DoubleToString(s.current_lot, 2) + " / " + DoubleToString(s.target_lot, 2));
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V10", OBJPROP_TEXT,
+                      IntegerToString(m_frozen_session) + " / " + IntegerToString(m_cancelled_session) + " / " + IntegerToString(m_lot_modify_session));
+      string health = (s.health == GM_P11E_HEALTH_OK) ? "OK" : "DISABLED";
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V11", OBJPROP_TEXT, health + " | " + GmP11EStateName(s.pending_state));
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V12", OBJPROP_TEXT, s.market_condition);
+
+      string why = s.why;
+      if(StringLen(why) > 140) why = StringSubstr(why, 0, 137) + "...";
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "Why", OBJPROP_TEXT, "WHY: " + why);
+      string ev = s.market_evidence;
+      if(StringLen(ev) > 140) ev = StringSubstr(ev, 0, 137) + "...";
+      ObjectSetString(chart, GM_P11E_UI_PREFIX + "Ev", OBJPROP_TEXT, "EVIDENCE: " + ev);
      }
 
 public:
@@ -924,14 +965,14 @@ public:
       m_last_atr = 0.0;
       m_broker_fail_streak = 0;
       m_panel_init = 0;
+      m_panel_x = 15;
+      m_panel_y = 350;
+      m_panel_minimized = false;
+      m_panel_dragging = false;
+      m_panel_drag_ox = 0;
+      m_panel_drag_oy = 0;
+      m_panel_pos_ready = false;
       m_tick_idx = 0;
-      m_panel_x = 10;
-      m_panel_y = 320;
-      m_minimized = false;
-      m_user_placed = false;
-      m_dragging = false;
-      m_drag_off_x = 0;
-      m_drag_off_y = 0;
       m_global.Reset();
       for(int i = 0; i < GM_P11E_MAX_TRACKED; i++)
         {
@@ -979,7 +1020,6 @@ public:
 
    bool IsEnabled(void) const { return m_enabled; }
    bool IsSupervisorActive(void) const { return m_supervisor_active && m_enabled; }
-   bool IsPanelDragging(void) const { return m_dragging; }
    SGmDynamicConfidence GlobalSnapshot(void) const { return m_global; }
 
    double AdjustLotForPlacement(const double engineLots, const int levelIndex, const string comment, const bool isBuy)
@@ -1181,265 +1221,162 @@ public:
         }
      }
 
-   bool IsPointInsideHeader(const int mouseX, const int mouseY) const
-     {
-      return (mouseX >= m_panel_x && mouseX <= m_panel_x + GM_P11E_PANEL_WIDTH &&
-              mouseY >= m_panel_y && mouseY <= m_panel_y + GM_P11E_HEADER_H);
-     }
-
-   bool IsPointInsideMinButton(const int mouseX, const int mouseY) const
-     {
-      const int btnX = m_panel_x + GM_P11E_PANEL_WIDTH - GM_P11E_BTN_W - 4;
-      const int btnY = m_panel_y + 4;
-      return (mouseX >= btnX && mouseX <= btnX + GM_P11E_BTN_W &&
-              mouseY >= btnY && mouseY <= btnY + GM_P11E_BTN_H);
-     }
-
-   void RenderPanelLayout(void)
-     {
-      const int px = m_panel_x;
-      const int py = m_panel_y;
-      const long chart = ChartID();
-      const int height = m_minimized ? GM_P11E_PANEL_HEIGHT_MIN : GM_P11E_PANEL_HEIGHT_FULL;
-      const long visibilityState = m_minimized ? OBJ_NO_PERIODS : OBJ_ALL_PERIODS;
-      const color gold = C'198,168,86';
-      const int btnX = px + GM_P11E_PANEL_WIDTH - GM_P11E_BTN_W - 4;
-
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_XDISTANCE, px);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_YDISTANCE, py);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_XSIZE, GM_P11E_PANEL_WIDTH);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_YSIZE, height);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_BGCOLOR, C'12,10,8');
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_BORDER_COLOR, gold);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_BORDER_TYPE, BORDER_FLAT);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_ZORDER, GM_P11E_UI_Z_BG);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_BACK, false);
-
-      // Dedicated drag strip (same idea as main dashboard PanelHeader)
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_XDISTANCE, px);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_YDISTANCE, py);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_XSIZE, GM_P11E_PANEL_WIDTH);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_YSIZE, GM_P11E_HEADER_H);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_BGCOLOR, C'38,32,18');
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_BORDER_COLOR, C'38,32,18');
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_ZORDER, GM_P11E_UI_Z_HEADER);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_BACK, false);
-
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Title", OBJPROP_XDISTANCE, px + 8);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Title", OBJPROP_YDISTANCE, py + 8);
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "Title", OBJPROP_TEXT, "AI DYNAMIC EXEC 11E.2");
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Title", OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Title", OBJPROP_ZORDER, GM_P11E_UI_Z_LABEL);
-
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Hint", OBJPROP_XDISTANCE, px + 168);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Hint", OBJPROP_YDISTANCE, py + 10);
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "Hint", OBJPROP_TEXT, "drag");
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Hint", OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Hint", OBJPROP_ZORDER, GM_P11E_UI_Z_LABEL);
-
-      if(ObjectFind(chart, GM_P11E_UI_PREFIX + "BtnMin") < 0)
-         EnsureMinButton();
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_XDISTANCE, btnX);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_YDISTANCE, py + 4);
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_TEXT, m_minimized ? "[+]" : "[-]");
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_COLOR, m_minimized ? clrLime : clrSilver);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_BGCOLOR, m_minimized ? C'20,45,20' : C'45,38,22');
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_ZORDER, GM_P11E_UI_Z_BUTTON);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_HIDDEN, false);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BtnMin", OBJPROP_BACK, false);
-
-      // Body rows start below header
-      string bodyNames[] = {"L01","V01","L02","V02","L03","V03","L04","V04","L05","V05","L06","V06",
-                            "L07","V07","L08","V08","L09","V09","L10","V10","L11","V11","L12","V12","Why","Ev"};
-      int ys[] = {40,40,56,56,72,72,88,88,104,104,120,120,136,136,152,152,168,168,184,184,200,200,216,216,236,264};
-      int xs[] = {8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,150,8,8};
-      for(int n = 0; n < ArraySize(bodyNames); n++)
-        {
-         ObjectSetInteger(chart, GM_P11E_UI_PREFIX + bodyNames[n], OBJPROP_XDISTANCE, px + xs[n]);
-         ObjectSetInteger(chart, GM_P11E_UI_PREFIX + bodyNames[n], OBJPROP_YDISTANCE, py + ys[n]);
-         ObjectSetInteger(chart, GM_P11E_UI_PREFIX + bodyNames[n], OBJPROP_TIMEFRAMES, visibilityState);
-         ObjectSetInteger(chart, GM_P11E_UI_PREFIX + bodyNames[n], OBJPROP_ZORDER, GM_P11E_UI_Z_LABEL);
-        }
-     }
-
    void InitPanel(const int x, const int y)
      {
-      LoadSavedPanelPos();
+      m_panel_x = x;
+      m_panel_y = y;
+      m_panel_pos_ready = true;
+      m_panel_minimized = false;
       m_panel_init = TimeCurrent();
-      if(!m_user_placed)
-        {
-         m_panel_x = x;
-         m_panel_y = y;
-        }
+
       const color gold = C'198,168,86';
       const color lbl = C'160,150,120';
       const color val = clrWhite;
       const long chart = ChartID();
-      ChartSetInteger(chart, CHART_EVENT_MOUSE_MOVE, true);
-      ChartSetInteger(chart, CHART_FOREGROUND, false);
 
-      EnsurePanelObject("BG", OBJ_RECTANGLE_LABEL, m_panel_x, m_panel_y, "", C'12,10,8', 8);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_XSIZE, GM_P11E_PANEL_WIDTH);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_YSIZE, GM_P11E_PANEL_HEIGHT_FULL);
+      EnsurePanelObject("BG", OBJ_RECTANGLE_LABEL, x, y, "", C'12,10,8', 8);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_XSIZE, GM_P11E_PANEL_W);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_YSIZE, GM_P11E_PANEL_H);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_BGCOLOR, C'12,10,8');
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_BORDER_COLOR, gold);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_BACK, false);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "BG", OBJPROP_ZORDER, 20);
 
-      EnsurePanelObject("Header", OBJ_RECTANGLE_LABEL, m_panel_x, m_panel_y, "", C'38,32,18', 8);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_XSIZE, GM_P11E_PANEL_WIDTH);
-      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_YSIZE, GM_P11E_HEADER_H);
+      EnsurePanelObject("Header", OBJ_RECTANGLE_LABEL, x, y, "", C'38,32,18', 8);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_XSIZE, GM_P11E_PANEL_W);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_YSIZE, GM_P11E_PANEL_HEADER_H);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_BGCOLOR, C'38,32,18');
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_BORDER_COLOR, C'38,32,18');
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_BACK, false);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Header", OBJPROP_ZORDER, 21);
 
-      EnsurePanelObject("Title", OBJ_LABEL, m_panel_x + 8, m_panel_y + 8, "AI DYNAMIC EXEC 11E.2", gold, 9);
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "Title", OBJPROP_FONT, "Arial Bold");
-      EnsurePanelObject("Hint", OBJ_LABEL, m_panel_x + 168, m_panel_y + 10, "drag", C'160,150,120', 7);
+      EnsurePanelObject("Title", OBJ_LABEL, x + 8, y + 6, "AI DYNAMIC EXEC ENGINE 11E", gold, 9);
+      ObjectSetInteger(chart, GM_P11E_UI_PREFIX + "Title", OBJPROP_ZORDER, 22);
 
-      EnsureMinButton();
+      // Minimize / maximize button (clickable)
+      const string btn = GM_P11E_UI_PREFIX + "BtnMin";
+      if(ObjectFind(chart, btn) < 0)
+        {
+         ObjectCreate(chart, btn, OBJ_BUTTON, 0, 0, 0);
+         ObjectSetInteger(chart, btn, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+         ObjectSetInteger(chart, btn, OBJPROP_SELECTABLE, true);
+         ObjectSetInteger(chart, btn, OBJPROP_HIDDEN, true);
+        }
+      ObjectSetInteger(chart, btn, OBJPROP_XDISTANCE, x + GM_P11E_PANEL_W - 30);
+      ObjectSetInteger(chart, btn, OBJPROP_YDISTANCE, y + 6);
+      ObjectSetInteger(chart, btn, OBJPROP_XSIZE, GM_P11E_PANEL_BTN_W);
+      ObjectSetInteger(chart, btn, OBJPROP_YSIZE, GM_P11E_PANEL_BTN_H);
+      ObjectSetString(chart, btn, OBJPROP_TEXT, "[-]");
+      ObjectSetInteger(chart, btn, OBJPROP_COLOR, clrSilver);
+      ObjectSetInteger(chart, btn, OBJPROP_BGCOLOR, C'28,24,16');
+      ObjectSetInteger(chart, btn, OBJPROP_BORDER_COLOR, gold);
+      ObjectSetInteger(chart, btn, OBJPROP_FONTSIZE, 9);
+      ObjectSetInteger(chart, btn, OBJPROP_ZORDER, 23);
 
-      EnsurePanelObject("L01", OBJ_LABEL, m_panel_x + 8, m_panel_y + 40, "Overall Confidence:", lbl, 8);
-      EnsurePanelObject("V01", OBJ_LABEL, m_panel_x + 150, m_panel_y + 40, "---", val, 8);
-      EnsurePanelObject("L02", OBJ_LABEL, m_panel_x + 8, m_panel_y + 56, "BUY / SELL Conf:", lbl, 8);
-      EnsurePanelObject("V02", OBJ_LABEL, m_panel_x + 150, m_panel_y + 56, "---", val, 8);
-      EnsurePanelObject("L03", OBJ_LABEL, m_panel_x + 8, m_panel_y + 72, "Decision Conf:", lbl, 8);
-      EnsurePanelObject("V03", OBJ_LABEL, m_panel_x + 150, m_panel_y + 72, "---", val, 8);
-      EnsurePanelObject("L04", OBJ_LABEL, m_panel_x + 8, m_panel_y + 88, "Trend / Momentum:", lbl, 8);
-      EnsurePanelObject("V04", OBJ_LABEL, m_panel_x + 150, m_panel_y + 88, "---", val, 8);
-      EnsurePanelObject("L05", OBJ_LABEL, m_panel_x + 8, m_panel_y + 104, "Liquidity / Spread:", lbl, 8);
-      EnsurePanelObject("V05", OBJ_LABEL, m_panel_x + 150, m_panel_y + 104, "---", val, 8);
-      EnsurePanelObject("L06", OBJ_LABEL, m_panel_x + 8, m_panel_y + 120, "Volatility / News:", lbl, 8);
-      EnsurePanelObject("V06", OBJ_LABEL, m_panel_x + 150, m_panel_y + 120, "---", val, 8);
-      EnsurePanelObject("L07", OBJ_LABEL, m_panel_x + 8, m_panel_y + 136, "Recommendation:", lbl, 8);
-      EnsurePanelObject("V07", OBJ_LABEL, m_panel_x + 150, m_panel_y + 136, "---", gold, 8);
-      EnsurePanelObject("L08", OBJ_LABEL, m_panel_x + 8, m_panel_y + 152, "Original Lot:", lbl, 8);
-      EnsurePanelObject("V08", OBJ_LABEL, m_panel_x + 150, m_panel_y + 152, "---", val, 8);
-      EnsurePanelObject("L09", OBJ_LABEL, m_panel_x + 8, m_panel_y + 168, "Current / Target Lot:", lbl, 8);
-      EnsurePanelObject("V09", OBJ_LABEL, m_panel_x + 150, m_panel_y + 168, "---", val, 8);
-      EnsurePanelObject("L10", OBJ_LABEL, m_panel_x + 8, m_panel_y + 184, "Frozen / Cancel / Mods:", lbl, 8);
-      EnsurePanelObject("V10", OBJ_LABEL, m_panel_x + 150, m_panel_y + 184, "---", val, 8);
-      EnsurePanelObject("L11", OBJ_LABEL, m_panel_x + 8, m_panel_y + 200, "AI Health / State:", lbl, 8);
-      EnsurePanelObject("V11", OBJ_LABEL, m_panel_x + 150, m_panel_y + 200, "---", val, 8);
-      EnsurePanelObject("L12", OBJ_LABEL, m_panel_x + 8, m_panel_y + 216, "Market Condition:", lbl, 8);
-      EnsurePanelObject("V12", OBJ_LABEL, m_panel_x + 150, m_panel_y + 216, "---", val, 8);
-      EnsurePanelObject("Why", OBJ_LABEL, m_panel_x + 8, m_panel_y + 236, "WHY: —", C'140,200,160', 7);
-      EnsurePanelObject("Ev", OBJ_LABEL, m_panel_x + 8, m_panel_y + 264, "EVIDENCE: —", C'120,160,200', 7);
+      EnsurePanelObject("L01", OBJ_LABEL, x + 8, y + 36, "Overall Confidence:", lbl, 8);
+      EnsurePanelObject("V01", OBJ_LABEL, x + 150, y + 36, "---", val, 8);
+      EnsurePanelObject("L02", OBJ_LABEL, x + 8, y + 52, "BUY / SELL Conf:", lbl, 8);
+      EnsurePanelObject("V02", OBJ_LABEL, x + 150, y + 52, "---", val, 8);
+      EnsurePanelObject("L03", OBJ_LABEL, x + 8, y + 68, "Decision Conf:", lbl, 8);
+      EnsurePanelObject("V03", OBJ_LABEL, x + 150, y + 68, "---", val, 8);
+      EnsurePanelObject("L04", OBJ_LABEL, x + 8, y + 84, "Trend / Momentum:", lbl, 8);
+      EnsurePanelObject("V04", OBJ_LABEL, x + 150, y + 84, "---", val, 8);
+      EnsurePanelObject("L05", OBJ_LABEL, x + 8, y + 100, "Liquidity / Spread:", lbl, 8);
+      EnsurePanelObject("V05", OBJ_LABEL, x + 150, y + 100, "---", val, 8);
+      EnsurePanelObject("L06", OBJ_LABEL, x + 8, y + 116, "Volatility / News:", lbl, 8);
+      EnsurePanelObject("V06", OBJ_LABEL, x + 150, y + 116, "---", val, 8);
+      EnsurePanelObject("L07", OBJ_LABEL, x + 8, y + 132, "Recommendation:", lbl, 8);
+      EnsurePanelObject("V07", OBJ_LABEL, x + 150, y + 132, "---", gold, 8);
+      EnsurePanelObject("L08", OBJ_LABEL, x + 8, y + 148, "Original Lot:", lbl, 8);
+      EnsurePanelObject("V08", OBJ_LABEL, x + 150, y + 148, "---", val, 8);
+      EnsurePanelObject("L09", OBJ_LABEL, x + 8, y + 164, "Current / Target Lot:", lbl, 8);
+      EnsurePanelObject("V09", OBJ_LABEL, x + 150, y + 164, "---", val, 8);
+      EnsurePanelObject("L10", OBJ_LABEL, x + 8, y + 180, "Frozen / Cancel / Mods:", lbl, 8);
+      EnsurePanelObject("V10", OBJ_LABEL, x + 150, y + 180, "---", val, 8);
+      EnsurePanelObject("L11", OBJ_LABEL, x + 8, y + 196, "AI Health / State:", lbl, 8);
+      EnsurePanelObject("V11", OBJ_LABEL, x + 150, y + 196, "---", val, 8);
+      EnsurePanelObject("L12", OBJ_LABEL, x + 8, y + 212, "Market Condition:", lbl, 8);
+      EnsurePanelObject("V12", OBJ_LABEL, x + 150, y + 212, "---", val, 8);
+      EnsurePanelObject("Why", OBJ_LABEL, x + 8, y + 232, "WHY: —", C'140,200,160', 7);
+      EnsurePanelObject("Ev", OBJ_LABEL, x + 8, y + 260, "EVIDENCE: —", C'120,160,200', 7);
+
       RenderPanelLayout();
-      Print("TGM [P11E UI]: panel ready — drag the brown header to move; [-]/[+] minimize/maximize (UI only).");
      }
 
-   void UpdatePanel(const int dockX, const int dockY)
+   void UpdatePanel(const int x, const int y)
      {
-      if(m_panel_init == 0)
-         InitPanel(dockX, dockY + 310);
-      else if(!m_user_placed && !m_dragging)
-        {
-         // Dock under main dashboard until the user drags this panel independently
-         m_panel_x = dockX;
-         m_panel_y = dockY + 310;
-        }
+      // Independent position: seed once under main dashboard, then keep own X/Y (movable).
+      if(!m_panel_pos_ready || m_panel_init == 0)
+         InitPanel(x, y + 310);
+      else
+         RenderPanelLayout();
 
-      // Heal missing min button (e.g. chart object cleanup) without resetting position
-      if(ObjectFind(ChartID(), GM_P11E_UI_PREFIX + "BtnMin") < 0 ||
-         ObjectFind(ChartID(), GM_P11E_UI_PREFIX + "Header") < 0)
-        {
-         EnsurePanelObject("Header", OBJ_RECTANGLE_LABEL, m_panel_x, m_panel_y, "", C'38,32,18', 8);
-         EnsureMinButton();
-        }
+      RefreshPanelValues();
+     }
 
-      RenderPanelLayout();
+   // Returns true when event was consumed (EA should skip main-panel handling).
+   bool OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
+     {
+      if(!m_enabled || m_panel_init == 0)
+         return false;
 
-      SGmDynamicConfidence s = m_global;
       const long chart = ChartID();
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V01", OBJPROP_TEXT, DoubleToString(s.overall_ai_confidence, 0));
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V02", OBJPROP_TEXT,
-                      DoubleToString(s.buy_confidence, 0) + " / " + DoubleToString(s.sell_confidence, 0));
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V03", OBJPROP_TEXT,
-                      DoubleToString(s.decision_confidence, 0) + " (" + GmP11EBandName(s.band) + ")");
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V04", OBJPROP_TEXT,
-                      DoubleToString(s.trend_strength, 0) + " / " + DoubleToString(s.momentum_strength, 0));
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V05", OBJPROP_TEXT,
-                      DoubleToString(s.liquidity_score, 0) + " / " + DoubleToString(s.spread_health, 0));
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V06", OBJPROP_TEXT,
-                      DoubleToString(s.volatility_score, 0) + " / " + DoubleToString(s.news_risk, 0));
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V07", OBJPROP_TEXT, s.recommendation);
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V08", OBJPROP_TEXT, DoubleToString(s.original_lot, 2));
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V09", OBJPROP_TEXT,
-                      DoubleToString(s.current_lot, 2) + " / " + DoubleToString(s.target_lot, 2));
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V10", OBJPROP_TEXT,
-                      IntegerToString(m_frozen_session) + " / " + IntegerToString(m_cancelled_session) + " / " + IntegerToString(m_lot_modify_session));
-      string health = (s.health == GM_P11E_HEALTH_OK) ? "OK" : "DISABLED";
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V11", OBJPROP_TEXT, health + " | " + GmP11EStateName(s.pending_state));
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "V12", OBJPROP_TEXT, s.market_condition);
-
-      string why = s.why;
-      if(StringLen(why) > 140) why = StringSubstr(why, 0, 137) + "...";
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "Why", OBJPROP_TEXT, "WHY: " + why);
-      string ev = s.market_evidence;
-      if(StringLen(ev) > 140) ev = StringSubstr(ev, 0, 137) + "...";
-      ObjectSetString(chart, GM_P11E_UI_PREFIX + "Ev", OBJPROP_TEXT, "EVIDENCE: " + ev);
-     }
-
-   void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
-     {
-      const long chartId = ChartID();
       const string btnMinName = GM_P11E_UI_PREFIX + "BtnMin";
-
-      // Keep mouse-move events on — required for drag
-      if(id == CHARTEVENT_CHART_CHANGE)
-         ChartSetInteger(chartId, CHART_EVENT_MOUSE_MOVE, true);
 
       if(id == CHARTEVENT_OBJECT_CLICK)
         {
          if(sparam == btnMinName)
            {
-            ObjectSetInteger(chartId, btnMinName, OBJPROP_STATE, false);
-            m_minimized = !m_minimized;
+            ObjectSetInteger(chart, btnMinName, OBJPROP_STATE, false);
+            m_panel_minimized = !m_panel_minimized;
             RenderPanelLayout();
-            ChartRedraw(chartId);
+            RefreshPanelValues();
+            ChartRedraw(chart);
+            return true;
            }
-         return;
+         return false;
         }
 
-      if(id != CHARTEVENT_MOUSE_MOVE)
-         return;
-
-      const int mouseX = (int)lparam;
-      const int mouseY = (int)dparam;
-      const int mouseState = (sparam == "" ? 0 : (int)StringToInteger(sparam));
-      const bool leftButtonDown = ((mouseState & 1) == 1);
-
-      if(leftButtonDown)
+      if(id == CHARTEVENT_MOUSE_MOVE)
         {
-         if(!m_dragging)
+         const int mouseX = (int)lparam;
+         const int mouseY = (int)dparam;
+         const int mouseState = (sparam == "" ? 0 : (int)StringToInteger(sparam));
+         const bool leftButtonDown = ((mouseState & 1) == 1);
+
+         if(leftButtonDown)
            {
-            if(IsPointInsideHeader(mouseX, mouseY) && !IsPointInsideMinButton(mouseX, mouseY))
+            if(!m_panel_dragging)
               {
-               m_dragging = true;
-               m_user_placed = true;
-               m_drag_off_x = mouseX - m_panel_x;
-               m_drag_off_y = mouseY - m_panel_y;
-               ChartSetInteger(chartId, CHART_MOUSE_SCROLL, false);
+               if(IsPointInsideAiHeader(mouseX, mouseY) && !IsPointInsideAiMinButton(mouseX, mouseY))
+                 {
+                  m_panel_dragging = true;
+                  m_panel_drag_ox = mouseX - m_panel_x;
+                  m_panel_drag_oy = mouseY - m_panel_y;
+                  ChartSetInteger(chart, CHART_MOUSE_SCROLL, false);
+                  return true;
+                 }
+               return false;
               }
-           }
-         else
-           {
-            m_panel_x = mouseX - m_drag_off_x;
-            m_panel_y = mouseY - m_drag_off_y;
+
+            m_panel_x = mouseX - m_panel_drag_ox;
+            m_panel_y = mouseY - m_panel_drag_oy;
             if(m_panel_x < 0) m_panel_x = 0;
             if(m_panel_y < 0) m_panel_y = 0;
-            // Keep panel inside chart roughly
-            const int chartW = (int)ChartGetInteger(chartId, CHART_WIDTH_IN_PIXELS);
-            const int chartH = (int)ChartGetInteger(chartId, CHART_HEIGHT_IN_PIXELS);
-            if(chartW > 40 && m_panel_x > chartW - 40) m_panel_x = chartW - 40;
-            if(chartH > 40 && m_panel_y > chartH - 40) m_panel_y = chartH - 40;
             RenderPanelLayout();
+            return true;
+           }
+
+         if(m_panel_dragging)
+           {
+            m_panel_dragging = false;
+            ChartSetInteger(chart, CHART_MOUSE_SCROLL, true);
+            ChartRedraw(chart);
+            return true;
            }
         }
-      else if(m_dragging)
-        {
-         m_dragging = false;
-         SavePanelPos();
-         ChartSetInteger(chartId, CHART_MOUSE_SCROLL, true);
-         ChartRedraw(chartId);
-        }
+
+      return false;
      }
 
    void DestroyPanel(void)
@@ -1452,7 +1389,8 @@ public:
             ObjectDelete(chart, name);
         }
       m_panel_init = 0;
-      m_dragging = false;
+      m_panel_pos_ready = false;
+      m_panel_dragging = false;
       if(m_rsi_handle != INVALID_HANDLE)
         {
          IndicatorRelease(m_rsi_handle);
