@@ -1,0 +1,11 @@
+{
+  "name": "THE GOLD MIND — Customer Portal",
+  "install": "npm install",
+  "terminals": [
+    {
+      "name": "portal-dev",
+      "command": "npm run dev"
+    }
+  ],
+  "ports": [3000]
+}
