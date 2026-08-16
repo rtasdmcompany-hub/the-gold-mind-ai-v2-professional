@@ -1,12 +1,10 @@
-# Keep CLI uploads small if someone runs vercel from repo root.
-Commercial/Documentation
-Commercial/Releases
-Experts
-Include
-MQL5
-*.zip
-*.ex5
+# Do NOT ignore CustomerPortal release ZIPs (needed on the live site).
+# Do NOT ignore .git (breaks some Vercel Git build steps).
+Commercial/Documentation/**
+Experts/**
+Include/**
+**/node_modules/**
+**/.next/**
 *.htm
 *.png
-node_modules
-.git
+Experts.zip
