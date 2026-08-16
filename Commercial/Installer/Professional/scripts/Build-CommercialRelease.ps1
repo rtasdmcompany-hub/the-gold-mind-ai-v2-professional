@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   THE GOLD MIND PROFESSIONAL - Final commercial packaging build.
 .DESCRIPTION
@@ -490,7 +490,8 @@ function Publish-PortalReleaseAsset([string]$zipPath) {
       coreFrozen = $true
     }
   }
-  ($seed | ConvertTo-Json -Depth 6) | Set-Content (Join-Path $portalReleases "latest-stable.json") -Encoding UTF8
+  $seedJson = ($seed | ConvertTo-Json -Depth 6) + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $portalReleases "latest-stable.json"), $seedJson, (New-Object System.Text.UTF8Encoding $false))
   Write-Host "  Portal ZIP: $destZip"
   Write-Host "  Catalog seed: $(Join-Path $portalReleases 'latest-stable.json')"
   Write-Host "  After deploy, set RELEASE_STABLE_ZIP_URL if serverless FS cannot read public/releases."
