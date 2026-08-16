@@ -1,10 +1,8 @@
-# Do NOT ignore CustomerPortal release ZIPs (needed on the live site).
-# Do NOT ignore .git (breaks some Vercel Git build steps).
+# Keep CustomerPortal public assets (brand logos PNGs, release ZIPs).
+# Only exclude heavy monorepo paths that are not part of the Next.js app.
 Commercial/Documentation/**
 Experts/**
 Include/**
 **/node_modules/**
 **/.next/**
-*.htm
-*.png
 Experts.zip
