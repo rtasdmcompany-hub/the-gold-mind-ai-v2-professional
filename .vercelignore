@@ -1,0 +1,12 @@
+# Keep CLI uploads small if someone runs vercel from repo root.
+Commercial/Documentation
+Commercial/Releases
+Experts
+Include
+MQL5
+*.zip
+*.ex5
+*.htm
+*.png
+node_modules
+.git

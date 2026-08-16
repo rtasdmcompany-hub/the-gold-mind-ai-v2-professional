@@ -166,7 +166,8 @@ function Update-WebsiteVersionConstants([string]$zipPath, [string]$seedPath) {
 
   $pkg = Get-Content $PkgJson -Raw | ConvertFrom-Json
   $pkg.version = $Version
-  $pkg | ConvertTo-Json -Depth 20 | Set-Content $PkgJson -Encoding UTF8
+  $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+  [System.IO.File]::WriteAllText($PkgJson, (($pkg | ConvertTo-Json -Depth 20) + "`n"), $utf8NoBom)
 
   Write-Host "  Portal constants updated for $Version" -ForegroundColor Green
 }
