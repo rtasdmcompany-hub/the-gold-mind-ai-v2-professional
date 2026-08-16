@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Resolves the real commercial installer ZIP ({product.installer.name} + EA payload + scripts).
  * Prefer monorepo Commercial/Releases artifacts, then public/releases, then RELEASE_* env URLs.
  */
@@ -13,15 +13,15 @@ export const STABLE_PACKAGE_ID = product.installer.stablePackageId;
 export const STABLE_VERSION = product.version;
 export const STABLE_BUILD_NUMBER = product.buildNumber;
 export const STABLE_PACKAGE_FILE = product.installer.zipName;
-/** Known SHA-256 of Commercial/Releases/1.0.0/TGM_PROFESSIONAL_1.0.0_stable.zip */
+/** Known SHA-256 of Commercial/Releases/1.0.1/TGM_PROFESSIONAL_1.0.1_stable.zip */
 export const STABLE_SHA256 =
-  "08a391eab307fe4e95bcfe48efcb650dab48ebca79fdf5e3d8c30976aa012e69";
-export const STABLE_SIZE_BYTES = 861_612;
-export const STABLE_RELEASED_AT = "2026-08-01T18:25:00Z";
+  "27a59db75d7625dbdae61903e1ed33d4d78fa2d6dcf952904a09138900451f2c";
+export const STABLE_SIZE_BYTES = 853388;
+export const STABLE_RELEASED_AT = "2026-08-16T19:09:22.0123274Z";
 
 const FAKE_SEED_IDS = new Set(["rel_200_stable", "rel_201_rc", "rel_dev_nightly"]);
 
-/** Package ids accepted by download API — blocks path traversal / arbitrary reads. */
+/** Package ids accepted by download API - blocks path traversal / arbitrary reads. */
 export const SAFE_PACKAGE_ID = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
 export function isSafePackageId(id: string): boolean {
@@ -47,7 +47,7 @@ export function portalBaseUrl(): string {
   return product.urls.portal;
 }
 
-/** Optional overlay written by Build-CommercialRelease.ps1 → public/releases/latest-stable.json */
+/** Optional overlay written by Build-CommercialRelease.ps1 â†’ public/releases/latest-stable.json */
 export function readPortalStableSeed(): Partial<ReleasePackage> | null {
   const candidates = [
     path.join(process.cwd(), "public", "releases", "latest-stable.json"),
@@ -81,7 +81,7 @@ export function commercialZipCandidates(packageFile = STABLE_PACKAGE_FILE): stri
   // Bundled static asset (CustomerPortal/web/public/releases)
   list.push(path.join(cwd, "public", "releases", packageFile));
 
-  // CustomerPortal/web → ../../Releases/<version>
+  // CustomerPortal/web â†’ ../../Releases/<version>
   const fromWeb = path.resolve(cwd, "..", "..", "Releases", versionDir);
   list.push(path.join(fromWeb, packageFile));
 
@@ -129,7 +129,7 @@ export function configuredReleaseAssetUrl(packageFile = STABLE_PACKAGE_FILE): st
 export function stableReleaseNotes(): string {
   return [
     `${brand.productName} ${product.version} (stable).`,
-    `"Windows installer ZIP — extract, run ${product.installer.name}, enter your existing license email and key."`,
+    `"Windows installer ZIP â€” extract, run ${product.installer.name}, enter your existing license email and key."`,
     "Mandatory license activation completes before the commercial shell is ready.",
     "Includes MT5 EA deploy, activation wizard, desktop shortcuts, SHA-256 checksums, and SBOM.",
     "Core Trading Engine remains certified frozen.",
@@ -188,7 +188,7 @@ export async function loadCommercialZipBytes(
   if (!url) return null;
 
   try {
-    // /releases/* is not a public customer download surface — this same-origin
+    // /releases/* is not a public customer download surface â€” this same-origin
     // fallback fetch (used when local disk is unavailable, e.g. serverless) is
     // authorized only via this internal shared-secret header, never exposed to
     // browsers/customers.

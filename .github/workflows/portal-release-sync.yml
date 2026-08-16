@@ -1,0 +1,40 @@
+# Ensures Customer Portal release assets stay on the path Vercel deploys.
+# Actual site update happens via Vercel Git integration on push to main.
+# This workflow only verifies the portal seed + ZIP exist and EX5 freeze is intact when a release changes.
+name: Portal release sync check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Commercial/CustomerPortal/web/public/releases/**"
+      - "Commercial/Releases/**"
+      - "Commercial/Installer/Professional/scripts/Sync-ReleaseEverywhere.ps1"
+  workflow_dispatch:
+
+jobs:
+  verify-portal-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify latest-stable.json + ZIP EX5 freeze
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $freeze = "21503FA83938CF80AA24947A512EBE2F238AC7512BF9E48A21FBFF647D77F9B7"
+          $seedPath = "Commercial/CustomerPortal/web/public/releases/latest-stable.json"
+          if (-not (Test-Path $seedPath)) { throw "latest-stable.json missing" }
+          $seed = Get-Content $seedPath -Raw | ConvertFrom-Json
+          $zip = "Commercial/CustomerPortal/web/public/releases/$($seed.packageFile)"
+          if (-not (Test-Path $zip)) { throw "Portal ZIP missing: $zip" }
+          $stage = Join-Path $env:TEMP ("tgm-ci-" + [guid]::NewGuid().ToString("N"))
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::ExtractToDirectory((Resolve-Path $zip), $stage)
+          $ex5 = Get-ChildItem $stage -Recurse -Filter "TheGoldMindAI_Professional.ex5" | Select-Object -First 1
+          if (-not $ex5) { throw "EX5 missing inside ZIP" }
+          $hash = (Get-FileHash -Algorithm SHA256 $ex5.FullName).Hash.ToUpperInvariant()
+          Write-Host "version=$($seed.version) zipEx5=$hash"
+          if ($hash -ne $freeze) { throw "Portal ZIP EX5 is not freeze hash" }
+          Write-Host "OK: portal package matches freeze EX5"

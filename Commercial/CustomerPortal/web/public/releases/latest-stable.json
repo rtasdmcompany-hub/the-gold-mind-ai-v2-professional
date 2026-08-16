@@ -1,18 +1,27 @@
-{
-  "id": "rel_100_stable",
-  "product": "THE GOLD MIND PROFESSIONAL",
-  "version": "1.0.0",
-  "buildNumber": "26212",
-  "channel": "stable",
-  "status": "published",
-  "releasedAt": "2026-08-01T18:25:00Z",
-  "packageFile": "TGM_PROFESSIONAL_1.0.0_stable.zip",
-  "packageUrl": "https://the-gold-mind-ai-v2-professional.vercel.app/api/releases/download/rel_100_stable",
-  "externalAssetUrl": "https://the-gold-mind-ai-v2-professional.vercel.app/releases/TGM_PROFESSIONAL_1.0.0_stable.zip",
-  "packageSizeBytes": 861612,
-  "sha256": "08a391eab307fe4e95bcfe48efcb650dab48ebca79fdf5e3d8c30976aa012e69",
-  "signatureRequired": false,
-  "signatureSubject": "Code signing pending",
-  "signatureStatus": "pending_code_sign",
-  "releaseNotes": "1.0.0 — Setup clears portal soft-activate seat; clearer license activation errors."
+﻿{
+    "id":  "rel_101_stable",
+    "product":  "THE GOLD MIND PROFESSIONAL",
+    "version":  "1.0.1",
+    "buildNumber":  "26228",
+    "channel":  "stable",
+    "status":  "published",
+    "releasedAt":  "2026-08-16T19:09:22.0123274Z",
+    "packageFile":  "TGM_PROFESSIONAL_1.0.1_stable.zip",
+    "packageUrl":  "https://the-gold-mind-ai-v2-professional.vercel.app/api/releases/download/rel_101_stable",
+    "externalAssetUrl":  "https://the-gold-mind-ai-v2-professional.vercel.app/releases/TGM_PROFESSIONAL_1.0.1_stable.zip",
+    "packageSizeBytes":  853388,
+    "sha256":  "27a59db75d7625dbdae61903e1ed33d4d78fa2d6dcf952904a09138900451f2c",
+    "signatureRequired":  false,
+    "signatureSubject":  "Code signing pending",
+    "signatureStatus":  "pending_code_sign",
+    "releaseNotes":  "Commercial packaging release 1.0.1 - extract ZIP, run Setup.exe, activate with existing license email/key.",
+    "compatibility":  {
+                          "coreTag":  "1.0.1",
+                          "coreFrozen":  true,
+                          "mt5":  "build 3800+",
+                          "os":  [
+                                     "Windows 10",
+                                     "Windows 11"
+                                 ]
+                      }
 }

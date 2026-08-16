@@ -1,5 +1,5 @@
-/**
- * Central product configuration — commercial / packaging / licensing constants.
+﻿/**
+ * Central product configuration â€” commercial / packaging / licensing constants.
  *
  * SINGLE SOURCE OF TRUTH for application name, edition, version, build, license
  * catalog, plans, payment provider, product URLs, MT5/installer names, locale
@@ -9,7 +9,7 @@
  * This module owns product *behavior* and *packaging* values.
  *
  * Override via NEXT_PUBLIC_PRODUCT_* / PRODUCT_* environment variables.
- * Do not hardcode these values elsewhere — import `{ product }` from here.
+ * Do not hardcode these values elsewhere â€” import `{ product }` from here.
  */
 import { brand } from "./brand";
 
@@ -208,10 +208,10 @@ const timezone = firstEnv(
   "UTC"
 );
 
-const stablePackageId = firstEnv(["PRODUCT_STABLE_PACKAGE_ID"], "rel_100_stable");
+const stablePackageId = firstEnv(["PRODUCT_STABLE_PACKAGE_ID"], "rel_101_stable");
 
 /**
- * Canonical product object — import `{ product }` everywhere product config is needed.
+ * Canonical product object â€” import `{ product }` everywhere product config is needed.
  */
 export const product = {
   /** Full application / product title */

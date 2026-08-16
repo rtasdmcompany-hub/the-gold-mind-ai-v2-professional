@@ -978,9 +978,10 @@ namespace TgmProfessionalSetup
                 }
 
                 SetProgress(55, "Deploying Expert Advisor…");
-                if (_terminalList != null && _terminalList.SelectedItem is Mt5Terminal term)
+                var selectedTerminal = _terminalList != null ? _terminalList.SelectedItem as Mt5Terminal : null;
+                if (selectedTerminal != null)
                 {
-                    _installedEaPath = InstallerCore.DeployEa(_installRoot, term.Path);
+                    _installedEaPath = InstallerCore.DeployEa(_installRoot, selectedTerminal.Path);
                 }
 
                 SetProgress(75, "Creating shortcuts…");

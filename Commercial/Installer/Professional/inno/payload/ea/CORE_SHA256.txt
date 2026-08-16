@@ -1,13 +1,8 @@
-Core source (mq5) SHA-256 (certified, frozen):
+﻿Core source (mq5) SHA-256 (certified, frozen):
 1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e
 
 Packaged binary (ex5) SHA-256:
-21503FA83938CF80AA24947A512EBE2F238AC7512BF9E48A21FBFF647D77F9B7
-
-Power config lock (inputs / preset — does not change EX5 bytes):
-PHASE18_MAX_H4_RANGE_PIPS=250.0
-PHASE18_MAX_LEVEL_ACTIVATIONS_H4=1
+21503fa83938cf80aa24947a512ebe2f238ac7512bf9e48a21fbff647d77f9b7
 
 Rule: Commercial packaging copies the certified binary only.
-Trading geometry / SL / TP formulas: NOT reinvented.
-Re-arm max=2 REJECTED (Phase30). Range 400 REJECTED (Phase34).
+Trading / Risk / Recovery / Money / Entry / Exit / Order logic: NOT MODIFIED.

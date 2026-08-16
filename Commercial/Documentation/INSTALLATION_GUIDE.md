@@ -1,7 +1,7 @@
 ﻿# INSTALLATION_GUIDE.md
 
-**Product:** THE GOLD MIND PROFESSIONAL 1.0.0
-**Installer:** `Commercial/Releases/1.0.0/installer/Setup.exe`
+**Product:** THE GOLD MIND PROFESSIONAL 1.0.1
+**Installer:** `Commercial/Releases/1.0.1/installer/Setup.exe`
 
 ## Requirements
 - Windows 10/11 (64-bit)

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Central customer-facing brand configuration.
  *
  * SINGLE SOURCE OF TRUTH for brand name, company, product, version, domain,
@@ -8,7 +8,7 @@
  * strings so Client Components stay consistent). Defaults are THE GOLD MIND
  * placeholders until custom domain cutover.
  *
- * Do not hardcode brand strings elsewhere — import from this module.
+ * Do not hardcode brand strings elsewhere â€” import from this module.
  */
 function env(name: string, fallback = ""): string {
   const v = process.env[name];
@@ -57,7 +57,7 @@ const productShortName = firstEnv(
 );
 const version = firstEnv(
   ["NEXT_PUBLIC_BRAND_VERSION", "BRAND_VERSION", "npm_package_version"],
-  "1.0.0"
+  "1.0.1"
 );
 const tagline = firstEnv(
   ["NEXT_PUBLIC_BRAND_TAGLINE", "BRAND_TAGLINE"],
@@ -80,7 +80,7 @@ const website = firstEnv(
 ).replace(/\/$/, "");
 
 // Prefer dedicated brand email envs. Generic SUPPORT_EMAIL is used only by
-// delivery routes as an inbox override — not as the customer-facing brand address.
+// delivery routes as an inbox override â€” not as the customer-facing brand address.
 const supportEmail = firstEnv(
   ["NEXT_PUBLIC_BRAND_SUPPORT_EMAIL", "BRAND_SUPPORT_EMAIL"],
   `support@${brandDomain}`
@@ -130,10 +130,10 @@ const mobileBundleId = firstEnv(
   "com.thegoldmind.companion"
 );
 
-const defaultDescription = `${productFullName} — Customer Portal, licensing, downloads, and certified automated trading software. Trading involves risk of loss.`;
+const defaultDescription = `${productFullName} â€” Customer Portal, licensing, downloads, and certified automated trading software. Trading involves risk of loss.`;
 
 /**
- * Canonical brand object — import `{ brand }` everywhere customer-facing
+ * Canonical brand object â€” import `{ brand }` everywhere customer-facing
  * identity is needed.
  */
 export const brand = {
@@ -193,11 +193,11 @@ export const brand = {
   },
 
   copyrightYear,
-  /** e.g. © 2026 THE GOLD MIND */
-  copyright: `© ${copyrightYear} ${companyName}`,
-  /** e.g. © 2026 THE GOLD MIND PROFESSIONAL */
-  copyrightProduct: `© ${copyrightYear} ${productName}`,
-  copyrightNotice: `© ${copyrightYear} ${companyName}. All rights reserved.`,
+  /** e.g. Â© 2026 THE GOLD MIND */
+  copyright: `Â© ${copyrightYear} ${companyName}`,
+  /** e.g. Â© 2026 THE GOLD MIND PROFESSIONAL */
+  copyrightProduct: `Â© ${copyrightYear} ${productName}`,
+  copyrightNotice: `Â© ${copyrightYear} ${companyName}. All rights reserved.`,
 
   description: firstEnv(
     ["NEXT_PUBLIC_BRAND_DESCRIPTION", "BRAND_DESCRIPTION"],
@@ -205,14 +205,14 @@ export const brand = {
   ),
   ogDescription: firstEnv(
     ["NEXT_PUBLIC_BRAND_OG_DESCRIPTION"],
-    "Official website and Customer Portal — licenses, downloads, and certified Core."
+    "Official website and Customer Portal â€” licenses, downloads, and certified Core."
   ),
   riskLine: firstEnv(
     ["NEXT_PUBLIC_BRAND_RISK_LINE"],
     "Trading involves substantial risk of loss."
   ),
-  emailSignature: `— ${productName}`,
-  supportContactLine: `${partnersEmail} · ${supportEmail}`,
+  emailSignature: `â€” ${productName}`,
+  supportContactLine: `${partnersEmail} Â· ${supportEmail}`,
 
   mobile: {
     bundleId: mobileBundleId,
@@ -299,7 +299,7 @@ export function brandExport(): Record<string, unknown> {
   };
 }
 
-/* ── Backward-compatible aliases (prefer `brand.*`) ───────────────────── */
+/* â”€â”€ Backward-compatible aliases (prefer `brand.*`) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 export const BRAND_PRODUCT = brand.productName;
 export const BRAND_PRODUCT_SHORT = brand.productShortName;

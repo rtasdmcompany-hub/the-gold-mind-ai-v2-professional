@@ -14,7 +14,11 @@ param(
   [string]$SignCertPath = "",
   [string]$SignCertPassword = "",
   [string]$SignThumbprint = "",
-  [switch]$SkipValidate
+  [switch]$SkipValidate,
+  # When set, mq5 source SHA is reported but does not abort packaging (EX5 freeze gate still applies).
+  [switch]$SkipMq5Gate,
+  # Production freeze EX5 — packaging aborts if Experts binary differs (unless empty to skip).
+  [string]$ExpectedEx5Sha = "21503FA83938CF80AA24947A512EBE2F238AC7512BF9E48A21FBFF647D77F9B7"
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,13 +48,29 @@ function Assert-CoreFrozen {
   Write-Banner "Core SHA-256 gate"
   if (-not (Test-Path $Mq5)) { throw "Core mq5 NOT FOUND: $Mq5" }
   if (-not (Test-Path $Ex5)) { throw "Compiled ex5 NOT FOUND: $Ex5. Compile in MetaEditor first." }
-  $hash = (Get-FileHash -Algorithm SHA256 $Mq5).Hash.ToLowerInvariant()
-  Write-Host "  Expected: $CertSha"
-  Write-Host "  Actual:   $hash"
-  if ($hash -ne $CertSha) {
-    throw "CORE SHA MISMATCH - packaging aborted. Do not redistribute."
+
+  $ex5Hash = (Get-FileHash -Algorithm SHA256 $Ex5).Hash.ToUpperInvariant()
+  if ($ExpectedEx5Sha) {
+    Write-Host "  Expected EX5: $($ExpectedEx5Sha.ToUpperInvariant())"
+    Write-Host "  Actual EX5:   $ex5Hash"
+    if ($ex5Hash -ne $ExpectedEx5Sha.ToUpperInvariant()) {
+      throw "EX5 FREEZE MISMATCH - packaging aborted. Restore freeze binary or pass authorized ExpectedEx5Sha."
+    }
+    Write-Host "  EX5 freeze MATCH." -ForegroundColor Green
   }
-  Write-Host "  MATCH - Core frozen. Packaging commercial surfaces only." -ForegroundColor Green
+
+  $hash = (Get-FileHash -Algorithm SHA256 $Mq5).Hash.ToLowerInvariant()
+  Write-Host "  Expected mq5: $CertSha"
+  Write-Host "  Actual mq5:   $hash"
+  if ($hash -ne $CertSha) {
+    if ($SkipMq5Gate) {
+      Write-Host "  mq5 SHA differs (SkipMq5Gate) — packaging EX5 freeze only." -ForegroundColor Yellow
+    } else {
+      throw "CORE SHA MISMATCH - packaging aborted. Do not redistribute."
+    }
+  } else {
+    Write-Host "  MATCH - Core frozen. Packaging commercial surfaces only." -ForegroundColor Green
+  }
 }
 
 function New-Payload {

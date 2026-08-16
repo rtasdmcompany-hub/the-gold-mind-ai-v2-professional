@@ -1,0 +1,2 @@
+59ed8c4fdc5e99fe8ac7fc2be213120ddea13fda19ead0fd66d6de3cd8b4611b  Setup.exe
+27a59db75d7625dbdae61903e1ed33d4d78fa2d6dcf952904a09138900451f2c  TGM_PROFESSIONAL_1.0.1_stable.zip
