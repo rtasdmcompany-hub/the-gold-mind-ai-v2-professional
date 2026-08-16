@@ -5,6 +5,8 @@
 3. Click Deploy EA to MetaTrader 5.
 4. Open official MetaTrader 5 (MetaQuotes).
 5. In Navigator open The Gold Mind Professional and attach TheGoldMindAI_Professional to a chart.
-6. Enable AutoTrading.
+6. Load preset Phase18_DEFAULT_PROTECTIONS (range 250, activations=1 — no re-arm).
+7. Enable AutoTrading.
 
+Power config lock: H4 range max 250 pips · max 1 activation per level per H4.
 Customer Portal: https://the-gold-mind-ai-v2-professional.vercel.app

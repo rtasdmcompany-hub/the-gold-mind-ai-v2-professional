@@ -1,10 +1,16 @@
 ﻿{
-    "product":  "THE GOLD MIND PROFESSIONAL",
-    "version":  "1.0.0",
-    "channel":  "stable",
-    "buildAt":  "2026-07-30T20:26:10.1754207Z",
-    "portalBase":  "https://the-gold-mind-ai-v2-professional.vercel.app",
-    "coreMq5Sha":  "1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e",
-    "coreEx5Sha":  "890e22254ef44f86e82bc3700cd2b0dd0eaddf57c3ce91ff0f801b999c347535",
-    "coreFrozen":  true
+  "product": "THE GOLD MIND PROFESSIONAL",
+  "version": "1.0.1",
+  "channel": "stable",
+  "buildAt": "2026-08-16T17:00:00Z",
+  "portalBase": "https://the-gold-mind-ai-v2-professional.vercel.app",
+  "coreMq5Sha": "1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e",
+  "coreEx5Sha": "21503FA83938CF80AA24947A512EBE2F238AC7512BF9E48A21FBFF647D77F9B7",
+  "coreFrozen": true,
+  "powerConfig": {
+    "PHASE18_MAX_H4_RANGE_PIPS": 250.0,
+    "PHASE18_MAX_LEVEL_ACTIVATIONS_H4": 1,
+    "preset": "presets/Phase18_DEFAULT_PROTECTIONS.set",
+    "notes": "Phase30: act=2 re-arm rejected. Phase34: range 400 rejected."
+  }
 }
