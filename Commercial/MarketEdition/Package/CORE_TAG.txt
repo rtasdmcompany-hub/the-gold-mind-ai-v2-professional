@@ -1,18 +1,18 @@
-# CORE_TAG.txt
+﻿# CORE_TAG.txt
 
 Edition: THE GOLD MIND MARKET (GM_EDITION_MARKET)
 Shared Core: Experts/TheGoldMindAI_Professional.mq5
-Build: 417 (property version 2.132)
-SHA-256 (mq5): c7a251ef5769d597f50f7515165106a937471ed765a491f59f7e542d05e165da
-SHA-256 (ex5): 254d30b6b8ef6afa9bc1184459664f5e951ec54ab2ba96ff98367729922afead
-Cert: Commercial/Documentation/RC2_CORE_CERTIFICATION.txt
+Build: 421 (property version 2.136)
+SHA-256 (mq5): 734b0cc4831dc15fadb2cd838776928e8e9fbe611d7880a6801c548548591f4e
+SHA-256 (ex5): 736305944c488755a8fdd8aac77d7d2a688be936b8ec0f50f024a6d00fb7b084
 
-Method (Build 417):
+Method (Build 421):
 - Shared broker SL = last grid level +/- 50 pip (all 3 levels)
-- Profit: +30 pip FULL book
-- Lots: 2% of BALANCE (not equity)
+- Profit: +30 pip -> 80% close + BE; 20% runner to ATR TP
+- Lots: 3% of EQUITY (|entry-sharedSL| per level)
+- Excel entries: BUY=High-Diff*m, SELL=Low+Diff*m
+- Phase11E AI Dynamic Exec OFF
 - H4 range lock OFF (3 BUY + 3 SELL every H4)
 - Hedge OFF
-- Daily profit lock OFF
 
 Rule: Market packaging must never alter this Core file.

@@ -3,7 +3,7 @@
 ## Prerequisite
 - Windows `csc.exe` (.NET Framework 4.x) **or** Linux `mcs` (mono) - used automatically
 - Certified `Experts/TheGoldMindAI_Professional.ex5` present
-- Core mq5 SHA must equal `c7a251ef5769d597f50f7515165106a937471ed765a491f59f7e542d05e165da`
+- Core mq5 SHA must equal `734b0cc4831dc15fadb2cd838776928e8e9fbe611d7880a6801c548548591f4e`
 - No duplicate alias installers / no `github-assets/` mirror in git
 
 ## Build (unsigned / default)
@@ -24,11 +24,11 @@ powershell -ExecutionPolicy Bypass -File .\Build-CommercialRelease.ps1
 
 ## Validate
 ```powershell
-.\Validate-Installer.ps1 -SetupExe "..\..\..\Releases\1.1.0\installer\Setup.exe"
+.\Validate-Installer.ps1 -SetupExe "..\..\..\Releases\1.2.0\installer\Setup.exe"
 ```
 
 ## Output
-`Commercial/Releases/1.1.0/installer/Setup.exe`
+`Commercial/Releases/1.2.0/installer/Setup.exe`
 
 ## Absolute rule
 Do not modify Trading Engine / Risk / Recovery / Money / Entry / Exit / Order logic / Core SHA.

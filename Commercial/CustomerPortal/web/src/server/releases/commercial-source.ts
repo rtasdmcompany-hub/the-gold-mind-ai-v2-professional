@@ -13,11 +13,11 @@ export const STABLE_PACKAGE_ID = product.installer.stablePackageId;
 export const STABLE_VERSION = product.version;
 export const STABLE_BUILD_NUMBER = product.buildNumber;
 export const STABLE_PACKAGE_FILE = product.installer.zipName;
-/** Known SHA-256 of Commercial/Releases/1.1.0/TGM_PROFESSIONAL_1.1.0_stable.zip */
+/** Known SHA-256 of Commercial/Releases/1.2.0/TGM_PROFESSIONAL_1.2.0_stable.zip */
 export const STABLE_SHA256 =
-  "69f125cc44e729b966b8cd6ac8c773c22196a221593503d17bf4d628eedfb697";
-export const STABLE_SIZE_BYTES = 872793;
-export const STABLE_RELEASED_AT = "2026-08-25T03:38:59.4877453Z";
+  "eb7df805e43b7c94c0c410e5f0f303ef256c998701bd6b6d1f155c208d24d37b";
+export const STABLE_SIZE_BYTES = 789112;
+export const STABLE_RELEASED_AT = "2026-08-25T09:47:08.3872215Z";
 
 const FAKE_SEED_IDS = new Set(["rel_200_stable", "rel_201_rc", "rel_dev_nightly"]);
 

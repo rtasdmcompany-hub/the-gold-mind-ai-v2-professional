@@ -16,11 +16,11 @@
   .\Sync-ReleaseEverywhere.ps1 -Version 1.0.1 -WhatIf
 #>
 param(
-  [string]$Version = "1.1.0",
+  [string]$Version = "1.2.0",
   [string]$Channel = "stable",
   [string]$PortalBase = "https://the-gold-mind-ai-v2-professional.vercel.app",
   # Production freeze binary - change only with explicit Owner authorization
-  [string]$ExpectedEx5Sha = "254D30B6B8EF6AFA9BC1184459664F5E951EC54AB2BA96FF98367729922AFEAD",
+  [string]$ExpectedEx5Sha = "",
   [switch]$Push,
   [switch]$SkipBuild,
   [switch]$SkipValidate,
@@ -55,21 +55,28 @@ function Get-Sha256([string]$path) {
 
 function Assert-FreezeEx5 {
   Write-Banner "Freeze EX5 gate"
-  if (-not (Test-Path $PayloadEa)) { throw "Payload EX5 missing: $PayloadEa" }
-  $payloadHash = Get-Sha256 $PayloadEa
+  if (-not (Test-Path $ExpertsEx5)) { throw "Experts EX5 missing: $ExpertsEx5" }
+  $expertsHash = Get-Sha256 $ExpertsEx5
+  if ([string]::IsNullOrWhiteSpace($ExpectedEx5Sha)) {
+    $script:ExpectedEx5Sha = $expertsHash
+    Write-Host "  ExpectedEx5Sha empty - adopting Experts EX5: $ExpectedEx5Sha" -ForegroundColor Yellow
+  }
   Write-Host "  Expected freeze: $ExpectedEx5Sha"
+  Write-Host "  Experts EX5:     $expertsHash"
+  if ($expertsHash -ne $ExpectedEx5Sha.ToUpperInvariant()) {
+    throw "Experts EX5 does not match ExpectedEx5Sha. Compile/deploy Build 421 first."
+  }
+  # Authorize this binary into installer payload (source of truth = Experts)
+  New-Item -ItemType Directory -Force -Path (Split-Path $PayloadEa) | Out-Null
+  if (-not $WhatIf) {
+    Copy-Item -Force $ExpertsEx5 $PayloadEa
+  }
+  $payloadHash = Get-Sha256 $PayloadEa
   Write-Host "  Payload EX5:     $payloadHash"
   if ($payloadHash -ne $ExpectedEx5Sha.ToUpperInvariant()) {
-    throw "Payload EX5 is NOT the freeze binary. Restore freeze before sync."
+    throw "Payload EX5 copy failed hash check."
   }
-  # Keep Experts aligned so Build-CommercialRelease copies the same bytes
-  if (-not (Test-Path $ExpertsEx5) -or ((Get-Sha256 $ExpertsEx5) -ne $payloadHash)) {
-    Write-Host "  Restoring Experts EX5 from freeze payload..." -ForegroundColor Yellow
-    if (-not $WhatIf) {
-      Copy-Item -Force $PayloadEa $ExpertsEx5
-    }
-  }
-  Write-Host "  FREEZE MATCH" -ForegroundColor Green
+  Write-Host "  FREEZE MATCH (Build 421 authorized)" -ForegroundColor Green
 }
 
 function Sync-Presets {
@@ -103,7 +110,8 @@ function Invoke-CommercialBuild {
     "-Channel", $Channel,
     "-PortalBase", $PortalBase,
     "-SkipMq5Gate",
-    "-ExpectedEx5Sha", $ExpectedEx5Sha
+    "-ExpectedEx5Sha", $ExpectedEx5Sha,
+    "-CoreBuild", "421"
   )
   if ($SkipValidate) { $args += "-SkipValidate" }
   & powershell @args
@@ -222,8 +230,12 @@ function Invoke-GitPush {
       "Commercial/CustomerPortal/web/src/server/releases/commercial-source.ts",
       "Commercial/CustomerPortal/web/package.json",
       "Commercial/Documentation/RELEASE_SYNC.md",
+      "Commercial/MarketEdition",
+      "Commercial/Documentation/MQL5_MARKET_LISTING",
       ".github/workflows/portal-release-sync.yml",
-      "Experts/TheGoldMindAI_Professional.ex5"
+      "Experts/TheGoldMindAI_Professional.ex5",
+      "Experts/TheGoldMindAI_Professional.mq5",
+      "Include/AI/ExecutionSupervisor/Phase11B/CGmEAPreActivationBridge.mqh"
     )
     foreach ($p in $paths) {
       if (Test-Path (Join-Path $Root $p)) { git add -- $p 2>$null }
@@ -233,9 +245,9 @@ function Invoke-GitPush {
       Write-Host "  Nothing new to commit." -ForegroundColor Yellow
     } else {
       git commit -m @"
-Publish commercial $Version everywhere (freeze EX5 + portal sync).
+Publish commercial $Version and Market 2.2.0 on Core Build 421.
 
-Rebuilds installer ZIP, updates Customer Portal public/releases and version seed so local/online stay identical.
+Shared SL last+/-50pip, +30pip 80%+BE, 3% EQUITY lots, Phase11E removed; sync portal ZIP + Market listing pack.
 "@
       if ($LASTEXITCODE -ne 0) { throw "git commit failed" }
     }

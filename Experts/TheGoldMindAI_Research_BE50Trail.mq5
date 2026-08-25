@@ -1,44 +1,68 @@
 //+------------------------------------------------------------------+
-//|                                                The_Gold_Mind.mq5 |
-//|                        The Gold Mind - H4 Grid Expert Advisor     |
-//|  Production Build 421 - shared SL last+/-50 | 3% EQUITY risk     |
+//|                               TheGoldMindAI_Research_BE50Trail.mq5|
+//|                 The Gold Mind - H4 Grid  [RESEARCH BUILD 416]      |
+//|  No H4 range lock | No hedge | shared SL last±50pip | +30 FULL   |
 //+------------------------------------------------------------------+
 #property copyright "RTAS Digital Marketing Company | RTAS Group of Companies"
-#property version   "2.136"
-#property description "The Gold Mind - Excel entries: BUY=High-diff*m | SELL=Low+diff*m."
-#property description "Shared SL last+/-50pip (same on all 3) | +30pip 80%+BE | 20% ATR TP."
-#property description "Lots on EQUITY 3%. Phase11E AI Dynamic Exec REMOVED."
-#property description "Build 421 - shared SL + 3% equity risk per level."
+#property version   "2.131"
+#property description "RESEARCH BUILD 416 — NOT FOR LIVE. DO NOT attach to live account."
+#property description "Any H4 range: 3 BUY + 3 SELL | broker SL last±50pip | no hedge."
 #property link      "https://www.mql5.com/en/users/rtas"
 
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
-#include <AI/ExecutionSupervisor/Phase11B/CGmEAPreActivationBridge.mqh>
-#include <AI/InstitutionalValidation/CGmPhase14ValidationBridge.mqh>
 
 //--- Core constants
-#define EXPERT_MAGIC              112233
+#define EXPERT_MAGIC              112234   // RESEARCH BUILD - isolated from production magic
 #define GRID_LINE_PREFIX          "TGM_GL_"
 #define UI_PREFIX                 "TGM_UI_"
+#define TGM_AI_PANEL_PREFIX       "TGM_AI_" // legacy Phase11E chart objects — wiped on init
 #define TGM_BE_STRATEGY_POINTS      500.0
 #define TGM_TRAIL_STRATEGY_POINTS   300.0
-#define TGM_PARTIAL_BE_TRIGGER_PIPS 30.0   // +30 pips -> 80% close + BE
-#define TGM_FULL_CLOSE_TRIGGER_PIPS 30.0   // same gate (legacy alias)
-#define TGM_SHARED_SL_BEYOND_LAST_PIPS 50.0 // all 3 levels share SL = last +/-50pip
-#define TGM_RISK_DIST_PIPS           50.0
-#define TGM_BUILD_SERIAL            421
-#define TGM_PARTIAL_CLOSE_AT_30_PCT  80.0   // book 80%, leave 20% runner to ATR TP
-#define TGM_R380_FORCE_NO_H4_RANGE_FILTER 1
+#define TGM_STAGE1_AT_PIPS           30.0   // +30 pip -> FULL close (equity→balance)
+#define TGM_STAGE1_CLOSE_PCT        100.0
+#define TGM_STAGE2_AT_PIPS           30.0
+#define TGM_STAGE2_CLOSE_PCT        100.0
+#define TGM_STAGE3_AT_PIPS           30.0
+#define TGM_STAGE3_CLOSE_PCT        100.0
+#define TGM_STAGE3_REMAIN_PCT         0.0
+#define TGM_STAGE4_AT_PIPS           30.0
+#define TGM_RUNNER_TRAIL_PIPS         0.0   // no runner — full book at +30
+#define TGM_LOT_SIZE_ON_BALANCE         1   // R415: size on BALANCE not floating equity
+#define TGM_LOSS_HEDGE_PIPS          30.0   // open 1:1 hedge when parent loss >= 30 pip
+#define TGM_LOSS_BE_PIPS             40.0   // parent -40pip (~hedge +10) -> arm BE on hedge
+#define TGM_HEDGE_OWN_BE_PIPS        10.0   // hedge +10pip profit -> BE SL (parent untouched)
+#define TGM_HEDGE_OWN_LOSS_PIPS      10.0   // hedge -10pip -> close HEDGE only (parent stays)
+#define TGM_HEDGE_BE_PROFIT_PIPS     TGM_LOSS_BE_PIPS // legacy alias -> parent-loss BE trigger
+#define TGM_SHARED_SL_BEYOND_LAST_PIPS 50.0 // pending shared SL = last level ±50pip (lot sizing)
+#define TGM_RISK_DIST_PIPS           50.0   // fallback lot distance if shared SL missing
+#define TGM_NO_FIXED_BROKER_SL          1   // parent pending SL NEVER stripped — stays until hit
+#define R376_MAX_OPEN_GRID_TOTAL        6
+#define R376_MAX_OPEN_GRID_PER_SIDE     3
+#define R376_ENABLE_H4_DIRECTION_FILTER false
+#define TGM_EXTREME_H4_RANGE_PIPS    250.0
+#define TGM_EXTREME_H4_BODY_PIPS     180.0
+#define TGM_EXTREME_H4_COOLDOWN_HOURS   24
+#define TGM_SIDE_LOSS_STREAK_LIMIT   9999
+#define TGM_MAX_LEVEL_ACTS_H4_HARD      1
+#define TGM_H4_RANGE_MAX_PIPS       200.0
+#define TGM_ATR_SL_PERIOD              14
+#define TGM_BUILD_SERIAL             416
+#define TGM_HEDGE_REOPEN_MIN_SEC        0
+#define TGM_MANDATORY_REHEDGE_ATTEMPTS  3
+#define TGM_R380_DISABLE_SHOCK_COOLDOWN 1
+#define TGM_R380_DISABLE_SIDE_CASCADE   1
+#define TGM_R380_FORCE_NO_H4_RANGE_FILTER 1   // R416: any H4 range — both sides always
 #define TGM_FORCE_DISABLE_DAILY_PROFIT_LOCK 1
 
 #include <AI/RiskGovernor/Phase17/CPhase17RiskGovernor.mqh>
 #define TGM_RETCODE_FROZEN          10029
-#define TGM_RISK_PER_TRADE_FRACTION 0.03   // Excel Risk 3%
+#define TGM_RISK_PER_TRADE_FRACTION 0.02   // 2% of BALANCE (R415) — not floating equity
 #define TGM_HEDGE_TRIGGER_STRATEGY_PTS 500.0
 #define TGM_HEDGE_CLOSE_STRATEGY_PTS   100.0
 #define TGM_HEDGE_COMMENT              "GM_HEDGE"
 #define TGM_MAX_GRID_POSITIONS_TOTAL    6
-// Max activations/level/H4: PHASE18_MAX_LEVEL_ACTIVATIONS_H4 (default 2) Ã¢â‚¬â€ 1st SL re-arm; 2nd SL locks
+// Max activations/level/H4: PHASE18_MAX_LEVEL_ACTIVATIONS_H4 (default 2) — 1st SL re-arm; 2nd SL locks
 #define TGM_MAX_HEDGE_CYCLES_PER_H4     3
 #define TGM_HEDGE_REOPEN_RECOVERY_PTS   100.0
 #define TGM_PROTECTION_SCAN_INTERVAL_SEC 10
@@ -101,45 +125,46 @@
 //--- Risk mode enumeration
 enum ENUM_RISK_MODE
   {
-   RISK_AUTO_3_PERCENT_EQUITY = 0, // Auto: each trade risks 3% of account EQUITY
+   RISK_AUTO_3_PERCENT_EQUITY = 0, // Auto: each trade risks 3% of account equity
    RISK_MANUAL_LOT            = 1  // Manual Lot Size
   };
 
-//--- Mode A (hedge + loss-cap) permanently removed in v2.067 Ã¢â‚¬â€ Mode B only.
+//--- Mode A (hedge + loss-cap) permanently removed in v2.067 — Mode B only.
 
-//--- Inputs
+//--- R392 = no fixed SL | hedge@-30 | hedge-only BE@-40 (parent stays) | profit ladder | 3%
+// H4<=200 | NO broker SL | hedge cycles open/BE/close until parent profit method
 input group "--- Risk & Lot Sizing ---"
-input ENUM_RISK_MODE RiskMode           = RISK_AUTO_3_PERCENT_EQUITY; // Risk Mode: 3% EQUITY per trade OR Manual
-input double         Manual_Lot_Size      = 0.50; // Manual lot size (used when RiskMode = Manual)
-input double         Max_Lot_Size         = 5.00; // Hard cap: never open above this lot (0 = broker max only)
+input ENUM_RISK_MODE RiskMode           = RISK_AUTO_3_PERCENT_EQUITY; // Risk Mode
+input double         Manual_Lot_Size      = 0.50; // Manual lot size (RiskMode=Manual only)
+input double         Max_Lot_Size         = 5.00; // Hard lot cap
 
 input group "--- ATR Fallback ---"
-input double         InpFixedStopLossUSD  = 3.00; // Fallback only if ATR unavailable
+const double         InpFixedStopLossUSD  = 3.00; // Fallback risk-distance only (no broker SL)
 
 input group "--- Live ATR Indicator Settings ---"
-input int            ATR_Period           = 12; // Live ATR-12 H4 for TP only
+input int            ATR_Period           = 12; // ATR period for TP only
 
 input group "--- SL & TP Settings ---"
-const bool           Enable_ATR_StopLoss       = false; // OFF: shared SL last+/-50pip
-input double         SL_ATR_Multiplier       = 1.0; // unused while ATR SL OFF
-input double         TP_ATR_Multiplier       = 1.0; // TP = Live ATR x multiplier
+const bool           Enable_ATR_StopLoss  = false; // R392: NO fixed/ATR broker SL
+const double         SL_ATR_Multiplier    = 1.0;   // unused
+input double         TP_ATR_Multiplier    = 1.0;   // TP = ATR-12 × this
 
-input group "--- Price-Based ($) Profit Engine [XAUUSD: 1.00 price move = $1.00] ---"
-input double         InpProfitBE          = 5.00;  // Parent: $ profit -> Break-Even + 80% book + trailing
-input double         InpTrailingStopUSD   = 3.00;  // PROFIT: trailing gap $ behind price (3.00 = 30pip)
+input group "--- Price-Based ($) Profit Engine ---"
+const double         InpProfitBE          = 3.00;  // profit-side BE reference
+const double         InpTrailingStopUSD   = 2.00;  // unused in R393
 
-//--- Legacy Mode A constants (not inputs Ã¢â‚¬â€ kept so dead hedge helpers still compile; engine never runs)
-const double         InpHedgeTriggerUSD   = 5.00;
-const double         InpHedgeStopLossUSD  = 0.00;
-const double         InpHedgeBreakEvenUSD = 1.00;
-const double         InpHedgeRearmClearUSD = 5.00;
-const int            InpHedgeRearmMinSec  = 0;
+//--- Hedge loss-control (R412): hedge@-30 | hedge +10pip BE | hedge -10pip close | parent SL stays
+const double         InpHedgeTriggerUSD   = 3.00;  // ~30pip on XAU (overridden by pip gate)
+const double         InpHedgeStopLossUSD  = 1.00;  // ~10pip death SL on hedge only (see TGM_HEDGE_OWN_LOSS_PIPS)
+const double         InpHedgeBreakEvenUSD = 1.00;  // ~10pip BE on hedge (see TGM_HEDGE_OWN_BE_PIPS)
+const double         InpHedgeRearmClearUSD = 3.00;
+const int            InpHedgeRearmMinSec  = TGM_HEDGE_REOPEN_MIN_SEC; // anti-spam between hedge cycles
 const double         InpHedgeReturnArmUSD = 0.00;
 const bool           Enable_LossCapEngine     = false;
 const double         InpLossCapUSD            = 6.00;
-const double         InpHedgeReleaseUSD       = 1.00;
+const double         InpHedgeReleaseUSD       = 1.00; // release hedge when parent nearly recovered
 const bool           Enable_ParentHardCapSL   = false;
-const bool           Enable_Hedge_Protection   = false;
+const bool           Enable_Hedge_Protection   = false; // R416: hedge OFF — broker SL only
 const bool           InpHedgeChopFreezeEnable  = false;
 const double         InpHedgeChopRangeUSD    = 2.00;
 const int            InpHedgeChopMinDeaths   = 2;
@@ -154,23 +179,25 @@ const int            Max_Hedge_Cycles_Per_H4   = 0;    // legacy unused (Mode A 
 const int            Hedge_Retry_Seconds       = 30;   // legacy unused (Mode A removed)
 const bool           Enable_Basket_TP          = false; // permanently OFF (Mode A removed)
 const double         Basket_TP_Amount          = 500.0;
-const bool           Enable_TrendBleedProtect  = false; // OFF Ã¢â‚¬â€ full 3BUY+3SELL (Phase17C E2 rejected)
+const bool           Enable_TrendBleedProtect  = false; // R380 OFF — both sides always allowed
 
 input group "--- Kill Switch (last resort) ---"
-input bool           Enable_Triple_Protection       = true;  // Layer 3 kill switch
+// R395: Kill Switch DISABLED in research — hedge system pure test (no forced close interference).
+const bool           Enable_Triple_Protection       = false; // Layer 3 OFF for hedge research
 const double         Emergency_Parent_SL_Points     = 750.0; // legacy Layer 2 (unused in Mode B)
 const int            Unprotected_Hang_Seconds       = 90;    // legacy Layer 2 (unused in Mode B)
-input double         Emergency_Close_DD_Percent     = 18.0;  // close ALL bot trades + pendings
-input double         Max_Daily_Loss_Percent         = 15.0;  // daily loss cap -> close ALL + pause day
+const double         Emergency_Close_DD_Percent     = 9999.0; // R395 RESEARCH: disabled
+const double         Max_Daily_Loss_Percent         = 9999.0; // R395 RESEARCH: disabled
 
 input group "--- Advanced Trade Management ($ Based) ---"
-input bool           Enable_BreakEven        = true;  // ON: +30pip move SL to BE (keep ATR TP)
-input bool           Enable_PartialClose     = true;  // ON: +30pip book 80%, leave 20% runner
-input double         PartialClose_Percent    = 80.0;  // % closed at +30pip (remainder stays to ATR TP)
+const bool           Enable_BreakEven        = true;   // R375 LOCKED: BE always on
+const bool           Enable_PartialClose     = false;  // R375 LOCKED: no partial close via old engine
+const double         PartialClose_Percent    = 0.0;    // R375 LOCKED: unused
 
 //--- Globals
 CTrade              g_trade;
-int                 g_atrHandle              = INVALID_HANDLE;
+int                 g_atrHandle              = INVALID_HANDLE; // ATR-12 for TP
+int                 g_atrSlHandle            = INVALID_HANDLE; // ATR-14 for SL
 datetime            g_lastH4BarTime          = 0;
 datetime            g_lastDashboardUpdate    = 0;
 datetime            g_historyCacheH4Start    = 0;
@@ -200,14 +227,30 @@ bool                g_emergencyKillSwitchActive = false;
 string              g_emergencyKillSwitchReason = "";
 bool                g_marketValidationCompleted = false; // tester: true after Market validation trades done
 
+//--- R408: paired parent+hedge cycle nets (MT5 report splits them; this is the truth)
+int                 g_pairCycles             = 0;
+int                 g_pairWins               = 0;
+int                 g_pairLosses             = 0;
+int                 g_pairUnhedgedSL         = 0;
+double              g_pairNetSum             = 0.0;
+double              g_pairWinSum             = 0.0;
+double              g_pairLossSum            = 0.0;
+double              g_pairWorstNet           = 0.0;
+double              g_pairBestNet            = 0.0;
+
 //--- Forward declarations
 bool   ShouldRenderUI();
+void   RecordPairedCycleNet(const double netMoney, const bool hedged, const string tag);
+void   LogPairedNetSummary();
+double SumLiveHedgeMoneyForParent(const ulong parentTicket);
 void   InitBrokerPointModifier();
 bool   GetLiveATR(double &atrOut);
+bool   GetLiveAtrSl(double &atrOut);
+void   DeleteLegacyAiPanelObjects();
 double GetLiveAtrStopDistance();
 double GetConfiguredStopDistance();
 bool   GetSharedGridSideStopLoss(const ENUM_POSITION_TYPE side, double &slOut);
-double GetLotSizingCapital();
+bool   IsResearchH4RangeAllowed(string &reasonOut);
 bool   CalculateH4GridLevels(double &high1, double &low1, double &pivot, double &buy1, double &buy2, double &buy3, double &sell1, double &sell2, double &sell3);
 bool   CalculateExcelGridSLTP(const double buy1, const double buy2, const double buy3, const double sell1, const double sell2, const double sell3, const double atrValue, double &buySL, double &sellSL, double &buyTP1, double &buyTP2, double &buyTP3, double &sellTP1, double &sellTP2, double &sellTP3);
 double StrategyPointsToBrokerPoints(const double strategyPoints);
@@ -229,6 +272,21 @@ bool   IsWeekendOrMarketClosed();
 bool   IsTradeProfitZoneSecured(const ulong ticket);
 bool   IsModifyTradeOperation(const string operation);
 bool   IsNearSessionBreak(const int warningSec = 300);
+bool   ResolveGridLevelSide(const string level, ENUM_POSITION_TYPE &sideOut);
+datetime GetTradeDayStart(const datetime when);
+datetime GetNextTradeDayStart(const datetime when);
+string DirectionalLossCountKey(const ENUM_POSITION_TYPE side, const datetime when);
+string DirectionalPauseKey(const ENUM_POSITION_TYPE side);
+string ExtremeH4ShockUntilKey();
+string ExtremeH4ShockBarKey();
+int    GetDirectionalLossCountToday(const ENUM_POSITION_TYPE side, const datetime when);
+void   ResetDirectionalLossCountToday(const ENUM_POSITION_TYPE side, const datetime when);
+void   RecordDirectionalLossAndMaybePause(const ENUM_POSITION_TYPE side, const datetime eventTime, const string level, const double net);
+bool   IsDirectionalPauseActive(const ENUM_POSITION_TYPE side, string &reasonOut);
+void   UpdateExtremeH4ShockCooldown();
+bool   IsExtremeH4ShockCooldownActive(string &reasonOut);
+int    CancelPendingOrdersForSide(const ENUM_POSITION_TYPE side);
+void   ClearResearchRuntimeGuards();
 void   MarkBreakEvenPending(const ulong ticket);
 void   ClearBreakEvenPending(const ulong ticket);
 bool   IsBreakEvenPending(const ulong ticket);
@@ -289,10 +347,23 @@ double GetHedgePeakProfitPoints(const ulong hedgeTicket);
 void   ClearHedgePeakProfitPoints(const ulong hedgeTicket);
 bool   ShouldCloseHedgeOnMarketReturn(const ulong hedgeTicket, const ulong parentTicket, const double point, const double closeBrokerPts, const double triggerBrokerPts);
 void   ProcessHedgeProtectionEngine();
+void   SyncHedgeOrphanPositions();
+void   ClearMandatoryHedgeGates(const ulong parentTicket);
+bool   ForceRehedgeIfParentStillInLoss(const ulong parentTicket, const string reason);
+void   EnforceMandatoryHedgeCoverage();
+void   ProcessHedgeExitRehedgeFromDeal(const ulong dealTicket);
+void   ProcessHedgeFillBindFromDeal(const ulong dealTicket);
+ulong  FindHedgeProtectStopTicket(const ulong parentTicket);
+int    CancelHedgeProtectStopsForParent(const ulong parentTicket, const string reason);
+bool   PlaceHedgeProtectStop(const ulong parentTicket);
+void   EnsureHedgeProtectArmed(const ulong parentTicket);
+void   ManageHedgeBreakEvenCycle();
+bool   ArmHedgeBreakEvenSL(const ulong hedgeTicket);
 void   ProcessBreakEvenPriorityQueue();
 void   RunAccountProtectionEngine();
 void   EnforceHedgeCoverageScan();
 void   MonitorAccountDrawdownProtection();
+void   EnforceSurvivalBeforeStopOut();
 int    CountGridPositions();
 int    CountHedgePositions();
 bool   IsGridPlacementAllowed(const bool freshH4Cycle = false);
@@ -305,6 +376,7 @@ bool   IsKillSwitchActiveToday();
 bool   ApplyEmergencyParentSL(const ulong ticket);
 bool   CloseGridPositionEmergency(const ulong ticket, const string reason);
 bool   SafePositionModify(const ulong ticket, const double sl, const double tp, const string operation);
+bool   IsBrokerStopDistanceOK(const ENUM_POSITION_TYPE posType, const double refPrice, const double slPrice);
 bool   EnsureParentHasBrokerSL(const ulong ticket);
 bool   ApplyParentHardLossCap(const ulong parentTicket);
 bool   TryReleaseStickyHedge(const ulong parentTicket);
@@ -357,6 +429,8 @@ bool   HasBasketPrematureWinners();
 void   EnforceTrendBleedProtect();
 bool   HasWinningSideArmed(const ENUM_POSITION_TYPE side);
 bool   IsOppositeBleedPaused(const ENUM_POSITION_TYPE sideToRestrict);
+int    CountOpenGridParents(const ENUM_POSITION_TYPE sideFilter = (ENUM_POSITION_TYPE)-1);
+bool   R376_AllowGridSideThisH4(const ENUM_POSITION_TYPE side, const double pivot, const double prevClose);
 int    DeleteBotPendingsOfType(const ENUM_ORDER_TYPE orderType);
 bool   IsHedgeReturnArmed(const ulong hedgeTicket);
 void   MarkHedgeReturnArmed(const ulong hedgeTicket);
@@ -375,12 +449,22 @@ bool   IsOurBotMagicPosition(const ulong ticket);
 bool   IsOurBotGridParent(const ulong ticket);
 bool   IsForeignOrManualPosition(const ulong ticket);
 bool   IsBotHedgePosition(const ulong ticket, const string comment);
+ulong  StrictHedgeParentTicket(const ulong hedgeTicket, const string comment);
+ulong  ResolveHedgeParentTicket(const ulong hedgeTicket, const string comment);
+ulong  FindParentForLinkedHedge(const ulong hedgeTicket);
 bool   IsProfitEngineArmed(const ulong ticket);
 bool   IsPartialClosedBeRunner(const ulong ticket);
 void   MarkPartialClosedBeRunner(const ulong ticket);
 void   LogPhase28A(const string eventName, const ulong ticket, const string detail);
 double GetPositionProfitPips(const ulong ticket);
+double GetPositionLossPips(const ulong ticket);
+double GetTicketNetMoney(const ulong ticket);
 bool   StripPositionTakeProfit(const ulong ticket, const string reason);
+bool   StripPositionStopLoss(const ulong ticket, const string reason);
+void   RememberParentPendingSL(const ulong ticket);
+bool   RestoreParentPendingSL(const ulong ticket, const string reason);
+void   CloseHedgesForParent(const ulong parentTicket, const string reason);
+void   ProcessParentExitCloseHedges(const ulong dealTicket);
 bool   ApplyBreakEvenSlNoTp(const ulong ticket, const double beSL, const string reason);
 double GetPositionProfitUSD(const ulong ticket);
 void   ClearGridLevelState(const string comment);
@@ -429,12 +513,14 @@ int OnInit()
       Print("The Gold Mind: InpFixedStopLossUSD must be > 0 (fixed $ SL / ATR fallback).");
       return INIT_PARAMETERS_INCORRECT;
      }
-   if(Emergency_Close_DD_Percent <= Max_Floating_DD_Percent || Emergency_Close_DD_Percent > 40.0)
+   if(Enable_Triple_Protection &&
+      (Emergency_Close_DD_Percent <= Max_Floating_DD_Percent || Emergency_Close_DD_Percent > 40.0))
      {
       Print("The Gold Mind: Emergency_Close_DD_Percent must be > Max_Floating_DD_Percent and <= 40.");
       return INIT_PARAMETERS_INCORRECT;
      }
-   if(Max_Daily_Loss_Percent <= 0.0 || Max_Daily_Loss_Percent > 40.0)
+   if(Enable_Triple_Protection &&
+      (Max_Daily_Loss_Percent <= 0.0 || Max_Daily_Loss_Percent > 40.0))
      {
       Print("The Gold Mind: Max_Daily_Loss_Percent must be between 0 and 40.");
       return INIT_PARAMETERS_INCORRECT;
@@ -482,18 +568,19 @@ int OnInit()
    g_atrHandle = iATR(_Symbol, PERIOD_H4, ATR_Period);
    if(g_atrHandle == INVALID_HANDLE)
      {
-      Print("The Gold Mind: Failed to create iATR handle. GetLastError=", GetLastError());
+      Print("The Gold Mind: Failed to create iATR(TP) handle. GetLastError=", GetLastError());
       return INIT_FAILED;
      }
+   g_atrSlHandle = INVALID_HANDLE; // R392: no ATR/fixed broker SL
 
-   double initAtr = 0.0;
-   if(GetLiveATR(initAtr))
+   double initAtrTp = 0.0;
+   if(GetLiveATR(initAtrTp))
      {
       const int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-      PrintFormat("The Gold Mind: Live H4 ATR(%d)=%.*f | sharedSL last+/-%.0fpip | TP=%.*f (%.1fx ATR) | hedge=OFF",
-                  ATR_Period, digits, initAtr,
-                  TGM_SHARED_SL_BEYOND_LAST_PIPS,
-                  digits, initAtr * TP_ATR_Multiplier, TP_ATR_Multiplier);
+      const double riskDist = GetConfiguredStopDistance();
+      PrintFormat("The Gold Mind: H4 ATR-TP(%d)=%.*f | sharedSL last±%.0fpip | hedge=OFF | any H4 range OK",
+                  ATR_Period, digits, initAtrTp,
+                  TGM_SHARED_SL_BEYOND_LAST_PIPS);
      }
 
    if(ShouldRenderUI())
@@ -505,9 +592,12 @@ int OnInit()
       EventSetTimer(TGM_DASHBOARD_TIMER_SEC);
      }
 
-   GmP11B_OnInit(EXPERT_MAGIC, Max_Lot_Size, g_atrHandle, g_uiX, g_uiY);
-   GmP14_OnInit(g_atrHandle);
+   DeleteLegacyAiPanelObjects(); // wipe leftover Phase11E chart panel
    Phase17_OnInit();
+
+   // R380: tester must start clean so consecutive runs are comparable.
+   if(IsStrategyTester())
+      ClearResearchRuntimeGuards();
 
    if(!IsStrategyTester())
      {
@@ -547,22 +637,15 @@ int OnInit()
          Print("The Gold Mind: Trade blocked - ", block);
      }
 
-   Print("The Gold Mind v2.136 (build ", TGM_BUILD_SERIAL, "): Initialized on ", _Symbol, " (", _Digits, " digits).");
-   PrintFormat("TGM: Max activations/level/H4=%d (ONE shot - no re-arm).",
+   Print("The Gold Mind v2.131 (build ", TGM_BUILD_SERIAL, "): Initialized on ", _Symbol, " (", _Digits, " digits).");
+   PrintFormat("TGM: Max activations/level/H4=%d (ONE shot — no re-arm).",
                MaxLevelActivationsThisH4());
-   PrintFormat("TGM [R421]: Excel BUY=High-d*m SELL=Low+d*m | sharedSL last+/-%.0fpip | +%.0fpip %.0f%%+BE | lots=EQUITY %.0f%%.",
-               TGM_SHARED_SL_BEYOND_LAST_PIPS, TGM_PARTIAL_BE_TRIGGER_PIPS, TGM_PARTIAL_CLOSE_AT_30_PCT,
-               TGM_RISK_PER_TRADE_FRACTION * 100.0);
-   PrintFormat("TGM [OWNERSHIP]: Magic=%d ONLY - manual/foreign trades are invisible (no manage, no DD, no block).", EXPERT_MAGIC);
-   Print("TGM [H4-POLICY]: Each H4 -> 3 BUY + 3 SELL | SAME shared SL on all 3 | BUY SL=buy3-50pip | SELL SL=sell3+50pip.");
-   PrintFormat("TGM [LOT]: Max_Lot_Size=%.2f | AutoRisk=%.0f%% of EQUITY | lot dist = |entry-sharedSL| per level.",
+   PrintFormat("TGM [R416]: H4 range lock OFF | hedge OFF | lots=BALANCE | +30=FULL book.");
+   PrintFormat("TGM [OWNERSHIP]: Magic=%d ONLY — manual/foreign trades are invisible (no manage, no DD, no block).", EXPERT_MAGIC);
+   Print("TGM [H4-POLICY]: Each H4 -> 3 BUY + 3 SELL (any range) | shared SL last±50pip on all 3 levels.");
+   Print("TGM [METHOD]: Profit +30pip FULL book | Loss: broker shared SL only (no hedge).");
+   PrintFormat("TGM [LOT]: Max_Lot_Size=%.2f | AutoRisk=%.0f%% BALANCE | conservative L1 distance.",
                Max_Lot_Size, TGM_RISK_PER_TRADE_FRACTION * 100.0);
-   PrintFormat("TGM [METHOD]: Profit +%.0fpip -> %.0f%% close + BE | %.0f%% runner to ATR TP | Loss: shared SL last+/-50pip.",
-               TGM_PARTIAL_BE_TRIGGER_PIPS, TGM_PARTIAL_CLOSE_AT_30_PCT, 100.0 - TGM_PARTIAL_CLOSE_AT_30_PCT);
-   Print("TGM [P11E]: AI Dynamic Exec Engine DISABLED (removed from strategy).");
-   PrintFormat("TGM [P14]: AI_VALIDATION_ENABLED=%s (OFF = unchanged H4 OrderSend path).",
-               (AI_VALIDATION_ENABLED ? "true" : "false"));
-   Print("TGM [PLACE]: Pendings only when Ask>BuyLevel (BuyLimit) / Bid<SellLevel (SellLimit). Price-through = wait.");
    if(InpTrailingStopUSD > 3.01 || InpTrailingStopUSD < 2.99)
       PrintFormat("TGM [WARN]: InpTrailingStopUSD=%.2f (expected 3.00). Set Inputs trail to 3.", InpTrailingStopUSD);
    return INIT_SUCCEEDED;
@@ -580,6 +663,11 @@ void OnDeinit(const int reason)
       IndicatorRelease(g_atrHandle);
       g_atrHandle = INVALID_HANDLE;
      }
+   if(g_atrSlHandle != INVALID_HANDLE)
+     {
+      IndicatorRelease(g_atrSlHandle);
+      g_atrSlHandle = INVALID_HANDLE;
+     }
 
    // NOTE: we intentionally do NOT close positions / delete pendings here.
    //  * On REASON_REMOVE / CHARTCLOSE the terminal has already disabled trading
@@ -594,9 +682,8 @@ void OnDeinit(const int reason)
 
    if(reason != REASON_CHARTCHANGE)
      {
+      LogPairedNetSummary();
       Phase17_LogSummary();
-      GmP11B_OnDeinit();
-      GmP14_OnDeinit();
       CleanupEAChartVisuals();
      }
   }
@@ -643,7 +730,6 @@ void OnTick()
      }
 
    MonitorServerTradeRecovery();
-   GmP11B_OnTick();
    Phase17_OnTickUpdate(); // DD / daily lock / H4 range diagnostics (gates placement separately)
    if(Phase17_ConsumePendingCancelRequest())
      {
@@ -659,7 +745,14 @@ void OnTick()
      }
 
    if(IsPositionMgmtAllowed() || HasOpenBotPositions())
+     {
       RunAccountProtectionEngine();
+      if(IsHedgeEngineActive())
+        {
+         SyncHedgeOrphanPositions();
+         EnforceMandatoryHedgeCoverage();
+        }
+     }
 
    CleanDeadGlobalVariables();
 
@@ -674,10 +767,27 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
    if(IsMarketValidationMode() || !IsGoldChartSymbol())
       return;
 
-   GmP11B_OnTradeTransaction(trans);
-
    if((trans.type == TRADE_TRANSACTION_DEAL_ADD || trans.type == TRADE_TRANSACTION_HISTORY_ADD) && trans.deal > 0)
+     {
       ProcessModeBLevelExitFromDeal(trans.deal);
+      if(IsHedgeEngineActive())
+        {
+         ProcessParentExitCloseHedges(trans.deal);
+         ProcessHedgeFillBindFromDeal(trans.deal);
+         ProcessHedgeExitRehedgeFromDeal(trans.deal);
+        }
+
+      if(IsHedgeEngineActive() &&
+         HistoryDealSelect(trans.deal) &&
+         HistoryDealGetInteger(trans.deal, DEAL_ENTRY) == DEAL_ENTRY_IN &&
+         !IsHedgePositionComment(HistoryDealGetString(trans.deal, DEAL_COMMENT)) &&
+         !IsTrackedHedgeTicket((ulong)HistoryDealGetInteger(trans.deal, DEAL_POSITION_ID)))
+        {
+         const ulong filled = (ulong)HistoryDealGetInteger(trans.deal, DEAL_POSITION_ID);
+         if(filled > 0)
+            EnsureHedgeProtectArmed(filled);
+        }
+     }
 
    if(trans.type == TRADE_TRANSACTION_ORDER_ADD ||
       trans.type == TRADE_TRANSACTION_ORDER_UPDATE ||
@@ -694,10 +804,6 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
 void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
   {
    if(!ShouldRenderUI())
-      return;
-
-   // AI DYNAMIC panel (independent drag / minimize) Ã¢â‚¬â€ handle first so it doesn't fight main UI.
-   if(GmP11B_OnChartEvent(id, lparam, dparam, sparam))
       return;
 
    const long chartId = ChartID();
@@ -877,7 +983,7 @@ bool RunMarketValidationTradeOnce()
         {
          lastBarTime = barTime;
          phase = 2;
-         return true; // BUY + SELL done Ã¢â‚¬â€ unlock main strategy.
+         return true; // BUY + SELL done — unlock main strategy.
         }
      }
 
@@ -998,7 +1104,7 @@ bool IsDashboardMarketClosed()
    if(!IsSymbolTradeSessionOpenNow())
       return true;
 
-   // Broker session can still read "open" during daily breaks Ã¢â‚¬â€ confirm with live quotes.
+   // Broker session can still read "open" during daily breaks — confirm with live quotes.
    const datetime lastM1 = iTime(_Symbol, PERIOD_M1, 0);
    if(lastM1 <= 0)
       return true;
@@ -1300,7 +1406,7 @@ bool SafePositionModify(const ulong ticket, const double sl, const double tp, co
   {
    if(ticket == 0)
      {
-      PrintFormat("TGM [SAFE]: %s blocked Ã¢â‚¬â€ ticket #0 (invalid).", operation);
+      PrintFormat("TGM [SAFE]: %s blocked — ticket #0 (invalid).", operation);
       return false;
      }
 
@@ -1311,21 +1417,46 @@ bool SafePositionModify(const ulong ticket, const double sl, const double tp, co
       return false;
 
    const int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+   const double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    const double nSL = (sl > 0.0) ? NormalizeDouble(sl, digits) : 0.0;
    const double nTP = (tp > 0.0) ? NormalizeDouble(tp, digits) : 0.0;
+
+   // No-op modify → broker still returns invalid stops if live SL is already wrong-side.
+   const double liveSL = pos.StopLoss();
+   const double liveTP = pos.TakeProfit();
+   if(MathAbs(liveSL - nSL) <= point && MathAbs(liveTP - nTP) <= point)
+      return true;
+
+   const double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   const double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   // Hard reject wrong-side SL (HedgeBE spam: BUY SL above bid → retcode 10016).
+   if(nSL > 0.0)
+     {
+      if(pos.PositionType() == POSITION_TYPE_BUY && nSL >= bid - 1e-12)
+        {
+         // silent — caller retries every tick otherwise floods Journal
+         return false;
+        }
+      if(pos.PositionType() == POSITION_TYPE_SELL && nSL <= ask + 1e-12)
+         return false;
+      if(!IsBrokerStopDistanceOK(pos.PositionType(),
+                                 (pos.PositionType() == POSITION_TYPE_BUY) ? bid : ask,
+                                 nSL))
+         return false;
+     }
 
    // Reject inverted SL/TP which brokers refuse (seen as Invalid parameters).
    if(nSL > 0.0 && nTP > 0.0)
      {
       if(pos.PositionType() == POSITION_TYPE_BUY && nSL >= nTP)
         {
-         PrintFormat("TGM [SAFE]: %s blocked #%I64u Ã¢â‚¬â€ BUY SL>=TP (sl=%.*f tp=%.*f).",
+         PrintFormat("TGM [SAFE]: %s blocked #%I64u — BUY SL>=TP (sl=%.*f tp=%.*f).",
                      operation, ticket, digits, nSL, digits, nTP);
          return false;
         }
       if(pos.PositionType() == POSITION_TYPE_SELL && nSL <= nTP)
         {
-         PrintFormat("TGM [SAFE]: %s blocked #%I64u Ã¢â‚¬â€ SELL SL<=TP (sl=%.*f tp=%.*f).",
+         PrintFormat("TGM [SAFE]: %s blocked #%I64u — SELL SL<=TP (sl=%.*f tp=%.*f).",
                      operation, ticket, digits, nSL, digits, nTP);
          return false;
         }
@@ -1335,9 +1466,12 @@ bool SafePositionModify(const ulong ticket, const double sl, const double tp, co
                          StringFormat("ticket=%I64u sl=%.*f tp=%.*f", ticket, digits, nSL, digits, nTP));
   }
 
-//--- Parent must never sit naked (blank SL). Restore fixed $3 or ATR SL.
+//--- Parent broker SL: R391 keeps NO fixed SL (hedge owns loss control).
 bool EnsureParentHasBrokerSL(const ulong ticket)
   {
+#ifdef TGM_NO_FIXED_BROKER_SL
+   return true; // intentionally naked of fixed SL
+#else
    if(!IsOurBotGridParent(ticket))
       return false;
 
@@ -1385,9 +1519,10 @@ bool EnsureParentHasBrokerSL(const ulong ticket)
    if(!SafePositionModify(ticket, targetSL, liveTP, "ParentSLRestore"))
       return false;
 
-   PrintFormat("TGM [SL-RESTORE]: Parent #%I64u had NO SL Ã¢â‚¬â€ restored %.*f (distÃ¢â€°Ë†$%.2f).",
+   PrintFormat("TGM [SL-RESTORE]: Parent #%I64u had NO SL — restored %.*f (dist≈$%.2f).",
                ticket, digits, targetSL, slDist);
    return true;
+#endif
   }
 
 //--- LOSS CAP: once 1:1 hedge is live, tighten parent broker SL to InpLossCapUSD from open.
@@ -1425,7 +1560,7 @@ bool ApplyParentHardLossCap(const ulong parentTicket)
       const double maxValid = NormalizeDouble(bid - stops - point, digits);
       if(targetSL > maxValid)
          targetSL = maxValid;
-      // Already tighter or equal Ã¢â€ â€™ done
+      // Already tighter or equal → done
       if(liveSL > 0.0 && liveSL + point >= targetSL)
          return true;
       if(targetSL >= bid)
@@ -1447,22 +1582,23 @@ bool ApplyParentHardLossCap(const ulong parentTicket)
    if(!SafePositionModify(parentTicket, targetSL, liveTP, "ParentHardLossCap"))
       return false;
 
-   PrintFormat("TGM [LOSS-CAP]: Parent #%I64u SL capped at %.*f (max adverse Ã¢â€°Ë† $%.2f) | 1:1 hedge locked.",
+   PrintFormat("TGM [LOSS-CAP]: Parent #%I64u SL capped at %.*f (max adverse ≈ $%.2f) | 1:1 hedge locked.",
                parentTicket, digits, targetSL, InpLossCapUSD);
    return true;
   }
 
-//--- Close sticky hedge when parent has recovered so profit path can run (Mode A only).
+//--- Close sticky hedge only when parent is actually in profit (profit method owns it).
 bool TryReleaseStickyHedge(const ulong parentTicket)
   {
    if(!IsHedgeEngineActive())
       return false;
-   if(!HasHedge(parentTicket))
+
+   if(GetPositionProfitPips(parentTicket) <= 0.0)
       return false;
 
-   const double loss = GetPositionLossUSD(parentTicket);
-   const double release = (InpHedgeReleaseUSD > 0.0) ? InpHedgeReleaseUSD : 1.0;
-   if(loss >= release)
+   CancelHedgeProtectStopsForParent(parentTicket, "ParentRecovered");
+
+   if(!HasHedge(parentTicket))
       return false;
 
    ulong hedges[];
@@ -1474,7 +1610,7 @@ bool TryReleaseStickyHedge(const ulong parentTicket)
          any = true;
      }
    if(any)
-      PrintFormat("TGM [HEDGE]: Parent #%I64u recovered Ã¢â‚¬â€ hedge released.", parentTicket);
+      PrintFormat("TGM [HEDGE]: Parent #%I64u in profit — hedge released.", parentTicket);
    return any;
   }
 
@@ -1614,43 +1750,59 @@ void ResetAllGridLevelStates()
 
 bool IsFixedSlReentryMode()
   {
-   return true; // Mode B only Ã¢â‚¬â€ Mode A removed in v2.067
+   return false; // R391: no fixed broker SL
   }
 
 bool IsLossCapHedgeMode()
   {
-   return false; // Mode A permanently disabled
+   return false; // R416: no hedge loss-control
   }
 
 bool IsHedgeEngineActive()
   {
-   return false; // Mode A hedge engine permanently disabled
+   return Enable_Hedge_Protection; // R391: hedge at -30pip loss
   }
 
 bool IsLossCapEngineActive()
   {
-   return false; // Mode A loss-cap permanently disabled
+   return false; // hard $ loss-cap SL stays OFF (no fixed SL)
+  }
+
+//--- Live ATR-14 H4 value (price units).
+bool GetLiveAtrSl(double &atrOut)
+  {
+   atrOut = 0.0;
+   if(g_atrSlHandle == INVALID_HANDLE)
+      return false;
+   double buf[];
+   ArraySetAsSeries(buf, true);
+   if(CopyBuffer(g_atrSlHandle, 0, 1, 1, buf) < 1)
+     {
+      Print("The Gold Mind: CopyBuffer(iATR SL-14) failed. GetLastError=", GetLastError());
+      return false;
+     }
+   atrOut = buf[0];
+   return (atrOut > 0.0);
   }
 
 //--- Live ATR-14 H4 SL distance (price). Fallback: fixed InpFixedStopLossUSD.
 double GetLiveAtrStopDistance()
   {
    double atr = 0.0;
+   if(GetLiveAtrSl(atr) && atr > 0.0 && SL_ATR_Multiplier > 0.0)
+      return atr * SL_ATR_Multiplier;
    if(GetLiveATR(atr) && atr > 0.0 && SL_ATR_Multiplier > 0.0)
       return atr * SL_ATR_Multiplier;
    return (InpFixedStopLossUSD > 0.0) ? InpFixedStopLossUSD : 3.0;
   }
 
-//--- Active SL distance: Excel method = Live ATR (per entry).
-//--- Active SL distance: shared last+/-50pip. ATR SL stays OFF.
+//--- Risk distance for lot sizing (30pip). Broker SL is NOT attached in R391.
 double GetConfiguredStopDistance()
   {
    const double pip = Phase17_GetPipSize();
    if(pip > 0.0)
       return TGM_RISK_DIST_PIPS * pip;
-   if(Enable_ATR_StopLoss)
-      return GetLiveAtrStopDistance();
-   return (InpFixedStopLossUSD > 0.0) ? InpFixedStopLossUSD : 5.0;
+   return (InpFixedStopLossUSD > 0.0) ? InpFixedStopLossUSD : 3.0;
   }
 
 //--- Shared SL for side: last grid level +/-50pip (buy3 / sell3).
@@ -1671,80 +1823,30 @@ bool GetSharedGridSideStopLoss(const ENUM_POSITION_TYPE side, double &slOut)
    return (slOut > 0.0);
   }
 
+bool GetFixedStopLossForParent(const ulong ticket, double &slOut)
+  {
+   slOut = 0.0;
+   return false; // R391: no fixed broker SL
+  }
+
 //--- Mode B: SL distance for lot/heal math.
 double GetActiveHedgeTriggerUSD()
   {
-   return GetConfiguredStopDistance();
+   // Price-distance trigger ≈ 30 pip (GetPositionLossUSD uses price units).
+   const double pip = Phase17_GetPipSize();
+   if(pip > 0.0)
+      return TGM_LOSS_HEDGE_PIPS * pip;
+   return (InpHedgeTriggerUSD > 0.0) ? InpHedgeTriggerUSD : 3.0;
   }
 
-//--- Legacy stub (Mode A removed).
 double GetActiveHedgeBreakEvenUSD()
   {
    return (InpHedgeBreakEvenUSD > 0.0) ? InpHedgeBreakEvenUSD : 1.0;
   }
 
-//--- Ensure parent has broker shared SL (last+/-50pip). Heal if cleared.
+//--- R392: never restore a fixed broker SL (loss control = hedge cycle + hedge BE).
 bool EnsureModeBFixedBrokerSL(const ulong parentTicket)
   {
-   if(parentTicket == 0)
-      return false;
-   if(!IsOurBotGridParent(parentTicket))
-      return false;
-   if(IsProfitEngineArmed(parentTicket))
-      return false;
-
-   CPositionInfo pos;
-   if(!pos.SelectByTicket(parentTicket))
-      return false;
-   if(pos.StopLoss() > 0.0)
-      return true;
-
-   const int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-   const double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-   if(point <= 0.0)
-      return false;
-
-   double targetSL = 0.0;
-   if(!GetSharedGridSideStopLoss(pos.PositionType(), targetSL) || targetSL <= 0.0)
-     {
-      const double slDist = GetConfiguredStopDistance();
-      if(slDist <= 0.0)
-         return false;
-      if(pos.PositionType() == POSITION_TYPE_BUY)
-         targetSL = NormalizeDouble(pos.PriceOpen() - slDist, digits);
-      else
-         targetSL = NormalizeDouble(pos.PriceOpen() + slDist, digits);
-     }
-
-   const double stops  = GetSymbolStopsPrice();
-   const double liveTP = pos.TakeProfit();
-
-   if(pos.PositionType() == POSITION_TYPE_BUY)
-     {
-      const double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-      const double maxValid = NormalizeDouble(bid - stops - point, digits);
-      if(targetSL > maxValid)
-         targetSL = maxValid;
-      if(targetSL >= bid)
-         return false;
-     }
-   else
-     {
-      const double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-      const double minValid = NormalizeDouble(ask + stops + point, digits);
-      if(targetSL < minValid)
-         targetSL = minValid;
-      if(targetSL <= ask)
-         return false;
-     }
-
-   if(IsTradeModifyCooldownActive())
-      return false;
-   if(!SafePositionModify(parentTicket, targetSL, liveTP, "ModeB-SharedSL"))
-      return false;
-
-   PrintFormat("TGM [MODE-B]: Parent #%I64u shared SL restored at %.*f (last+/-%.0fpip).",
-               parentTicket, digits, targetSL, TGM_SHARED_SL_BEYOND_LAST_PIPS);
    return true;
   }
 
@@ -1779,7 +1881,8 @@ string ResolveGridLevelNameFromComment(const string comment)
 
 int MaxLevelActivationsThisH4()
   {
-   return MathMax(1, PHASE18_MAX_LEVEL_ACTIVATIONS_H4);
+   // R382: each level activates once per H4 — SL or TP ends the level (no re-arm).
+   return TGM_MAX_LEVEL_ACTS_H4_HARD;
   }
 
 bool LevelHasLivePositionThisH4(const string comment)
@@ -1917,6 +2020,9 @@ void ProcessModeBLevelExitFromDeal(const ulong dealTicket)
    if(level == "")
       return;
 
+   ENUM_POSITION_TYPE closedSide = (ENUM_POSITION_TYPE)-1;
+   const bool hasClosedSide = ResolveGridLevelSide(level, closedSide);
+
    static ulong seen[32];
    static int seenN = 0;
    for(int s = 0; s < seenN && s < 32; s++)
@@ -1939,38 +2045,282 @@ void ProcessModeBLevelExitFromDeal(const ulong dealTicket)
      }
 
    const ulong posId = (ulong)HistoryDealGetInteger(dealTicket, DEAL_POSITION_ID);
+   const datetime dealTime = (datetime)HistoryDealGetInteger(dealTicket, DEAL_TIME);
    const double net = HistoryDealGetDouble(dealTicket, DEAL_PROFIT)
                     + HistoryDealGetDouble(dealTicket, DEAL_SWAP)
                     + HistoryDealGetDouble(dealTicket, DEAL_COMMISSION);
 
-   // Profit path: BE/partial was armed OR final deal is profit Ã¢â€ â€™ lock level (no more re-entry this H4).
+   // Profit path: BE/partial was armed OR final deal is profit → lock level (no more re-entry this H4).
    if(net > 0.0 || (posId > 0 && IsProfitEngineArmed(posId)))
      {
       if(IsPartialClosedBeRunner(posId) || IsProfitEngineArmed(posId))
          LogPhase28A("RUNNER_SL_CLOSE", posId,
                      StringFormat("level=%s net=%.2f deal_comment=%s", level, net, dealComment));
+      if(hasClosedSide)
+         ResetDirectionalLossCountToday(closedSide, dealTime);
       MarkLevelBELockedThisH4(level);
       PrintFormat("TGM [MODE-B]: Level %s profit-exit lock (deal net $%.2f).", level, net);
       return;
      }
 
+   // Loss path — do NOT cancel sibling pendings (R380: independent 3+3 levels).
+   if(hasClosedSide)
+      RecordDirectionalLossAndMaybePause(closedSide, dealTime, level, net);
+
    const int acts = GetLevelActivationCountThisH4(level);
-   if(acts >= MaxLevelActivationsThisH4())
+   const int maxActs = MaxLevelActivationsThisH4();
+   if(acts >= maxActs)
      {
       MarkLevelActivationExhaustedThisH4(level);
       const int cancelled = CancelPendingOrdersForLevel(level);
-      PrintFormat("TGM [P28-EXEC]: SECOND_SL_LOCK | %s | acts=%d | PENDING_CANCELLED=%d | DISABLED_UNTIL_NEXT_H4",
-                  level, acts, cancelled);
+      PrintFormat("TGM [P28-EXEC]: LEVEL_SL_LOCK | %s | acts=%d/%d | PENDING_CANCELLED=%d | NO_MORE_REARM",
+                  level, acts, maxActs, cancelled);
       return;
      }
 
-   PrintFormat("TGM [P28-EXEC]: FIRST_SL | %s | acts=%d | deal_comment=%s | re-arm same LIMIT level",
-               level, acts, dealComment);
+   // First SL: clear slot so same-H4 OnTick refill can place this level again (2nd activation).
    if(!LevelHasLivePositionThisH4(level))
       ClearGridLevelState(level);
+   PrintFormat("TGM [R380]: FIRST_SL | %s | acts=%d/%d | RE-ARM allowed this H4 | deal=%s",
+               level, acts, maxActs, dealComment);
+   LogPhase28A("FIRST_SL_REARM", posId,
+               StringFormat("%s acts=%d/%d", level, acts, maxActs));
+  }
 
-   if(IsGridOpsAllowed() && IsGridPlacementAllowed())
-      ExecuteH4GridStrategy();
+bool ResolveGridLevelSide(const string level, ENUM_POSITION_TYPE &sideOut)
+  {
+   if(StringFind(level, "GM_BL") == 0)
+     {
+      sideOut = POSITION_TYPE_BUY;
+      return true;
+     }
+   if(StringFind(level, "GM_SL") == 0)
+     {
+      sideOut = POSITION_TYPE_SELL;
+      return true;
+     }
+   return false;
+  }
+
+datetime GetTradeDayStart(const datetime when)
+  {
+   MqlDateTime dt;
+   TimeToStruct(when, dt);
+   dt.hour = 0;
+   dt.min = 0;
+   dt.sec = 0;
+   return StructToTime(dt);
+  }
+
+datetime GetNextTradeDayStart(const datetime when)
+  {
+   return (GetTradeDayStart(when) + 24 * 60 * 60);
+  }
+
+string DirectionalLossCountKey(const ENUM_POSITION_TYPE side, const datetime when)
+  {
+   return StringFormat("TGM_SideLoss_%I64u_%s_%s_%I64d",
+                       (ulong)AccountInfoInteger(ACCOUNT_LOGIN),
+                       _Symbol,
+                       (side == POSITION_TYPE_BUY) ? "BUY" : "SELL",
+                       (long)GetTradeDayStart(when));
+  }
+
+string DirectionalPauseKey(const ENUM_POSITION_TYPE side)
+  {
+   return StringFormat("TGM_SidePause_%I64u_%s_%s",
+                       (ulong)AccountInfoInteger(ACCOUNT_LOGIN),
+                       _Symbol,
+                       (side == POSITION_TYPE_BUY) ? "BUY" : "SELL");
+  }
+
+string ExtremeH4ShockUntilKey()
+  {
+   return StringFormat("TGM_ShockUntil_%I64u_%s",
+                       (ulong)AccountInfoInteger(ACCOUNT_LOGIN),
+                       _Symbol);
+  }
+
+string ExtremeH4ShockBarKey()
+  {
+   return StringFormat("TGM_ShockBar_%I64u_%s",
+                       (ulong)AccountInfoInteger(ACCOUNT_LOGIN),
+                       _Symbol);
+  }
+
+int GetDirectionalLossCountToday(const ENUM_POSITION_TYPE side, const datetime when)
+  {
+   const string key = DirectionalLossCountKey(side, when);
+   return GlobalVariableCheck(key) ? (int)GlobalVariableGet(key) : 0;
+  }
+
+void ResetDirectionalLossCountToday(const ENUM_POSITION_TYPE side, const datetime when)
+  {
+   const string key = DirectionalLossCountKey(side, when);
+   if(GlobalVariableCheck(key))
+      GlobalVariableDel(key);
+  }
+
+void RecordDirectionalLossAndMaybePause(const ENUM_POSITION_TYPE side, const datetime eventTime, const string level, const double net)
+  {
+   const string key = DirectionalLossCountKey(side, eventTime);
+   const int streak = GetDirectionalLossCountToday(side, eventTime) + 1;
+   GlobalVariableSet(key, (double)streak);
+   if(streak < TGM_SIDE_LOSS_STREAK_LIMIT)
+      return;
+
+   const datetime pauseUntil = GetNextTradeDayStart(eventTime);
+   GlobalVariableSet(DirectionalPauseKey(side), (double)pauseUntil);
+   PrintFormat("TGM [R378]: %s paused until %s after %d same-side losses. level=%s net=%.2f",
+               (side == POSITION_TYPE_BUY) ? "BUY" : "SELL",
+               TimeToString(pauseUntil, TIME_DATE|TIME_MINUTES),
+               streak, level, net);
+  }
+
+bool IsDirectionalPauseActive(const ENUM_POSITION_TYPE side, string &reasonOut)
+  {
+   const string key = DirectionalPauseKey(side);
+   if(!GlobalVariableCheck(key))
+      return false;
+
+   const datetime pauseUntil = (datetime)GlobalVariableGet(key);
+   if(TimeCurrent() >= pauseUntil)
+     {
+      GlobalVariableDel(key);
+      return false;
+     }
+
+   reasonOut = StringFormat("%s paused after %d same-side losses until %s",
+                            (side == POSITION_TYPE_BUY) ? "BUY" : "SELL",
+                            TGM_SIDE_LOSS_STREAK_LIMIT,
+                            TimeToString(pauseUntil, TIME_DATE|TIME_MINUTES));
+   return true;
+  }
+
+void UpdateExtremeH4ShockCooldown()
+  {
+   const datetime lastClosedH4 = iTime(_Symbol, PERIOD_H4, 1);
+   if(lastClosedH4 <= 0)
+      return;
+
+   const string lastBarKey = ExtremeH4ShockBarKey();
+   if(GlobalVariableCheck(lastBarKey) && (datetime)GlobalVariableGet(lastBarKey) == lastClosedH4)
+      return;
+   GlobalVariableSet(lastBarKey, (double)lastClosedH4);
+
+   const double pip = Phase17_GetPipSize();
+   if(pip <= 0.0)
+      return;
+
+   const double h = iHigh(_Symbol, PERIOD_H4, 1);
+   const double l = iLow(_Symbol, PERIOD_H4, 1);
+   const double o = iOpen(_Symbol, PERIOD_H4, 1);
+   const double c = iClose(_Symbol, PERIOD_H4, 1);
+   if(h <= l || o <= 0.0 || c <= 0.0)
+      return;
+
+   const double rangePips = (h - l) / pip;
+   const double bodyPips  = MathAbs(c - o) / pip;
+   if(rangePips + 1e-9 < TGM_EXTREME_H4_RANGE_PIPS || bodyPips + 1e-9 < TGM_EXTREME_H4_BODY_PIPS)
+      return;
+
+   const datetime pauseUntil = lastClosedH4 + (4 * 60 * 60) + (TGM_EXTREME_H4_COOLDOWN_HOURS * 60 * 60);
+   const string cooldownKey = ExtremeH4ShockUntilKey();
+   const datetime existingUntil = GlobalVariableCheck(cooldownKey) ? (datetime)GlobalVariableGet(cooldownKey) : 0;
+   if(pauseUntil > existingUntil)
+      GlobalVariableSet(cooldownKey, (double)pauseUntil);
+
+   PrintFormat("TGM [R378]: EXTREME_H4_SHOCK range=%.1f body=%.1f -> pause new grid until %s",
+               rangePips, bodyPips, TimeToString(pauseUntil, TIME_DATE|TIME_MINUTES));
+  }
+
+bool IsExtremeH4ShockCooldownActive(string &reasonOut)
+  {
+#ifdef TGM_R380_DISABLE_SHOCK_COOLDOWN
+   reasonOut = "";
+   return false; // R380: never pause grid for extreme H4 candles
+#else
+   UpdateExtremeH4ShockCooldown();
+
+   const string key = ExtremeH4ShockUntilKey();
+   if(!GlobalVariableCheck(key))
+      return false;
+
+   const datetime pauseUntil = (datetime)GlobalVariableGet(key);
+   if(TimeCurrent() >= pauseUntil)
+     {
+      GlobalVariableDel(key);
+      return false;
+     }
+
+   reasonOut = StringFormat("EXTREME_H4_SHOCK cooldown until %s",
+                            TimeToString(pauseUntil, TIME_DATE|TIME_MINUTES));
+   return true;
+#endif
+  }
+
+int CancelPendingOrdersForSide(const ENUM_POSITION_TYPE side)
+  {
+   const ENUM_ORDER_TYPE wantType = (side == POSITION_TYPE_BUY) ? ORDER_TYPE_BUY_LIMIT
+                                                                : ORDER_TYPE_SELL_LIMIT;
+   int n = 0;
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      const ulong ticket = OrderGetTicket(i);
+      if(ticket == 0 || !OrderSelect(ticket))
+         continue;
+      if(OrderGetString(ORDER_SYMBOL) != _Symbol)
+         continue;
+      if((long)OrderGetInteger(ORDER_MAGIC) != EXPERT_MAGIC)
+         continue;
+      if(!IsBotGridPendingOrder(ticket))
+         continue;
+      if((ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE) != wantType)
+         continue;
+
+      const string comment = OrderGetString(ORDER_COMMENT);
+      if(ExecuteTradeOp("OrderDelete", g_trade.OrderDelete(ticket),
+                        StringFormat("ticket=%I64u sideCancel", ticket)))
+        {
+         ClearGridLevelState(comment);
+         MarkLevelActivationExhaustedThisH4(comment);
+         n++;
+        }
+     }
+   return n;
+  }
+
+void ClearResearchRuntimeGuards()
+  {
+   // Wipe directional pause / shock / loss counters so each tester run starts fresh.
+   string prefixes[13];
+   prefixes[0] = "TGM_SideLoss_";
+   prefixes[1] = "TGM_SidePause_";
+   prefixes[2] = "TGM_ShockUntil_";
+   prefixes[3] = "TGM_ShockBar_";
+   prefixes[4] = "R389_OrigVol_";
+   prefixes[5] = "R389_Stage1_";
+   prefixes[6] = "R389_Stage2_";
+   prefixes[7] = "R389_Stage3_";
+   prefixes[8] = "TGM_P28A_Runner_";
+   prefixes[9] = "TGM_HedgeBar_";
+   prefixes[10] = "TGM_HedgeCnt_";
+   prefixes[11] = "TGM_HedgeCyc_";
+   prefixes[12] = "TGM_HedgeCD_";
+
+   for(int i = GlobalVariablesTotal() - 1; i >= 0; i--)
+     {
+      const string name = GlobalVariableName(i);
+      for(int p = 0; p < 13; p++)
+        {
+         if(StringFind(name, prefixes[p]) == 0)
+           {
+            GlobalVariableDel(name);
+            break;
+           }
+        }
+     }
+   Print("TGM [R380]: Cleared research runtime guards for clean tester start.");
   }
 
 string LevelBELockKey(const string comment)
@@ -2058,7 +2408,7 @@ void MarkLevelBELockedThisH4(const string comment)
       return;
    GlobalVariableSet(LevelBELockKey(comment), 1.0);
    SetGridLevelState(comment, TGM_GRID_LEVEL_SPENT);
-   PrintFormat("TGM [MODE-B]: Level %s LOCKED for this H4 (profit BE hit) Ã¢â‚¬â€ no more re-entries.", comment);
+   PrintFormat("TGM [MODE-B]: Level %s LOCKED for this H4 (profit BE hit) — no more re-entries.", comment);
   }
 
 void ClearAllLevelBELocksThisH4()
@@ -2092,7 +2442,7 @@ string ResolveGridLevelCommentFromTicket(const ulong ticket)
 
 void SaveGridH4BarTime(const datetime barTime)
   {
-   // Phase28/27: do NOT reset level state here Ã¢â‚¬â€ callers reset BEFORE placement.
+   // Phase28/27: do NOT reset level state here — callers reset BEFORE placement.
    // Resetting after ExecuteH4GridStrategy wiped PENDING flags (Issue 1B).
    g_lastH4BarTime = barTime;
    g_historyCacheH4Start = 0;
@@ -2296,7 +2646,7 @@ void ProcessBasketTakeProfit()
       SaveGridH4BarTime(GetCurrentH4BarOpenTime());
      }
 
-   PrintFormat("TGM [BASKET-TP]: Locked. New BalanceÃ¢â€°Ë†$%.2f EquityÃ¢â€°Ë†$%.2f | grid reset.",
+   PrintFormat("TGM [BASKET-TP]: Locked. New Balance≈$%.2f Equity≈$%.2f | grid reset.",
                AccountInfoDouble(ACCOUNT_BALANCE), AccountInfoDouble(ACCOUNT_EQUITY));
   }
 
@@ -2322,12 +2672,53 @@ bool HasWinningSideArmed(const ENUM_POSITION_TYPE side)
    return false;
   }
 
+int CountOpenGridParents(const ENUM_POSITION_TYPE sideFilter = (ENUM_POSITION_TYPE)-1)
+  {
+   CPositionInfo pos;
+   int count = 0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      if(!pos.SelectByIndex(i))
+         continue;
+      if(pos.Symbol() != _Symbol || pos.Magic() != (ulong)EXPERT_MAGIC)
+         continue;
+      if(!IsOurBotGridParent(pos.Ticket()))
+         continue;
+      if(sideFilter != (ENUM_POSITION_TYPE)-1 && pos.PositionType() != sideFilter)
+         continue;
+      count++;
+     }
+   return count;
+  }
+
+bool R376_AllowGridSideThisH4(const ENUM_POSITION_TYPE side, const double pivot, const double prevClose)
+  {
+   if(!R376_ENABLE_H4_DIRECTION_FILTER)
+      return true;
+   if(pivot <= 0.0 || prevClose <= 0.0)
+      return true;
+
+   // R379: require TWO closed H4 candles on the same side of pivot.
+   // Mixed / chop / one-bar flip -> block both sides (no new grid).
+   const double close2 = iClose(_Symbol, PERIOD_H4, 2);
+   if(close2 <= 0.0)
+      return false;
+
+   const bool bull1 = (prevClose > pivot + 1e-9);
+   const bool bear1 = (prevClose < pivot - 1e-9);
+   const bool bull2 = (close2 > pivot + 1e-9);
+   const bool bear2 = (close2 < pivot - 1e-9);
+
+   if(bull1 && bull2)
+      return (side == POSITION_TYPE_BUY);
+   if(bear1 && bear2)
+      return (side == POSITION_TYPE_SELL);
+   return false;
+  }
+
 // sideToRestrict = the losing / opposite side we want to pause.
-// Mode B exact method: ALWAYS keep full 3BUY+3SELL Ã¢â‚¬â€ never strip opposite side.
 bool IsOppositeBleedPaused(const ENUM_POSITION_TYPE sideToRestrict)
   {
-   if(IsFixedSlReentryMode())
-      return false;
    if(!Enable_TrendBleedProtect)
       return false;
 
@@ -2369,9 +2760,6 @@ int DeleteBotPendingsOfType(const ENUM_ORDER_TYPE orderType)
 void EnforceTrendBleedProtect()
   {
    if(!Enable_TrendBleedProtect || IsMarketValidationMode())
-      return;
-   // Mode B: exact method keeps all 6 levels for the full H4 Ã¢â‚¬â€ no opposite delete.
-   if(IsFixedSlReentryMode())
       return;
 
    static datetime lastLogSec = 0;
@@ -2545,8 +2933,20 @@ int CancelDuplicatePendingsAtSamePrice()
    return removed;
   }
 
+void DeleteLegacyAiPanelObjects()
+  {
+   const long chart_id = ChartID();
+   for(int i = ObjectsTotal(chart_id, 0, -1) - 1; i >= 0; i--)
+     {
+      const string name = ObjectName(chart_id, i, 0, -1);
+      if(StringFind(name, TGM_AI_PANEL_PREFIX) == 0)
+         ObjectDelete(chart_id, name);
+     }
+  }
+
 void CleanupEAChartVisuals()
   {
+   DeleteLegacyAiPanelObjects();
    DeleteAllGridChartObjects();
    DestroyAllChartDashboardUI();
    Comment("");
@@ -2635,7 +3035,7 @@ void SynchronizeGridLevelStates(const string reason)
          continue;
         }
 
-      // In-flight claim: PENDING with ticket 0 means OrderSend started Ã¢â‚¬â€ do NOT clear
+      // In-flight claim: PENDING with ticket 0 means OrderSend started — do NOT clear
       // or ExecuteH4GridStrategy will place a second order at the same price.
       if(oldState == TGM_GRID_LEVEL_PENDING && oldTicket == 0)
          continue;
@@ -2847,11 +3247,8 @@ bool CalculateH4GridLevels(double &high1, double &low1, double &pivot, double &b
    high1 = iHigh(_Symbol, PERIOD_H4, 1); low1 = iLow(_Symbol, PERIOD_H4, 1);
    if(high1 <= 0.0 || low1 <= 0.0 || high1 <= low1) return false;
    int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-   double diff = high1 - low1;
-   pivot = NormalizeDouble((high1 + low1) / 2.0, digits);
-   // Excel Gold Level Strategy backbone:
-   //   BUY  = High - Diff * {0.20, 0.58, 0.92}
-   //   SELL = Low  + Diff * {0.20, 0.58, 0.92}
+   double diff = high1 - low1; pivot = NormalizeDouble((high1 + low1) / 2.0, digits);
+   // Excel Gold Level Strategy: BUY=High-diff*m | SELL=Low+diff*m
    buy1  = NormalizeDouble(high1 - (diff * 0.20), digits);
    buy2  = NormalizeDouble(high1 - (diff * 0.58), digits);
    buy3  = NormalizeDouble(high1 - (diff * 0.92), digits);
@@ -2868,7 +3265,7 @@ bool CalculateExcelGridSLTP(const double buy1, const double buy2, const double b
    if(pip <= 0.0)
       return false;
 
-   // Shared SL for all 3 levels: 50pip beyond the LAST (furthest) level - also used for lot sizing.
+   // Shared SL for all 3 levels: 50pip beyond the LAST level.
    buySL  = NormalizeDouble(buy3  - (TGM_SHARED_SL_BEYOND_LAST_PIPS * pip), digits);
    sellSL = NormalizeDouble(sell3 + (TGM_SHARED_SL_BEYOND_LAST_PIPS * pip), digits);
 
@@ -2929,20 +3326,29 @@ int ExecuteH4GridStrategy(const bool freshH4Cycle = false)
 
    const double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    const double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-   const int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+   // R382: always allow both sides — no trend bias.
+   const bool allowBuySide  = true;
+   const bool allowSellSide = true;
 
-   // Full grid: 3 BUY + 3 SELL. SAME shared SL on all 3 = last level +/- 50pip.
-   // Lot risk = |this entry -> shared SL| so each level risks ~3% EQUITY to that shared SL.
-   PrintFormat("TGM [SHARED-SL]: BUY SL=%.*f (buy3-%.0fpip) | SELL SL=%.*f (sell3+%.0fpip) | all 3 levels same.",
-               digits, buySL, TGM_SHARED_SL_BEYOND_LAST_PIPS,
-               digits, sellSL, TGM_SHARED_SL_BEYOND_LAST_PIPS);
+   if(CountOpenGridParents() >= R376_MAX_OPEN_GRID_TOTAL)
+     {
+      g_gridStrategyBusy = false;
+      return 0;
+     }
 
+   // Shared SL last+/-50pip: ALL buy levels use |buy1->sharedSL| for lots.
+   const double buyLotDist  = MathAbs(buy1 - buySL);
+   const double sellLotDist = MathAbs(sellSL - sell1);
    double buyEntries[3] = {buy1, buy2, buy3};
    double buyTPs[3]     = {buyTP1, buyTP2, buyTP3};
    string buyComments[3]= {"GM_BL1", "GM_BL2", "GM_BL3"};
 
    for(int b = 0; b < 3; b++)
      {
+      if(!allowBuySide)
+         break;
+      if(CountOpenGridParents(POSITION_TYPE_BUY) >= R376_MAX_OPEN_GRID_PER_SIDE)
+         break;
       if(IsOppositeBleedPaused(POSITION_TYPE_BUY))
          break;
 
@@ -2950,7 +3356,7 @@ int ExecuteH4GridStrategy(const bool freshH4Cycle = false)
       const double calculated_SL = buySL; // SAME shared SL on all 3 BUY levels
       const double tp            = buyTPs[b];
       const string comment       = buyComments[b];
-      const double slDistLots    = MathAbs(entry_price - calculated_SL);
+      const double slDistLots    = buyLotDist;
 
       const double levelState = GetGridLevelState(comment);
       if(HasBotPendingByComment(comment) || levelState == TGM_GRID_LEVEL_PENDING) continue;
@@ -2981,6 +3387,10 @@ int ExecuteH4GridStrategy(const bool freshH4Cycle = false)
 
    for(int s = 0; s < 3; s++)
      {
+      if(!allowSellSide)
+         break;
+      if(CountOpenGridParents(POSITION_TYPE_SELL) >= R376_MAX_OPEN_GRID_PER_SIDE)
+         break;
       if(IsOppositeBleedPaused(POSITION_TYPE_SELL))
          break;
 
@@ -2988,7 +3398,7 @@ int ExecuteH4GridStrategy(const bool freshH4Cycle = false)
       const double calculated_SL = sellSL; // SAME shared SL on all 3 SELL levels
       const double tp            = sellTPs[s];
       const string comment       = sellComments[s];
-      const double slDistLots    = MathAbs(calculated_SL - entry_price);
+      const double slDistLots    = sellLotDist;
 
       const double levelState = GetGridLevelState(comment);
       if(HasBotPendingByComment(comment) || levelState == TGM_GRID_LEVEL_PENDING) continue;
@@ -3031,14 +3441,14 @@ bool GetLiveATR(double &atrOut)
   }
 
 //+------------------------------------------------------------------+
-//| Auto lot: 3% of EQUITY vs |entry -> shared SL| distance           |
+//| Auto lot: 2% of BALANCE (R415 — not equity, stops float feedback loop) |
 //+------------------------------------------------------------------+
 double GetLotSizingCapital()
   {
-   double cap = AccountInfoDouble(ACCOUNT_EQUITY);
+   double cap = AccountInfoDouble(ACCOUNT_BALANCE);
    if(cap > 0.0)
       return cap;
-   return AccountInfoDouble(ACCOUNT_BALANCE);
+   return AccountInfoDouble(ACCOUNT_EQUITY);
   }
 
 double CalculateAutoLotSize(const double slDistancePrice, const int levelIndex)
@@ -3069,6 +3479,8 @@ double GetTradeVolume(const double slDistancePrice, const int levelIndex)
   {
    double lots = (RiskMode == RISK_MANUAL_LOT) ? NormalizeVolume(Manual_Lot_Size) : CalculateAutoLotSize(slDistancePrice, levelIndex);
    lots *= Phase17_GetLotExposureMultiplier();
+   if(Max_Lot_Size > 0.0 && lots > Max_Lot_Size)
+      lots = Max_Lot_Size;
    return NormalizeVolume(lots);
   }
 
@@ -3114,36 +3526,28 @@ bool PlaceBuyLimit(const double price, const double sl, const double tp, const d
   {
    if(!PreTradeGuard("BuyLimit"))
       return false;
-   if(!GmP11B_AllowPlacement(comment, levelIndex))
-      return false;
    // Hard stop: never open a second pending/position at the same entry price.
    if(IsGridEntryPriceBlocked(price) || HasBotPendingByComment(comment) ||
       GetGridLevelState(comment) == TGM_GRID_LEVEL_PENDING)
      {
-      PrintFormat("TGM [DEDUP]: Skip BuyLimit %s @ %s Ã¢â‚¬â€ level/price already armed.",
+      PrintFormat("TGM [DEDUP]: Skip BuyLimit %s @ %s — level/price already armed.",
                   comment, DoubleToString(price, (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS)));
       return false;
      }
 
    int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-   double lots = GmP11B_AdjustLot(GetTradeVolume(slDistForLots, levelIndex), levelIndex, comment, true);
-   // Always attach broker SL (fixed $3 or ATR). TP = live ATR.
+   double lots = GetTradeVolume(slDistForLots, levelIndex);
+   // Shared SL (last±50) + ATR TP on pending. Profit method strips TP; loss method strips SL.
    const bool attachSL = (sl > 0.0);
    double orderSL = attachSL ? NormalizeDouble(sl, digits) : 0.0;
-   double orderTP = NormalizeDouble(tp, digits); // always live ATR TP
-   // PHASE 14 Ã¢â‚¬â€ Institutional AI Validation (enhancement only; OFF = pass-through)
-   if(!GmP14_ValidateBeforeOrderSend(true, price, orderSL, orderTP, comment, levelIndex))
-      return false;
+   double orderTP = NormalizeDouble(tp, digits);
    LogLotCalculationDetail("BuyLimit", comment, levelIndex, slDistForLots, lots);
    // Claim slot BEFORE OrderSend so sync/re-entry cannot place a twin.
    SetGridLevelState(comment, TGM_GRID_LEVEL_PENDING, 0);
    bool ok = g_trade.BuyLimit(lots, price, _Symbol, orderSL, orderTP, ORDER_TIME_GTC, 0, comment);
    const bool placed = ExecuteTradeOp("BuyLimit", ok, StringFormat("comment=%s lots=%.2f price=%.*f", comment, lots, digits, price));
    if(placed)
-     {
       SetGridLevelState(comment, TGM_GRID_LEVEL_PENDING, g_trade.ResultOrder());
-      GmP11B_RegisterPlaced(g_trade.ResultOrder(), comment, levelIndex);
-     }
    else
       ClearGridLevelState(comment);
    return placed;
@@ -3153,19 +3557,15 @@ bool PlaceBuyStop(const double price, const double sl, const double tp, const do
   {
    if(!PreTradeGuard("BuyStop"))
       return false;
-   if(!GmP11B_AllowPlacement(comment, levelIndex))
-      return false;
    if(IsGridEntryPriceBlocked(price) || HasBotPendingByComment(comment) ||
       GetGridLevelState(comment) == TGM_GRID_LEVEL_PENDING)
       return false;
 
    int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-   double lots = GmP11B_AdjustLot(GetTradeVolume(slDistForLots, levelIndex), levelIndex, comment, true);
+   double lots = GetTradeVolume(slDistForLots, levelIndex);
    const bool attachSL = (sl > 0.0);
    double orderSL = attachSL ? NormalizeDouble(sl, digits) : 0.0;
    double orderTP = NormalizeDouble(tp, digits);
-   if(!GmP14_ValidateBeforeOrderSend(true, price, orderSL, orderTP, comment, levelIndex))
-      return false;
    LogLotCalculationDetail("BuyStop", comment, levelIndex, slDistForLots, lots);
    SetGridLevelState(comment, TGM_GRID_LEVEL_PENDING, 0);
    bool ok = g_trade.BuyStop(lots, price, _Symbol, orderSL, orderTP, ORDER_TIME_GTC, 0, comment);
@@ -3173,7 +3573,6 @@ bool PlaceBuyStop(const double price, const double sl, const double tp, const do
    if(placed)
      {
       SetGridLevelState(comment, TGM_GRID_LEVEL_PENDING, g_trade.ResultOrder());
-      GmP11B_RegisterPlaced(g_trade.ResultOrder(), comment, levelIndex);
       PrintFormat("TGM [REARM]: BUY STOP %s @ %.*f (price was at/below level after SL).", comment, digits, price);
      }
    else
@@ -3185,33 +3584,25 @@ bool PlaceSellLimit(const double price, const double sl, const double tp, const 
   {
    if(!PreTradeGuard("SellLimit"))
       return false;
-   if(!GmP11B_AllowPlacement(comment, levelIndex))
-      return false;
    if(IsGridEntryPriceBlocked(price) || HasBotPendingByComment(comment) ||
       GetGridLevelState(comment) == TGM_GRID_LEVEL_PENDING)
      {
-      PrintFormat("TGM [DEDUP]: Skip SellLimit %s @ %s Ã¢â‚¬â€ level/price already armed.",
+      PrintFormat("TGM [DEDUP]: Skip SellLimit %s @ %s — level/price already armed.",
                   comment, DoubleToString(price, (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS)));
       return false;
      }
 
    int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-   double lots = GmP11B_AdjustLot(GetTradeVolume(slDistForLots, levelIndex), levelIndex, comment, false);
-   // Always attach broker SL (fixed $3 or ATR). TP = live ATR.
+   double lots = GetTradeVolume(slDistForLots, levelIndex);
    const bool attachSL = (sl > 0.0);
    double orderSL = attachSL ? NormalizeDouble(sl, digits) : 0.0;
-   double orderTP = NormalizeDouble(tp, digits); // always live ATR TP
-   if(!GmP14_ValidateBeforeOrderSend(false, price, orderSL, orderTP, comment, levelIndex))
-      return false;
+   double orderTP = NormalizeDouble(tp, digits);
    LogLotCalculationDetail("SellLimit", comment, levelIndex, slDistForLots, lots);
    SetGridLevelState(comment, TGM_GRID_LEVEL_PENDING, 0);
    bool ok = g_trade.SellLimit(lots, price, _Symbol, orderSL, orderTP, ORDER_TIME_GTC, 0, comment);
    const bool placed = ExecuteTradeOp("SellLimit", ok, StringFormat("comment=%s lots=%.2f price=%.*f", comment, lots, digits, price));
    if(placed)
-     {
       SetGridLevelState(comment, TGM_GRID_LEVEL_PENDING, g_trade.ResultOrder());
-      GmP11B_RegisterPlaced(g_trade.ResultOrder(), comment, levelIndex);
-     }
    else
       ClearGridLevelState(comment);
    return placed;
@@ -3221,19 +3612,15 @@ bool PlaceSellStop(const double price, const double sl, const double tp, const d
   {
    if(!PreTradeGuard("SellStop"))
       return false;
-   if(!GmP11B_AllowPlacement(comment, levelIndex))
-      return false;
    if(IsGridEntryPriceBlocked(price) || HasBotPendingByComment(comment) ||
       GetGridLevelState(comment) == TGM_GRID_LEVEL_PENDING)
       return false;
 
    int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-   double lots = GmP11B_AdjustLot(GetTradeVolume(slDistForLots, levelIndex), levelIndex, comment, false);
+   double lots = GetTradeVolume(slDistForLots, levelIndex);
    const bool attachSL = (sl > 0.0);
    double orderSL = attachSL ? NormalizeDouble(sl, digits) : 0.0;
    double orderTP = NormalizeDouble(tp, digits);
-   if(!GmP14_ValidateBeforeOrderSend(false, price, orderSL, orderTP, comment, levelIndex))
-      return false;
    LogLotCalculationDetail("SellStop", comment, levelIndex, slDistForLots, lots);
    SetGridLevelState(comment, TGM_GRID_LEVEL_PENDING, 0);
    bool ok = g_trade.SellStop(lots, price, _Symbol, orderSL, orderTP, ORDER_TIME_GTC, 0, comment);
@@ -3241,7 +3628,6 @@ bool PlaceSellStop(const double price, const double sl, const double tp, const d
    if(placed)
      {
       SetGridLevelState(comment, TGM_GRID_LEVEL_PENDING, g_trade.ResultOrder());
-      GmP11B_RegisterPlaced(g_trade.ResultOrder(), comment, levelIndex);
       PrintFormat("TGM [REARM]: SELL STOP %s @ %.*f (price was at/above level after SL).", comment, digits, price);
      }
    else
@@ -3254,7 +3640,7 @@ bool ExecutePartialClose(const ulong ticket, const double partialPercent)
    if(!PreProtectionTradeGuard("PositionClosePartial"))
       return false;
 
-   if(IsTicketPartialCloseDone(ticket) || IsPartialClosedBeRunner(ticket))
+   if(IsTicketPartialCloseDone(ticket))
      {
       LogPhase28A("DUPLICATE_TRIGGER_BLOCKED", ticket, "partial_already_done");
       return false;
@@ -3307,9 +3693,9 @@ bool ExecutePartialClose(const ulong ticket, const double partialPercent)
 
    if(!pos.SelectByTicket(ticket))
      {
-      // Unexpected full close Ã¢â‚¬â€ do NOT mark runner complete.
+      // Unexpected full close — do NOT mark runner complete.
       LogPhase28A("PARTIAL_CLOSE_REQUEST", ticket, "REJECT fully_closed_no_runner");
-      PrintFormat("TGM [PARTIAL]: Position #%I64u fully closed after partial on %s Ã¢â‚¬â€ runner state NOT marked.",
+      PrintFormat("TGM [PARTIAL]: Position #%I64u fully closed after partial on %s — runner state NOT marked.",
                   ticket, _Symbol);
       return false;
      }
@@ -3398,7 +3784,7 @@ bool ShouldCloseHedgeOnMarketReturn(const ulong hedgeTicket, const ulong parentT
    if(parent.SelectByTicket(parentTicket))
      {
       const double parentLossPts = GetTicketLossPoints(parentTicket, point);
-      // Parent still needs protection Ã¢â‚¬â€ never close hedge during deep parent loss.
+      // Parent still needs protection — never close hedge during deep parent loss.
       if(parentLossPts >= triggerBrokerPts)
          return false;
      }
@@ -3682,22 +4068,23 @@ bool IsTrackedHedgeTicket(const ulong ticket)
    return false;
   }
 
-//--- A position is our HEDGE when its comment says so OR it is registered as a
-//    hedge in the GV table.
+//--- A position is our HEDGE only with GM_HEDGE comment (live or opening deal).
+//    NEVER treat "any market fill" as a hedge — that double-counted coverage
+//    and DuplicateCleanup closed the real hedge (tester: covered 0.06 parent 0.03).
 bool IsBotHedgePosition(const ulong ticket, const string comment)
   {
    if(WasOpenedAsGridLimit(ticket))
       return false;
-
+   if(IsGridPositionComment(comment))
+      return false;
    if(IsHedgePositionComment(comment))
       return true;
+   // Exness often strips GM_HEDGE comment after fill — GV link still marks it.
    if(IsTrackedHedgeTicket(ticket))
-      return true;
-   if(FindParentForLinkedHedge(ticket) > 0)
       return true;
    if(HasHedgeOpeningEvidence(ticket))
       return true;
-   return WasOpenedAsMarketHedge(ticket);
+   return false;
   }
 
 //--- The EA only ever opens grid + hedge positions under EXPERT_MAGIC. Therefore
@@ -3736,7 +4123,7 @@ bool IsForeignOrManualPosition(const ulong ticket)
 bool IsOurBotGridParent(const ulong ticket)
   {
    if(!IsOurBotMagicPosition(ticket))
-      return false; // manual or foreign EA Ã¢â€ â€™ blind
+      return false; // manual or foreign EA → blind
 
    CPositionInfo pos;
    if(!pos.SelectByTicket(ticket))
@@ -3820,9 +4207,9 @@ bool GetPositionOpeningComments(const ulong positionTicket, string &dealCommentO
    return GetPositionOpeningInfo(positionTicket, ot, dealCommentOut, orderCommentOut);
   }
 
-//--- Grid trades are ALWAYS opened from Buy/Sell LIMIT pendings (GM_BL/GM_SL).
-//    Hedge trades are ALWAYS market Buy/Sell (GM_HEDGE). This split survives
-//    broker comment stripping on the live position object.
+//--- Grid trades are ALWAYS Buy/Sell LIMIT pendings (GM_BL/GM_SL).
+//    Hedge protect uses BUY_STOP/SELL_STOP — those are HEDGES, never grid.
+//    (R410: old STOP-as-grid bug left hedge fills as "parents" with no profit book.)
 bool WasOpenedAsGridLimit(const ulong positionTicket)
   {
    // Manual / foreign positions are NEVER treated as our grid parents.
@@ -3843,8 +4230,7 @@ bool WasOpenedAsGridLimit(const ulong positionTicket)
    string orderComment = "";
    if(!GetPositionOpeningInfo(positionTicket, orderType, dealComment, orderComment))
      {
-      // Unknown history but OUR magic + not hedge comment Ã¢â€ â€™ still our grid parent.
-      // Do NOT return true for foreign tickets (already blocked above).
+      // Unknown history but OUR magic + not hedge comment → still our grid parent.
       if(pos.SelectByTicket(positionTicket) && !IsHedgePositionComment(pos.Comment()))
          return true;
       return false;
@@ -3855,8 +4241,8 @@ bool WasOpenedAsGridLimit(const ulong positionTicket)
    if(IsHedgePositionComment(dealComment) || IsHedgePositionComment(orderComment))
       return false;
 
-   return (orderType == ORDER_TYPE_BUY_LIMIT || orderType == ORDER_TYPE_SELL_LIMIT ||
-           orderType == ORDER_TYPE_BUY_STOP  || orderType == ORDER_TYPE_SELL_STOP);
+   // ONLY limits are grid. STOP fills = hedge protect (or foreign) — not grid.
+   return (orderType == ORDER_TYPE_BUY_LIMIT || orderType == ORDER_TYPE_SELL_LIMIT);
   }
 
 bool WasOpenedAsMarketHedge(const ulong positionTicket)
@@ -3902,7 +4288,7 @@ ulong InferHedgeParentTicket(const ulong hedgeTicket)
          continue;
       if(pos.Ticket() == hedgeTicket)
          continue;
-      // JAIL: only OUR grid parents Ã¢â‚¬â€ manual trades are invisible here.
+      // JAIL: only OUR grid parents — manual trades are invisible here.
       if(!IsOurBotGridParent(pos.Ticket()))
          continue;
       if(pos.PositionType() != parentType)
@@ -3910,8 +4296,30 @@ ulong InferHedgeParentTicket(const ulong hedgeTicket)
       if(MathAbs(pos.Volume() - hedgeVol) > 0.0001)
          continue;
 
+      // R394: never steal a parent that already has another live hedge link.
       ulong linked = 0;
       if(GetLinkedHedgeTicket(pos.Ticket(), linked) && linked != hedgeTicket)
+         continue;
+
+      // Strict comment match: another GM_HEDGE_<parent> already open?
+      const string expect = BuildHedgeComment(pos.Ticket());
+      bool otherHedge = false;
+      CPositionInfo hp;
+      for(int j = 0; j < PositionsTotal(); j++)
+        {
+         if(!hp.SelectByIndex(j))
+            continue;
+         if(hp.Ticket() == hedgeTicket)
+            continue;
+         if(hp.Symbol() != _Symbol || hp.Magic() != (ulong)EXPERT_MAGIC)
+            continue;
+         if(hp.Comment() == expect || ParseHedgeParentTicket(hp.Comment()) == pos.Ticket())
+           {
+            otherHedge = true;
+            break;
+           }
+        }
+      if(otherHedge)
          continue;
 
       const double loss = GetPositionLossUSD(pos.Ticket());
@@ -3936,7 +4344,8 @@ bool HasHedgeOpeningEvidence(const ulong ticket)
    return (ParseHedgeParentTicket(dealComment) > 0 || ParseHedgeParentTicket(orderComment) > 0);
   }
 
-ulong ResolveHedgeParentTicket(const ulong hedgeTicket, const string comment)
+//--- Comment / deal / GV link only — NEVER Infer (prevents cross-parent hedge theft).
+ulong StrictHedgeParentTicket(const ulong hedgeTicket, const string comment)
   {
    ulong parentTicket = ParseHedgeParentTicket(comment);
    if(parentTicket == 0)
@@ -3954,13 +4363,16 @@ ulong ResolveHedgeParentTicket(const ulong hedgeTicket, const string comment)
         }
      }
 
-   if(parentTicket == 0)
-      parentTicket = InferHedgeParentTicket(hedgeTicket);
-
-   // JAIL: parent must be OUR open grid trade. Manual/foreign ticket IDs are discarded.
    if(parentTicket > 0 && !IsOurBotGridParent(parentTicket))
       return 0;
    return parentTicket;
+  }
+
+ulong ResolveHedgeParentTicket(const ulong hedgeTicket, const string comment)
+  {
+   // R395: comment / deal / GV only. Infer is forbidden — it bound foreign lots
+   // onto the deepest-loss parent and DuplicateCleanup killed the real hedge.
+   return StrictHedgeParentTicket(hedgeTicket, comment);
   }
 
 ulong GetOpenedPositionIdFromTrade()
@@ -4023,38 +4435,7 @@ void AssignOrphanHedgesToParents()
 
 void ConsolidateAllDuplicateHedges()
   {
-   ulong parentTickets[];
-   ArrayResize(parentTickets, 0);
-
-   CPositionInfo pos;
-   for(int i = 0; i < PositionsTotal(); i++)
-     {
-      if(!pos.SelectByIndex(i))
-         continue;
-      if(pos.Symbol() != _Symbol || pos.Magic() != (ulong)EXPERT_MAGIC)
-         continue;
-      if(!WasOpenedAsGridLimit(pos.Ticket()))
-         continue;
-
-      bool dup = false;
-      for(int p = 0; p < ArraySize(parentTickets); p++)
-        {
-         if(parentTickets[p] == pos.Ticket())
-           {
-            dup = true;
-            break;
-           }
-        }
-      if(!dup)
-        {
-         const int n = ArraySize(parentTickets);
-         ArrayResize(parentTickets, n + 1);
-         parentTickets[n] = pos.Ticket();
-        }
-     }
-
-   for(int g = 0; g < ArraySize(parentTickets); g++)
-      ConsolidateDuplicateHedgesForParent(parentTickets[g]);
+   // R395: OFF. False OVER-hedged counts were closing the only live hedge.
   }
 
 bool GetLinkedHedgeTicket(const ulong parentTicket, ulong &hedgeTicketOut)
@@ -4154,15 +4535,42 @@ ulong FindParentForLinkedHedge(const ulong hedgeTicket)
    return 0;
   }
 
-//--- Collect every open hedge belonging to one parent (comment OR GV link).
+//--- Collect hedges by comment OR GV link OR opening-deal evidence (comment strip safe).
 int CollectHedgesForParent(const ulong parentTicket, ulong &hedgeTickets[])
   {
    ArrayResize(hedgeTickets, 0);
-   // JAIL: never collect/manage hedges for manual or foreign parents.
-   if(!IsOurBotGridParent(parentTicket))
+   if(parentTicket == 0)
       return 0;
 
    const string expected = BuildHedgeComment(parentTicket);
+   bool parentAlive = false;
+   ENUM_POSITION_TYPE parentType = POSITION_TYPE_BUY;
+   CPositionInfo parent;
+   if(parent.SelectByTicket(parentTicket) &&
+      parent.Symbol() == _Symbol &&
+      parent.Magic() == (ulong)EXPERT_MAGIC &&
+      !IsBotHedgePosition(parentTicket, parent.Comment()))
+     {
+      parentAlive = true;
+      parentType = parent.PositionType();
+     }
+
+   // Path A: explicit link table (survives comment wipe).
+   ulong linked = 0;
+   if(GetLinkedHedgeTicket(parentTicket, linked) && linked > 0 && linked != parentTicket)
+     {
+      CPositionInfo h;
+      if(h.SelectByTicket(linked) &&
+         h.Symbol() == _Symbol &&
+         h.Magic() == (ulong)EXPERT_MAGIC)
+        {
+         if(!parentAlive || h.PositionType() != parentType)
+           {
+            ArrayResize(hedgeTickets, 1);
+            hedgeTickets[0] = linked;
+           }
+        }
+     }
 
    CPositionInfo pos;
    for(int i = 0; i < PositionsTotal(); i++)
@@ -4171,17 +4579,29 @@ int CollectHedgesForParent(const ulong parentTicket, ulong &hedgeTickets[])
          continue;
       if(pos.Symbol() != _Symbol || pos.Magic() != (ulong)EXPERT_MAGIC)
          continue;
-      if(!IsBotHedgePosition(pos.Ticket(), pos.Comment()))
+      if(pos.Ticket() == parentTicket)
          continue;
 
-      const ulong parsedParent = ResolveHedgeParentTicket(pos.Ticket(), pos.Comment());
-      if(parsedParent != parentTicket && pos.Comment() != expected)
+      const ulong ht = pos.Ticket();
+      bool isHedge = IsHedgePositionComment(pos.Comment()) ||
+                     IsTrackedHedgeTicket(ht) ||
+                     HasHedgeOpeningEvidence(ht);
+      if(!isHedge)
+         continue;
+
+      const ulong resolved = ResolveHedgeParentTicket(ht, pos.Comment());
+      if(resolved != parentTicket &&
+         pos.Comment() != expected &&
+         ParseHedgeParentTicket(pos.Comment()) != parentTicket)
+         continue;
+
+      if(parentAlive && pos.PositionType() == parentType)
          continue;
 
       bool dup = false;
       for(int d = 0; d < ArraySize(hedgeTickets); d++)
         {
-         if(hedgeTickets[d] == pos.Ticket())
+         if(hedgeTickets[d] == ht)
            {
             dup = true;
             break;
@@ -4191,27 +4611,7 @@ int CollectHedgesForParent(const ulong parentTicket, ulong &hedgeTickets[])
         {
          const int n = ArraySize(hedgeTickets);
          ArrayResize(hedgeTickets, n + 1);
-         hedgeTickets[n] = pos.Ticket();
-        }
-     }
-
-   ulong linked = 0;
-   if(GetLinkedHedgeTicket(parentTicket, linked))
-     {
-      bool dup = false;
-      for(int d = 0; d < ArraySize(hedgeTickets); d++)
-        {
-         if(hedgeTickets[d] == linked)
-           {
-            dup = true;
-            break;
-           }
-        }
-      if(!dup)
-        {
-         const int n = ArraySize(hedgeTickets);
-         ArrayResize(hedgeTickets, n + 1);
-         hedgeTickets[n] = linked;
+         hedgeTickets[n] = ht;
         }
      }
 
@@ -4243,7 +4643,7 @@ double GetHedgedVolumeForParent(const ulong parentTicket)
 double GetHedgeVolumeShortfall(const ulong parentTicket)
   {
    if(!IsOurBotGridParent(parentTicket))
-      return 0.0; // manual/foreign Ã¢â€ â€™ zero shortfall Ã¢â€ â€™ never hedge
+      return 0.0; // manual/foreign → zero shortfall → never hedge
    CPositionInfo parent;
    if(!parent.SelectByTicket(parentTicket))
       return 0.0;
@@ -4259,39 +4659,9 @@ bool HasFullHedgeCoverage(const ulong parentTicket)
    return (GetHedgeVolumeShortfall(parentTicket) <= 0.0);
   }
 
-//--- Trim only OVER-hedge. Multiple hedge legs that sum to parent volume (1:1 top-up) are kept.
 void ConsolidateDuplicateHedgesForParent(const ulong parentTicket)
   {
-   ulong hedges[];
-   const int n = CollectHedgesForParent(parentTicket, hedges);
-   if(n <= 1)
-      return;
-
-   CPositionInfo parent;
-   if(!parent.SelectByTicket(parentTicket))
-      return;
-
-   const double parentVol = parent.Volume();
-   const double step = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   double covered = GetHedgedVolumeForParent(parentTicket);
-
-   // Under-hedged or exact 1:1 with multiple legs Ã¢â€ â€™ do NOT close top-up legs.
-   if(covered <= parentVol + step)
-      return;
-
-   // Over-hedged: close newest extras until coverage ~= parent volume.
-   PrintFormat("TGM [HEDGE]: Parent #%I64u OVER-hedged (covered=%.2f parent=%.2f) - trimming extras.",
-               parentTicket, covered, parentVol);
-
-   for(int i = n - 1; i >= 0 && covered > parentVol + step; i--)
-     {
-      CPositionInfo hp;
-      if(!hp.SelectByTicket(hedges[i]))
-         continue;
-      const double hv = hp.Volume();
-      if(CloseHedgePosition(hedges[i], "DuplicateCleanup"))
-         covered -= hv;
-     }
+   // R395: never close a live hedge as "duplicate". One comment-matched hedge is the system.
   }
 
 double GetTicketLossPoints(const ulong ticket, const double point)
@@ -4538,7 +4908,7 @@ void LogHedgeBlockOnce(const ulong parentTicket, const string reason)
 void MarkHedgeRearmLocked(const ulong parentTicket)
   {
    ClearHedgeOpenTime(parentTicket);
-   // No LOCK / no rapid-death pause Ã¢â‚¬â€ clear state so next tick can re-hedge if loss >= trigger.
+   // No LOCK / no rapid-death pause — clear state so next tick can re-hedge if loss >= trigger.
    ClearHedgeRearmState(parentTicket);
    SetHedgeTriggerReady(parentTicket, true);
    ApplyHedgeRecycleCooldown(parentTicket, 0);
@@ -4607,7 +4977,7 @@ void HealStaleHedgeLock(const ulong parentTicket)
    if(IsHedgeReopenCooldownActive(parentTicket))
       return;
 
-   // Clear any legacy LOCK state Ã¢â‚¬â€ recurrent re-hedge uses cooldown + loss>=trigger only.
+   // Clear any legacy LOCK state — recurrent re-hedge uses cooldown + loss>=trigger only.
    ClearHedgeRearmState(parentTicket);
    SetHedgeTriggerReady(parentTicket, true);
    PrintFormat("TGM [HEDGE]: Parent #%I64u stale LOCK cleared - recurrent hedge enabled.", parentTicket);
@@ -4677,7 +5047,7 @@ bool CanOpenHedgeForParent(const ulong parentTicket)
    // JAIL: never hedge manual / foreign trades.
    if(!IsOurBotGridParent(parentTicket))
      {
-      LogHedgeBlockOnce(parentTicket, "FOREIGN/MANUAL trade Ã¢â‚¬â€ EA is blind (not our magic)");
+      LogHedgeBlockOnce(parentTicket, "FOREIGN/MANUAL trade — EA is blind (not our magic)");
       return false;
      }
 
@@ -4689,53 +5059,24 @@ bool CanOpenHedgeForParent(const ulong parentTicket)
       return false;
      }
 
-   const double parentLoss = GetPositionLossUSD(parentTicket);
-   const double trigger = GetActiveHedgeTriggerUSD();
-   if(parentLoss < trigger)
+   const double parentLossPips = GetPositionLossPips(parentTicket);
+   if(parentLossPips + 1e-9 < TGM_LOSS_HEDGE_PIPS)
      {
       LogHedgeBlockOnce(parentTicket,
-                        StringFormat("loss $%.2f < trigger $%.2f", parentLoss, trigger));
+                        StringFormat("loss %.1fpip < trigger %.0fpip",
+                                     parentLossPips, TGM_LOSS_HEDGE_PIPS));
       return false;
      }
+
+   // R406 HARD RULE: naked parent still in loss => ALWAYS allow hedge.
+   // No cooldown / bleed / chop / bar-lock may block the ~30pip net method.
+   if(CountHedgesForParent(parentTicket) <= 0)
+      return true;
 
    if(IsHedgeReopenCooldownActive(parentTicket))
      {
-      // Top-up of an already-live under-hedge must not wait for the 20s gap.
-      if(CountHedgesForParent(parentTicket) <= 0)
-        {
-         LogHedgeBlockOnce(parentTicket, "hedge cooldown (re-open soon if loss >= trigger)");
-         return false;
-        }
-     }
-
-   if(IsHedgeBarLockActive(parentTicket))
-     {
-      LogHedgeBlockOnce(parentTicket, "H4 hedge cycle limit reached");
+      LogHedgeBlockOnce(parentTicket, "hedge cooldown (coverage incomplete — will retry)");
       return false;
-     }
-
-   if(IsHedgeCycleLimitReached(parentTicket))
-     {
-      LogHedgeBlockOnce(parentTicket, "max hedge cycles this H4 bar");
-      return false;
-     }
-
-   if(IsHedgeChopFrozen(parentTicket))
-     {
-      const double center = GlobalVariableGet(HedgeChopCenterKey(parentTicket));
-      LogHedgeBlockOnce(parentTicket,
-                        StringFormat("CHOP FREEZE active (zone center %.2f)", center));
-      return false;
-     }
-
-   CPositionInfo parentPos;
-   if(parentPos.SelectByTicket(parentTicket))
-     {
-      if(IsOppositeBleedPaused(parentPos.PositionType()))
-        {
-         LogHedgeBlockOnce(parentTicket, "BLEED-PROTECT: winning opposite side is BE/trailing");
-         return false;
-        }
      }
 
    return true;
@@ -5040,6 +5381,66 @@ bool StripPositionTakeProfit(const ulong ticket, const string reason)
    return ok;
   }
 
+//--- Loss method starts: remove pending/shared broker SL — hedge owns the risk now.
+string ParentPendingSLKey(const ulong ticket)
+  {
+   return StringFormat("TGM_PendSL_%I64u_%s_%I64u",
+                       (ulong)AccountInfoInteger(ACCOUNT_LOGIN), _Symbol, ticket);
+  }
+
+void RememberParentPendingSL(const ulong ticket)
+  {
+   CPositionInfo pos;
+   if(!pos.SelectByTicket(ticket))
+      return;
+   if(pos.StopLoss() <= 0.0)
+      return;
+   const string key = ParentPendingSLKey(ticket);
+   if(!GlobalVariableCheck(key))
+      GlobalVariableSet(key, pos.StopLoss());
+  }
+
+bool RestoreParentPendingSL(const ulong ticket, const string reason)
+  {
+   CPositionInfo pos;
+   if(!pos.SelectByTicket(ticket))
+      return false;
+   if(pos.StopLoss() > 0.0)
+      return true;
+
+   const string key = ParentPendingSLKey(ticket);
+   if(!GlobalVariableCheck(key))
+      return false;
+   const double sl = GlobalVariableGet(key);
+   if(sl <= 0.0)
+      return false;
+
+   const ENUM_POSITION_TYPE posType = pos.PositionType();
+   const double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   const double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   const double ref = (posType == POSITION_TYPE_BUY) ? bid : ask;
+   if(!IsBrokerStopDistanceOK(posType, ref, sl))
+     {
+      PrintFormat("TGM [R403]: Parent #%I64u cannot restore pending SL %.5f (%s) — price already through. Re-hedge required.",
+                  ticket, sl, reason);
+      return false;
+     }
+
+   const double tp = pos.TakeProfit();
+   if(!SafePositionModify(ticket, sl, tp, "PositionModify(RESTORE-PARENT-SL)"))
+      return false;
+   PrintFormat("TGM [R403]: Parent #%I64u pending SL restored to %.5f (%s).", ticket, sl, reason);
+   return true;
+  }
+
+bool StripPositionStopLoss(const ulong ticket, const string reason)
+  {
+   // R404 hard rule: pending/shared SL is NEVER removed. It stays until broker hit.
+   PrintFormat("TGM [R404]: Strip parent SL BLOCKED #%I64u (%s) — pending SL stays until hit.",
+               ticket, reason);
+   return false;
+  }
+
 bool ApplyBreakEvenSlNoTp(const ulong ticket, const double beSL, const string reason)
   {
    LogPhase28A("BE_REQUEST", ticket, StringFormat("beSL=%.5f | %s", beSL, reason));
@@ -5104,7 +5505,7 @@ int CountHedgePositions()
   }
 
 //--- Combined floating P/L of ONLY this EA's own positions (magic == EXPERT_MAGIC).
-//    Manual / foreign trades never counted Ã¢â‚¬â€ protection & DD governor stay bot-only.
+//    Manual / foreign trades never counted — protection & DD governor stay bot-only.
 double GetBotFloatingPL()
   {
    CPositionInfo pos;
@@ -5163,6 +5564,38 @@ void MonitorAccountDrawdownProtection()
      }
   }
 
+//--- Method: with hedge open, parent may stay forever — do NOT force-close (no kill/survival wash).
+void EnforceSurvivalBeforeStopOut()
+  {
+  }
+
+bool IsResearchH4RangeAllowed(string &reasonOut)
+  {
+#ifdef TGM_R380_FORCE_NO_H4_RANGE_FILTER
+   reasonOut = "";
+   return true; // R416: no 200pip lock — any H4 range allowed
+#else
+   reasonOut = "";
+   const double pip = Phase17_GetPipSize();
+   const double h = iHigh(_Symbol, PERIOD_H4, 1);
+   const double l = iLow(_Symbol, PERIOD_H4, 1);
+   if(pip <= 0.0 || h <= l)
+     {
+      reasonOut = "H4_RANGE_INVALID";
+      return false;
+     }
+   const double rangePips = (h - l) / pip;
+   const double maxPips = Phase17_EffectiveMaxH4RangePips();
+   if(rangePips > maxPips + 1e-9)
+     {
+      reasonOut = StringFormat("H4_RANGE_REJECTED pips=%.1f>%.1f (R382)",
+                               rangePips, maxPips);
+      return false;
+     }
+   return true;
+#endif
+  }
+
 bool IsGridPlacementAllowed(const bool freshH4Cycle = false)
   {
    if(IsKillSwitchActiveToday())
@@ -5171,7 +5604,42 @@ bool IsGridPlacementAllowed(const bool freshH4Cycle = false)
    if(!IsGridOpsAllowed())
       return false;
 
-   // Fresh H4 bar: equity 9% + 6 pendings Ã¢â‚¬â€ manual trades never block; skip DD/daily gates.
+   string shockReason = "";
+   if(IsExtremeH4ShockCooldownActive(shockReason))
+     {
+      static datetime lastShockLogTime = 0;
+      const datetime now = TimeCurrent();
+      if((now - lastShockLogTime) >= 60)
+        {
+         lastShockLogTime = now;
+         PrintFormat("TGM [R378]: %s blocked — %s",
+                     freshH4Cycle ? "H4FreshGrid" : "GridPlacement",
+                     shockReason);
+        }
+      return false;
+     }
+
+   // R416: H4 range gate disabled — both sides on every H4 close.
+#ifdef TGM_R380_FORCE_NO_H4_RANGE_FILTER
+   // skip range check
+#else
+   string rangeReason = "";
+   if(!IsResearchH4RangeAllowed(rangeReason))
+     {
+      static datetime lastRangeLogTime = 0;
+      const datetime now = TimeCurrent();
+      if((now - lastRangeLogTime) >= 60)
+        {
+         lastRangeLogTime = now;
+         PrintFormat("TGM [R382]: %s blocked — %s",
+                     freshH4Cycle ? "H4FreshGrid" : "GridPlacement",
+                     rangeReason);
+        }
+      return false;
+     }
+#endif
+
+   // Fresh H4 bar: 3% equity per level + up to 6 pendings unless daily lock.
    if(freshH4Cycle)
       return Phase17_AllowFreshH4GridPlacement("H4FreshGrid");
 
@@ -5179,7 +5647,7 @@ bool IsGridPlacementAllowed(const bool freshH4Cycle = false)
    if(!Phase17_AllowNewExposureSimple("GridPlacement"))
       return false;
 
-   // Bot-only floating loss vs balance Ã¢â‚¬â€ manual open P/L invisible.
+   // Bot-only floating loss vs balance — manual open P/L invisible.
    if(Enable_Account_Protection && g_accountProtectionActive)
       return false;
 
@@ -5451,10 +5919,10 @@ void EnforceLayer2EmergencyParentProtection()
   {
    if(!Enable_Triple_Protection || !Enable_Account_Protection)
       return;
-   // Mode B: shared Live ATR-14 H4 broker SL is the loss exit Ã¢â‚¬â€ do not overlay emergency SL.
+   // Mode B: shared Live ATR-14 H4 broker SL is the loss exit — do not overlay emergency SL.
    if(IsFixedSlReentryMode())
       return;
-   // Mode A: still run while hedge engine is ON Ã¢â‚¬â€ only parents WITHOUT a live hedge
+   // Mode A: still run while hedge engine is ON — only parents WITHOUT a live hedge
    // get emergency SL after hang timeout (see ParentHasActiveHedge check below).
 
    const double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
@@ -5744,35 +6212,29 @@ void EnforceHedgeCoverageScan()
      }
   }
 
-//--- Simplified per-tick engine (Mode B only).
-//    Order: kill switch -> DD flag -> stray hedge cleanup + ATR SL heal ->
-//    per-trade profit engine (BE + partial + $ trailing).
+//--- Simplified per-tick engine (R411: PROFIT BOOK FIRST — hedge BE must not starve closes).
 void RunAccountProtectionEngine()
   {
    if(IsKillSwitchActiveToday())
       return;
 
-   MonitorLayer3HardKillSwitch();          // Layer 3: daily-loss / equity kill switch (last resort)
+   MonitorLayer3HardKillSwitch();
    if(IsKillSwitchActiveToday())
       return;
 
-   MonitorAccountDrawdownProtection();      // Layer 1: flag high floating DD (blocks NEW grid only)
+   MonitorAccountDrawdownProtection();
 
-   // Mode B only: close leftover GM_HEDGE + restore fixed/ATR broker SL. No hedge engine.
-   CloseStrayHedgesInFixedSlMode();
-   CPositionInfo posB;
-   for(int i = 0; i < PositionsTotal(); i++)
+   // R411: book floating winners BEFORE hedge modify spam (invalid stops was starving closes).
+   UniversalGoldTrailingEngine();
+
+   if(IsHedgeEngineActive())
      {
-      if(!posB.SelectByIndex(i))
-         continue;
-      if(posB.Symbol() != _Symbol || posB.Magic() != (ulong)EXPERT_MAGIC)
-         continue;
-      if(!IsOurBotGridParent(posB.Ticket()))
-         continue;
-      EnsureModeBFixedBrokerSL(posB.Ticket());
+      ProcessHedgeProtectionEngine();
+      ManageHedgeBreakEvenCycle();
      }
 
-   UniversalGoldTrailingEngine();            // R420: +30pip 80%+BE, 20% to ATR TP
+   EnforceSurvivalBeforeStopOut();
+   EnforceTrendBleedProtect();
   }
 
 bool CloseHedgePosition(const ulong hedgeTicket, const string reason)
@@ -5821,9 +6283,11 @@ bool CloseHedgePosition(const ulong hedgeTicket, const string reason)
          ClearHedgeLive(parentTicket);
          ClearHedgeRearmState(parentTicket);
          ApplyHedgeRecycleCooldown(parentTicket, 0);
-         SetHedgeTriggerReady(parentTicket, true); // recurrent: re-open after gap if still >= trigger
+         SetHedgeTriggerReady(parentTicket, true);
          if(reason == "HedgeLoss100")
             ScheduleHedgeRetry(parentTicket);
+         // R406: hedge gone while parent still in loss => MANDATORY instant re-hedge.
+         ForceRehedgeIfParentStillInLoss(parentTicket, "HedgeClosed:" + reason);
         }
      }
 
@@ -5844,13 +6308,20 @@ bool OpenHedgeForParent(const ulong parentTicket)
    // JAIL: manual/foreign parents cannot receive a hedge from this EA.
    if(!IsOurBotGridParent(parentTicket))
      {
-      LogProtectionAlert(StringFormat("Hedge BLOCKED Ã¢â‚¬â€ ticket #%I64u is manual/foreign (magic gate).", parentTicket));
+      LogProtectionAlert(StringFormat("Hedge BLOCKED — ticket #%I64u is manual/foreign (magic gate).", parentTicket));
       return false;
      }
    if(IsBotHedgePosition(parentTicket, pos.Comment()))
       return false;
    if(!CanOpenHedgeForParent(parentTicket))
       return false;
+
+   // R394: sticky mode — at most ONE hedge ticket per parent (no second-leg spam).
+   if(CountHedgesForParent(parentTicket) >= 1)
+     {
+      LogHedgeBlockOnce(parentTicket, "sticky: one hedge already live (no second ticket)");
+      return false;
+     }
 
    // CRITICAL: hedge size = parent lot still uncovered (never Manual_Lot_Size).
    const double parentLots = pos.Volume();
@@ -5866,7 +6337,7 @@ bool OpenHedgeForParent(const ulong parentTicket)
 
    const int    digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
    const double stops  = GetSymbolStopsPrice();
-   const double hedgeSLDist = GetEffectiveHedgeStopLossUSD();
+   const double pip    = Phase17_GetPipSize();
    const string cmt    = BuildHedgeComment(parentTicket);
    const double bid    = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    const double ask    = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
@@ -5875,32 +6346,27 @@ bool OpenHedgeForParent(const ulong parentTicket)
    double entry = 0.0;
    double sl    = 0.0;
    ENUM_ORDER_TYPE hedgeSide;
-   const bool stickyNoSL = (hedgeSLDist <= 0.0); // Loss Cap Engine: no $1 death SL
+   // R412: always attach hedge death SL at -10pip (parent pending SL untouched).
+   const double hedgeLossDist = (pip > 0.0) ? (TGM_HEDGE_OWN_LOSS_PIPS * pip) : 1.0;
 
    if(pos.PositionType() == POSITION_TYPE_BUY)
      {
       hedgeSide = ORDER_TYPE_SELL;
       entry     = bid;
-      if(!stickyNoSL)
-        {
-         sl = NormalizeDouble(entry + hedgeSLDist, digits);
-         const double minSL = NormalizeDouble(ask + stops, digits);
-         if(sl < minSL)
-            sl = minSL;
-        }
+      sl = NormalizeDouble(entry + hedgeLossDist, digits); // SELL SL above entry
+      const double minSL = NormalizeDouble(ask + stops, digits);
+      if(sl < minSL)
+         sl = minSL;
       ok = g_trade.Sell(lots, _Symbol, entry, sl, 0.0, cmt);
      }
    else
      {
       hedgeSide = ORDER_TYPE_BUY;
       entry     = ask;
-      if(!stickyNoSL)
-        {
-         sl = NormalizeDouble(entry - hedgeSLDist, digits);
-         const double maxSL = NormalizeDouble(bid - stops, digits);
-         if(sl > maxSL)
-            sl = maxSL;
-        }
+      sl = NormalizeDouble(entry - hedgeLossDist, digits); // BUY SL below entry
+      const double maxSL = NormalizeDouble(bid - stops, digits);
+      if(sl > maxSL)
+         sl = maxSL;
       ok = g_trade.Buy(lots, _Symbol, entry, sl, 0.0, cmt);
      }
 
@@ -5925,12 +6391,12 @@ bool OpenHedgeForParent(const ulong parentTicket)
       SetLinkedHedgeTicket(parentTicket, openedHedgeTicket);
       SetHedgeTriggerReady(parentTicket, true);
       ClearHedgeRearmState(parentTicket);
-      PrintFormat("TGM [LOSS-CAP]: opened %s sticky hedge #%I64u for parent #%I64u | lots=%.2f/%.2f | hedgeSL=%s.",
+      PrintFormat("TGM [R412]: opened %s hedge #%I64u for parent #%I64u | lots=%.2f | hedgeSL=-%.0fpip @ %.*f.",
                   (hedgeSide == ORDER_TYPE_SELL) ? "SELL" : "BUY",
-                  openedHedgeTicket, parentTicket, filledLots, parentLots,
-                  stickyNoSL ? "NONE(sticky)" : DoubleToString(sl, digits));
+                  openedHedgeTicket, parentTicket, filledLots,
+                  TGM_HEDGE_OWN_LOSS_PIPS, digits, sl);
       if(MathAbs(filledLots - lots) > SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP))
-         LogProtectionAlert(StringFormat("HEDGE LOT MISMATCH parent #%I64u requested=%.2f filled=%.2f Ã¢â‚¬â€ will top-up.",
+         LogProtectionAlert(StringFormat("HEDGE LOT MISMATCH parent #%I64u requested=%.2f filled=%.2f — will top-up.",
                                          parentTicket, lots, filledLots));
       MarkHedgeLive(parentTicket);
       MarkHedgeOpenTime(parentTicket);
@@ -5952,14 +6418,427 @@ void SyncHedgeOrphanPositions()
       if(!IsBotHedgePosition(pos.Ticket(), pos.Comment()))
          continue;
 
-      ulong parentTicket = ResolveHedgeParentTicket(pos.Ticket(), pos.Comment());
+      const ulong parentTicket = ResolveHedgeParentTicket(pos.Ticket(), pos.Comment());
       CPositionInfo parent;
       if(parentTicket == 0 || !parent.SelectByTicket(parentTicket))
          CloseHedgePosition(pos.Ticket(), "ParentClosed");
      }
   }
 
-//--- Manage hedge SL: sticky mode (SL=0) skips death-SL restore; arms BE at +$1 (Mode B).
+//--- Wipe every soft gate that could delay re-hedge while parent is still in loss.
+void ClearMandatoryHedgeGates(const ulong parentTicket)
+  {
+   if(parentTicket == 0)
+      return;
+   const string cd = PositionHedgeCooldownKey(parentTicket);
+   if(GlobalVariableCheck(cd))
+      GlobalVariableDel(cd);
+   const string retry = PositionHedgeRetryKey(parentTicket);
+   if(GlobalVariableCheck(retry))
+      GlobalVariableDel(retry);
+   const string barLock = PositionHedgeBarLockKey(parentTicket);
+   if(GlobalVariableCheck(barLock))
+      GlobalVariableDel(barLock);
+   ClearHedgeChopState(parentTicket);
+   ClearHedgeRearmState(parentTicket);
+   SetHedgeTriggerReady(parentTicket, true);
+  }
+
+//--- HARD RULE: parent still open + loss >= 30pip + no 1:1 hedge => open NOW.
+bool ForceRehedgeIfParentStillInLoss(const ulong parentTicket, const string reason)
+  {
+   if(parentTicket == 0 || !IsHedgeEngineActive())
+      return false;
+
+   CPositionInfo parent;
+   if(!parent.SelectByTicket(parentTicket))
+      return false;
+   if(!IsOurBotGridParent(parentTicket))
+      return false;
+   if(GetPositionLossPips(parentTicket) + 1e-9 < TGM_LOSS_HEDGE_PIPS)
+      return false;
+   if(HasHedge(parentTicket) && HasFullHedgeCoverage(parentTicket))
+      return true;
+
+   ClearMandatoryHedgeGates(parentTicket);
+   RestoreParentPendingSL(parentTicket, reason);
+
+   for(int attempt = 1; attempt <= TGM_MANDATORY_REHEDGE_ATTEMPTS; attempt++)
+     {
+      if(HasHedge(parentTicket) && HasFullHedgeCoverage(parentTicket))
+         return true;
+      if(OpenHedgeForParent(parentTicket))
+        {
+         PrintFormat("TGM [R406]: MANDATORY re-hedge OK parent #%I64u (%s) attempt=%d loss=%.1fpip",
+                     parentTicket, reason, attempt, GetPositionLossPips(parentTicket));
+         return true;
+        }
+     }
+
+   PrintFormat("TGM [R406]: MANDATORY re-hedge FAILED parent #%I64u (%s) — retry every tick until covered.",
+               parentTicket, reason);
+   return false;
+  }
+
+void EnforceMandatoryHedgeCoverage()
+  {
+   if(!IsHedgeEngineActive() || IsMarketValidationMode())
+      return;
+
+   CPositionInfo pos;
+   for(int i = 0; i < PositionsTotal(); i++)
+     {
+      if(IsStopped())
+         return;
+      if(!pos.SelectByIndex(i))
+         continue;
+      if(pos.Symbol() != _Symbol || pos.Magic() != (ulong)EXPERT_MAGIC)
+         continue;
+      if(!IsOurBotGridParent(pos.Ticket()))
+         continue;
+
+      const ulong parentTicket = pos.Ticket();
+      EnsureHedgeProtectArmed(parentTicket);
+      if(GetPositionLossPips(parentTicket) + 1e-9 < TGM_LOSS_HEDGE_PIPS)
+         continue;
+      if(HasHedge(parentTicket) && HasFullHedgeCoverage(parentTicket))
+         continue;
+
+      ForceRehedgeIfParentStillInLoss(parentTicket, "EnforceMandatory");
+     }
+  }
+
+ulong FindHedgeProtectStopTicket(const ulong parentTicket)
+  {
+   if(parentTicket == 0)
+      return 0;
+   const string expected = BuildHedgeComment(parentTicket);
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      const ulong ticket = OrderGetTicket(i);
+      if(ticket == 0 || !OrderSelect(ticket))
+         continue;
+      if(OrderGetString(ORDER_SYMBOL) != _Symbol)
+         continue;
+      if((long)OrderGetInteger(ORDER_MAGIC) != EXPERT_MAGIC)
+         continue;
+      const ENUM_ORDER_TYPE ot = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+      if(ot != ORDER_TYPE_BUY_STOP && ot != ORDER_TYPE_SELL_STOP)
+         continue;
+      const string cmt = OrderGetString(ORDER_COMMENT);
+      if(cmt == expected || ParseHedgeParentTicket(cmt) == parentTicket)
+         return ticket;
+     }
+   return 0;
+  }
+
+int CancelHedgeProtectStopsForParent(const ulong parentTicket, const string reason)
+  {
+   int n = 0;
+   const string expected = BuildHedgeComment(parentTicket);
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      const ulong ticket = OrderGetTicket(i);
+      if(ticket == 0 || !OrderSelect(ticket))
+         continue;
+      if(OrderGetString(ORDER_SYMBOL) != _Symbol)
+         continue;
+      if((long)OrderGetInteger(ORDER_MAGIC) != EXPERT_MAGIC)
+         continue;
+      const string cmt = OrderGetString(ORDER_COMMENT);
+      if(!IsHedgePositionComment(cmt))
+         continue;
+      if(cmt != expected && ParseHedgeParentTicket(cmt) != parentTicket)
+         continue;
+      if(ExecuteTradeOp("HedgeStopDelete", g_trade.OrderDelete(ticket),
+                        StringFormat("ticket=%I64u %s", ticket, reason)))
+         n++;
+     }
+   return n;
+  }
+
+bool PlaceHedgeProtectStop(const ulong parentTicket)
+  {
+   if(!IsHedgeEngineActive() || !PreProtectionTradeGuard("HedgeProtectStop"))
+      return false;
+
+   CPositionInfo parent;
+   if(!parent.SelectByTicket(parentTicket) || !IsOurBotGridParent(parentTicket))
+      return false;
+   if(HasHedge(parentTicket))
+      return true;
+   if(FindHedgeProtectStopTicket(parentTicket) > 0)
+      return true;
+
+   const double pip = Phase17_GetPipSize();
+   if(pip <= 0.0)
+      return false;
+
+   const int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+   const double lots = NormalizeVolume(parent.Volume());
+   if(lots <= 0.0)
+      return false;
+
+   const double open = parent.PriceOpen();
+   const double dist = TGM_LOSS_HEDGE_PIPS * pip;
+   const string cmt = BuildHedgeComment(parentTicket);
+   const double stops = GetSymbolStopsPrice();
+   const double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   const double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+
+   bool ok = false;
+   double stopPrice = 0.0;
+
+   if(parent.PositionType() == POSITION_TYPE_BUY)
+     {
+      stopPrice = NormalizeDouble(open - dist, digits);
+      if(bid <= stopPrice + 1e-9 || (bid - stopPrice) < stops - 1e-9)
+         return OpenHedgeForParent(parentTicket);
+      ok = g_trade.SellStop(lots, stopPrice, _Symbol, 0.0, 0.0, ORDER_TIME_GTC, (datetime)0, cmt);
+     }
+   else
+     {
+      stopPrice = NormalizeDouble(open + dist, digits);
+      if(ask >= stopPrice - 1e-9 || (stopPrice - ask) < stops - 1e-9)
+         return OpenHedgeForParent(parentTicket);
+      ok = g_trade.BuyStop(lots, stopPrice, _Symbol, 0.0, 0.0, ORDER_TIME_GTC, (datetime)0, cmt);
+     }
+
+   if(!ok)
+     {
+      PrintFormat("TGM [R407]: Hedge STOP FAILED parent #%I64u price=%.*f lots=%.2f ret=%u — market fallback.",
+                  parentTicket, digits, stopPrice, lots, g_trade.ResultRetcode());
+      return OpenHedgeForParent(parentTicket);
+     }
+
+   PrintFormat("TGM [R407]: Hedge STOP armed parent #%I64u %s @ %.*f lots=%.2f (broker fill @ -%.0fpip).",
+               parentTicket,
+               (parent.PositionType() == POSITION_TYPE_BUY) ? "SELL_STOP" : "BUY_STOP",
+               digits, stopPrice, lots, TGM_LOSS_HEDGE_PIPS);
+   return true;
+  }
+
+void EnsureHedgeProtectArmed(const ulong parentTicket)
+  {
+   if(parentTicket == 0 || !IsHedgeEngineActive())
+      return;
+   CPositionInfo parent;
+   if(!parent.SelectByTicket(parentTicket) || !IsOurBotGridParent(parentTicket))
+      return;
+
+   if(GetPositionProfitPips(parentTicket) > 0.0)
+     {
+      CancelHedgeProtectStopsForParent(parentTicket, "ParentInProfit");
+      return;
+     }
+
+   if(HasHedge(parentTicket) && HasFullHedgeCoverage(parentTicket))
+     {
+      CancelHedgeProtectStopsForParent(parentTicket, "HedgeAlreadyLive");
+      return;
+     }
+
+   if(GetPositionLossPips(parentTicket) + 1e-9 >= TGM_LOSS_HEDGE_PIPS)
+     {
+      CancelHedgeProtectStopsForParent(parentTicket, "AlreadyThrough30");
+      ForceRehedgeIfParentStillInLoss(parentTicket, "Through30Market");
+      return;
+     }
+
+   PlaceHedgeProtectStop(parentTicket);
+  }
+
+//--- Hedge STOP/market fill: permanently bind parent↔hedge in GV (survives comment wipe).
+void ProcessHedgeFillBindFromDeal(const ulong dealTicket)
+  {
+   if(dealTicket == 0)
+      return;
+   if(!HistoryDealSelect(dealTicket))
+     {
+      HistorySelect(0, TimeCurrent());
+      if(!HistoryDealSelect(dealTicket))
+         return;
+     }
+   if(HistoryDealGetString(dealTicket, DEAL_SYMBOL) != _Symbol)
+      return;
+   if((long)HistoryDealGetInteger(dealTicket, DEAL_MAGIC) != EXPERT_MAGIC)
+      return;
+   if(HistoryDealGetInteger(dealTicket, DEAL_ENTRY) != DEAL_ENTRY_IN)
+      return;
+
+   const string dealComment = HistoryDealGetString(dealTicket, DEAL_COMMENT);
+   const ulong hedgePos = (ulong)HistoryDealGetInteger(dealTicket, DEAL_POSITION_ID);
+   if(hedgePos == 0)
+      return;
+
+   ulong parentTicket = ParseHedgeParentTicket(dealComment);
+   if(parentTicket == 0)
+     {
+      // Order comment may still have GM_HEDGE_xxx even if deal comment is blank.
+      const ulong orderTicket = (ulong)HistoryDealGetInteger(dealTicket, DEAL_ORDER);
+      if(orderTicket > 0 && HistoryOrderSelect(orderTicket))
+         parentTicket = ParseHedgeParentTicket(HistoryOrderGetString(orderTicket, ORDER_COMMENT));
+     }
+   if(parentTicket == 0)
+      parentTicket = FindParentForLinkedHedge(hedgePos);
+   if(parentTicket == 0 || !IsOurBotGridParent(parentTicket))
+      return;
+
+   SetLinkedHedgeTicket(parentTicket, hedgePos);
+   MarkHedgeLive(parentTicket);
+   PrintFormat("TGM [R409]: Hedge FILL bound #%I64u -> parent #%I64u (link survives comment wipe).",
+               hedgePos, parentTicket);
+  }
+
+//--- Hedge closed by broker BE / SL / any OUT: same-event re-hedge if parent still losing.
+void ProcessHedgeExitRehedgeFromDeal(const ulong dealTicket)
+  {
+   if(dealTicket == 0 || !IsHedgeEngineActive())
+      return;
+   if(!HistoryDealSelect(dealTicket))
+     {
+      HistorySelect(0, TimeCurrent());
+      if(!HistoryDealSelect(dealTicket))
+         return;
+     }
+   if(HistoryDealGetString(dealTicket, DEAL_SYMBOL) != _Symbol)
+      return;
+   if((long)HistoryDealGetInteger(dealTicket, DEAL_MAGIC) != EXPERT_MAGIC)
+      return;
+
+   const long entry = HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
+   if(entry != DEAL_ENTRY_OUT && entry != DEAL_ENTRY_OUT_BY)
+      return;
+
+   const string dealComment = HistoryDealGetString(dealTicket, DEAL_COMMENT);
+   if(!IsHedgePositionComment(dealComment))
+      return;
+
+   const ulong parentTicket = ParseHedgeParentTicket(dealComment);
+   if(parentTicket == 0)
+      return;
+
+   CPositionInfo parent;
+   if(!parent.SelectByTicket(parentTicket))
+      return; // parent already gone — orphan path handles leftover hedges
+
+   ForceRehedgeIfParentStillInLoss(parentTicket, "HedgeDealOut");
+  }
+
+void RecordPairedCycleNet(const double netMoney, const bool hedged, const string tag)
+  {
+   g_pairCycles++;
+   g_pairNetSum += netMoney;
+   if(netMoney >= 0.0)
+     {
+      g_pairWins++;
+      g_pairWinSum += netMoney;
+      if(g_pairCycles == 1 || netMoney > g_pairBestNet)
+         g_pairBestNet = netMoney;
+     }
+   else
+     {
+      g_pairLosses++;
+      g_pairLossSum += netMoney;
+      if(g_pairCycles == 1 || netMoney < g_pairWorstNet)
+         g_pairWorstNet = netMoney;
+     }
+   if(!hedged && netMoney < -1.0)
+      g_pairUnhedgedSL++;
+
+   PrintFormat("TGM [PAIR-NET]: %s net=$%.2f hedged=%s (truth vs MT5 split deals)",
+               tag, netMoney, hedged ? "Y" : "N");
+  }
+
+void LogPairedNetSummary()
+  {
+   const double avgAll = (g_pairCycles > 0) ? (g_pairNetSum / g_pairCycles) : 0.0;
+   const double avgW = (g_pairWins > 0) ? (g_pairWinSum / g_pairWins) : 0.0;
+   const double avgL = (g_pairLosses > 0) ? (g_pairLossSum / g_pairLosses) : 0.0;
+   PrintFormat("TGM [PAIR-SUMMARY]: cycles=%d sum=$%.2f avg=$%.2f | pairWins=%d avgW=$%.2f | pairLosses=%d avgL=$%.2f | best=$%.2f worst=$%.2f | unhedgedSL_hits=%d",
+               g_pairCycles, g_pairNetSum, avgAll,
+               g_pairWins, avgW, g_pairLosses, avgL,
+               g_pairBestNet, g_pairWorstNet, g_pairUnhedgedSL);
+   if(g_pairUnhedgedSL > 0)
+      PrintFormat("TGM [PAIR-SUMMARY]: %d parent SL closes had NO live hedge — those are real leakage (not 30pip net).",
+                  g_pairUnhedgedSL);
+  }
+
+double SumLiveHedgeMoneyForParent(const ulong parentTicket)
+  {
+   ulong hedges[];
+   const int n = CollectHedgesForParent(parentTicket, hedges);
+   double sum = 0.0;
+   for(int i = 0; i < n; i++)
+      sum += GetTicketNetMoney(hedges[i]);
+   return sum;
+  }
+
+void CloseHedgesForParent(const ulong parentTicket, const string reason)
+  {
+   if(parentTicket == 0)
+      return;
+   ulong hedges[];
+   const int n = CollectHedgesForParent(parentTicket, hedges);
+   for(int i = 0; i < n; i++)
+      CloseHedgePosition(hedges[i], reason);
+  }
+
+//--- Parent fully closed (SL / any OUT): close linked hedge same event + record PAIR net.
+void ProcessParentExitCloseHedges(const ulong dealTicket)
+  {
+   if(dealTicket == 0)
+      return;
+   if(!HistoryDealSelect(dealTicket))
+     {
+      HistorySelect(0, TimeCurrent());
+      if(!HistoryDealSelect(dealTicket))
+         return;
+     }
+   if(HistoryDealGetString(dealTicket, DEAL_SYMBOL) != _Symbol)
+      return;
+   if((long)HistoryDealGetInteger(dealTicket, DEAL_MAGIC) != EXPERT_MAGIC)
+      return;
+
+   const long entry = HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
+   if(entry != DEAL_ENTRY_OUT && entry != DEAL_ENTRY_OUT_BY)
+      return;
+
+   const string dealComment = HistoryDealGetString(dealTicket, DEAL_COMMENT);
+   if(IsHedgePositionComment(dealComment))
+      return;
+
+   const ulong parentTicket = (ulong)HistoryDealGetInteger(dealTicket, DEAL_POSITION_ID);
+   if(parentTicket == 0)
+      return;
+
+   // Partial close still leaves parent live — do not kill hedge.
+   CPositionInfo stillOpen;
+   if(stillOpen.SelectByTicket(parentTicket))
+      return;
+
+   CancelHedgeProtectStopsForParent(parentTicket, "ParentGone");
+
+   const long reason = HistoryDealGetInteger(dealTicket, DEAL_REASON);
+   const string why = (reason == DEAL_REASON_SL) ? "ParentSLHit" : "ParentClosed";
+   const double dealMoney = HistoryDealGetDouble(dealTicket, DEAL_PROFIT)
+                            + HistoryDealGetDouble(dealTicket, DEAL_SWAP)
+                            + HistoryDealGetDouble(dealTicket, DEAL_COMMISSION);
+   const int hedgeN = CountHedgesForParent(parentTicket);
+   const double hedgeMoney = SumLiveHedgeMoneyForParent(parentTicket);
+   const bool hedged = (hedgeN > 0);
+
+   PrintFormat("TGM [R408]: Parent #%I64u closed (%s) parent$=%.2f hedgeFloat$=%.2f hedges=%d",
+               parentTicket, why, dealMoney, hedgeMoney, hedgeN);
+   if(hedgeN > 0)
+      CloseHedgesForParent(parentTicket, "ParentClosed");
+
+   RecordPairedCycleNet(dealMoney + hedgeMoney, hedged, why);
+  }
+
+//--- Manage hedge (R412):
+//    +10pip hedge profit (or parent -40) -> BE on hedge only
+//    -10pip hedge loss -> broker SL / force-close hedge only (parent pending SL stays)
 void ManageHedgeStopLoss(const ulong hedgeTicket)
   {
    CPositionInfo pos;
@@ -5968,17 +6847,33 @@ void ManageHedgeStopLoss(const ulong hedgeTicket)
 
    const int    digits   = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
    const double point    = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   const double pip      = Phase17_GetPipSize();
+   if(pip <= 0.0)
+      return;
    const double stops    = GetSymbolStopsPrice();
    const double open     = pos.PriceOpen();
    const double bid      = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    const double ask      = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    const double buffer   = GetSymbolSpreadPrice();
-   const double profitUSD = GetPositionProfitUSD(hedgeTicket);
-   const double hedgeBE  = GetActiveHedgeBreakEvenUSD();
    const ENUM_POSITION_TYPE posType = pos.PositionType();
-   const double hedgeSLDist = GetEffectiveHedgeStopLossUSD();
+   const ulong parentTicket = ResolveHedgeParentTicket(hedgeTicket, pos.Comment());
 
-   // Already BE-armed: do not spam-modify with live spread; only repair if SL left BE zone.
+   const double hedgeProfitPips = GetPositionProfitPips(hedgeTicket);
+   const double hedgeLossPips   = GetPositionLossPips(hedgeTicket);
+   const double parentLossPips  = (parentTicket > 0) ? GetPositionLossPips(parentTicket) : 0.0;
+
+   // Soft close if broker SL missed: hedge -10pip -> close HEDGE only.
+   if(!IsHedgeBreakEvenArmed(hedgeTicket) &&
+      hedgeLossPips + 1e-9 >= TGM_HEDGE_OWN_LOSS_PIPS)
+     {
+      CloseHedgePosition(hedgeTicket, "HedgeMinus10Close");
+      return;
+     }
+
+   const bool wantBE = (hedgeProfitPips + 1e-9 >= TGM_HEDGE_OWN_BE_PIPS) ||
+                       (parentLossPips + 1e-9 >= TGM_LOSS_BE_PIPS);
+
+   // Already BE-armed: keep BE SL; do not re-apply death SL.
    if(IsHedgeBreakEvenArmed(hedgeTicket))
      {
       const double curSL = pos.StopLoss();
@@ -5991,8 +6886,11 @@ void ManageHedgeStopLoss(const ulong hedgeTicket)
          return;
      }
 
-   if(profitUSD >= hedgeBE || IsHedgeBreakEvenArmed(hedgeTicket))
+   if(wantBE || IsHedgeBreakEvenArmed(hedgeTicket))
      {
+      if(hedgeProfitPips <= 0.0)
+         return; // wrong-side BE blocked
+
       const double beSL = (posType == POSITION_TYPE_BUY) ? NormalizeDouble(open + buffer, digits)
                                                            : NormalizeDouble(open - buffer, digits);
       const double curSL  = pos.StopLoss();
@@ -6006,9 +6904,9 @@ void ManageHedgeStopLoss(const ulong hedgeTicket)
 
       bool room = false;
       if(posType == POSITION_TYPE_BUY)
-         room = ((bid - beSL) > stops);
+         room = ((bid - beSL) > stops + point);
       else
-         room = ((beSL - ask) > stops);
+         room = ((beSL - ask) > stops + point);
 
       if(!room || IsTradeModifyCooldownActive())
          return;
@@ -6016,36 +6914,24 @@ void ManageHedgeStopLoss(const ulong hedgeTicket)
       if(SafePositionModify(hedgeTicket, beSL, 0.0, "HedgeBE"))
         {
          MarkHedgeBreakEvenArmed(hedgeTicket);
-         PrintFormat("TGM [HEDGE-BE]: Hedge #%I64u +$%.2f >= $%.2f -> SL to break-even %.*f.",
-                     hedgeTicket, profitUSD, hedgeBE, digits, beSL);
+         PrintFormat("TGM [R412]: Hedge #%I64u BE @ +%.0fpip (parentLoss=%.0f) | parent SL KEPT | SL=%.*f.",
+                     hedgeTicket, TGM_HEDGE_OWN_BE_PIPS, parentLossPips, digits, beSL);
         }
       return;
      }
 
-   // Sticky mode (Mode B always / Mode A when SL=0): strip any death SL left on hedge.
-   // Do not restore $1 SL. BE arming above still runs when profit hits +$2.
-   if(hedgeSLDist <= 0.0)
+   // Not yet BE: keep death SL at hedge open ± 10pip (recovery close path).
+   const double lossDist = TGM_HEDGE_OWN_LOSS_PIPS * pip;
+   double wantSL = 0.0;
+   bool room = false;
+   if(posType == POSITION_TYPE_SELL)
      {
-      const double curSticky = pos.StopLoss();
-      if(curSticky != 0.0 && !IsHedgeBreakEvenArmed(hedgeTicket) && !IsTradeModifyCooldownActive())
-        {
-         // Remove death SL so chop cannot burn the hedge before BE.
-         if(SafePositionModify(hedgeTicket, 0.0, 0.0, "HedgeStripDeathSL"))
-            PrintFormat("TGM [HEDGE-STICKY]: Stripped death SL on hedge #%I64u (Mode B / sticky).", hedgeTicket);
-        }
-      return;
-     }
-
-   double wantSL;
-   bool   room;
-   if(pos.PositionType() == POSITION_TYPE_SELL)
-     {
-      wantSL = NormalizeDouble(open + hedgeSLDist, digits);
+      wantSL = NormalizeDouble(open + lossDist, digits);
       room   = ((wantSL - ask) > stops);
      }
    else
      {
-      wantSL = NormalizeDouble(open - hedgeSLDist, digits);
+      wantSL = NormalizeDouble(open - lossDist, digits);
       room   = ((bid - wantSL) > stops);
      }
 
@@ -6055,15 +6941,12 @@ void ManageHedgeStopLoss(const ulong hedgeTicket)
    if(!room || IsTradeModifyCooldownActive())
       return;
 
-   if(SafePositionModify(hedgeTicket, wantSL, 0.0, "HedgeSLRestore"))
-      PrintFormat("TGM [HEDGE-LOCK]: Restored hedge SL %.*f (-$%.2f) on #%I64u.",
-                  digits, wantSL, hedgeSLDist, hedgeTicket);
+   if(SafePositionModify(hedgeTicket, wantSL, 0.0, "HedgeSL10"))
+      PrintFormat("TGM [R412]: Hedge #%I64u death SL -%.0fpip @ %.*f (parent untouched).",
+                  hedgeTicket, TGM_HEDGE_OWN_LOSS_PIPS, digits, wantSL);
   }
 
-//--- Live hedge management (ATR parent SL untouched):
-//    1) keep $1 SL until +InpHedgeBreakEvenUSD ($2) -> BE
-//    2) entry-return is OFF by default (InpHedgeReturnArmUSD=0) so hedges can reach +$2 BE
-//    3) if entry-return enabled, only after BE is armed (never cut hedge before $2 BE)
+//--- Live hedge: BE/+10 and -10 close; entry-return optional (OFF).
 void ManageLiveHedge(const ulong hedgeTicket)
   {
    if(hedgeTicket == 0)
@@ -6071,7 +6954,6 @@ void ManageLiveHedge(const ulong hedgeTicket)
 
    ManageHedgeStopLoss(hedgeTicket);
 
-   // Entry-return OFF: preserves your method (survive to +$2 BE instead of dying in chop).
    if(InpHedgeReturnArmUSD <= 0.0)
       return;
 
@@ -6097,6 +6979,101 @@ void ManageLiveHedge(const ulong hedgeTicket)
    PrintFormat("TGM [HEDGE]: Entry-return -> close hedge #%I64u at open %.5f (parent ATR SL unchanged).",
                hedgeTicket, pos.PriceOpen());
    CloseHedgePosition(hedgeTicket, "EntryReturn");
+  }
+
+//--- R392 loss control: parent loss >=40pip -> BE on HEDGE only. Parent NEVER closed here.
+//    Hedge may close at BE then re-open while parent still losing (>=30pip).
+double GetTicketNetMoney(const ulong ticket)
+  {
+   CPositionInfo pos;
+   if(!pos.SelectByTicket(ticket))
+      return 0.0;
+   return pos.Profit() + pos.Swap() + pos.Commission();
+  }
+
+double GetPositionLossPips(const ulong ticket)
+  {
+   const double p = GetPositionProfitPips(ticket);
+   return (p < 0.0) ? -p : 0.0;
+  }
+
+bool ArmHedgeBreakEvenSL(const ulong hedgeTicket)
+  {
+   CPositionInfo pos;
+   if(!pos.SelectByTicket(hedgeTicket))
+      return false;
+   if(!IsBotHedgePosition(hedgeTicket, pos.Comment()))
+      return false;
+   // Never BE-arm a losing hedge (wrong-side SL → invalid stops flood).
+   if(GetPositionProfitUSD(hedgeTicket) <= 0.0)
+      return false;
+
+   const int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+   const double open = pos.PriceOpen();
+   const double buffer = GetSymbolSpreadPrice();
+   const ENUM_POSITION_TYPE posType = pos.PositionType();
+   const double beSL = (posType == POSITION_TYPE_BUY)
+                        ? NormalizeDouble(open + buffer, digits)
+                        : NormalizeDouble(open - buffer, digits);
+   const double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   const double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   const double currentPrice = (posType == POSITION_TYPE_BUY) ? bid : ask;
+
+   if(!IsBrokerStopDistanceOK(posType, currentPrice, beSL))
+      return false;
+
+   const double liveSL = pos.StopLoss();
+   const double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   if(liveSL != 0.0 && MathAbs(liveSL - beSL) <= point)
+     {
+      MarkHedgeBreakEvenArmed(hedgeTicket);
+      return true;
+     }
+
+   if(IsTradeModifyCooldownActive())
+      return false;
+
+   if(!SafePositionModify(hedgeTicket, beSL, 0.0, "R404_HedgeBE"))
+      return false;
+
+   MarkHedgeBreakEvenArmed(hedgeTicket);
+   PrintFormat("TGM [R412]: Hedge #%I64u BE SL at %.*f (+%.0fpip / parent -%.0f) | parent pending SL KEPT.",
+               hedgeTicket, digits, beSL, TGM_HEDGE_OWN_BE_PIPS, TGM_LOSS_BE_PIPS);
+   return true;
+  }
+
+void ManageHedgeBreakEvenCycle()
+  {
+   if(!IsHedgeEngineActive())
+      return;
+
+   CPositionInfo pos;
+   for(int i = 0; i < PositionsTotal(); i++)
+     {
+      if(IsStopped())
+         return;
+      if(!pos.SelectByIndex(i))
+         continue;
+      if(pos.Symbol() != _Symbol || pos.Magic() != (ulong)EXPERT_MAGIC)
+         continue;
+      if(!IsBotHedgePosition(pos.Ticket(), pos.Comment()))
+         continue;
+
+      const ulong hedge = pos.Ticket();
+      const ulong parent = ResolveHedgeParentTicket(hedge, pos.Comment());
+      if(parent > 0 && GetPositionProfitPips(parent) > 0.0)
+        {
+         TryReleaseStickyHedge(parent);
+         continue;
+        }
+
+      // R412: arm BE when hedge +10pip OR parent -40pip.
+      const bool hedgePlus10 = (GetPositionProfitPips(hedge) + 1e-9 >= TGM_HEDGE_OWN_BE_PIPS);
+      const bool parentMinus40 = (parent > 0 && GetPositionLossPips(parent) + 1e-9 >= TGM_LOSS_BE_PIPS);
+      if(!hedgePlus10 && !parentMinus40)
+         continue;
+      ArmHedgeBreakEvenSL(hedge);
+     }
   }
 
 //--- Individual recurrent hedge engine (pure $ / price based).
@@ -6162,16 +7139,18 @@ void ProcessHedgeProtectionEngine()
 
       // Release sticky hedge when parent recovers (Mode A).
       if(IsHedgeEngineActive())
+        {
          TryReleaseStickyHedge(parentTicket);
+         EnsureHedgeProtectArmed(parentTicket);
+        }
 
       const bool hedgeLive = HasHedge(parentTicket);
 
+      // R404: keep parent pending SL forever (never strip). Hard-cap SL rewrite stays OFF.
       if(hedgeLive && HasFullHedgeCoverage(parentTicket))
          ApplyParentHardLossCap(parentTicket);
-      else
-         EnsureParentHasBrokerSL(parentTicket);
 
-      // Hedge closed: re-arm trigger latch for Mode A recurrent hedge.
+      // Hedge closed (broker BE / any): MANDATORY re-hedge same tick if still >= -30.
       if(WasHedgeLive(parentTicket) && !hedgeLive)
         {
          const int lifeSec = GetHedgeLifeSeconds(parentTicket);
@@ -6179,36 +7158,220 @@ void ProcessHedgeProtectionEngine()
          ClearHedgeLive(parentTicket);
          ClearLinkedHedgeTicket(parentTicket);
          ClearHedgeRearmState(parentTicket);
-         ApplyHedgeRecycleCooldown(parentTicket, lifeSec);
+         ApplyHedgeRecycleCooldown(parentTicket, 0); // never delay
          SetHedgeTriggerReady(parentTicket, true);
-         PrintFormat("TGM [HEDGE]: Hedge gone on parent #%I64u (lived %ds, loss $%.2f) - re-lock if still >= $%.2f.",
-                     parentTicket, lifeSec, lossNow, GetActiveHedgeTriggerUSD());
+         PrintFormat("TGM [R406]: Hedge gone on parent #%I64u (lived %ds, loss $%.2f) — forcing re-hedge.",
+                     parentTicket, lifeSec, lossNow);
+         ForceRehedgeIfParentStillInLoss(parentTicket, "HedgeGoneScan");
         }
 
       if(HasHedge(parentTicket))
         {
          MarkHedgeLive(parentTicket);
-         if(!HasFullHedgeCoverage(parentTicket) && CanOpenHedgeForParent(parentTicket))
-           {
-            PrintFormat("TGM [HEDGE]: Parent #%I64u under-hedged (covered=%.2f) - topping up 1:1.",
-                        parentTicket, GetHedgedVolumeForParent(parentTicket));
-            OpenHedgeForParent(parentTicket);
-           }
          ApplyParentHardLossCap(parentTicket);
          continue;
         }
 
-      if(GetPositionLossUSD(parentTicket) < GetActiveHedgeTriggerUSD())
+      // No hedge: KEEP pending/shared SL until a hedge is live (do not leave naked).
+      if(GetPositionLossPips(parentTicket) + 1e-9 < TGM_LOSS_HEDGE_PIPS)
          SetHedgeTriggerReady(parentTicket, true);
 
-      if(IsProfitEngineArmed(parentTicket) && GetPositionProfitUSD(parentTicket) > 0.0)
+      if(IsProfitEngineArmed(parentTicket) && GetPositionProfitPips(parentTicket) > 0.0)
          continue;
 
-      if(!CanOpenHedgeForParent(parentTicket))
-         continue;
-
-      OpenHedgeForParent(parentTicket);
+      ForceRehedgeIfParentStillInLoss(parentTicket, "ProtectionLoop");
      }
+  }
+
+// --- Research Build 389: 30pip SL | +30 25%+BE | +50 +25% | +80 80% out | 20pip trail ---
+
+string R375_BEAppliedKey(const ulong ticket)
+  {
+   return StringFormat("R375_BE_%I64u_%s_%I64u",
+                       (ulong)AccountInfoInteger(ACCOUNT_LOGIN), _Symbol, ticket);
+  }
+
+bool R375_IsBEApplied(const ulong ticket)
+  {
+   return GlobalVariableCheck(R375_BEAppliedKey(ticket)) &&
+          GlobalVariableGet(R375_BEAppliedKey(ticket)) > 0.5;
+  }
+
+void R375_MarkBEApplied(const ulong ticket)
+  {
+   GlobalVariableSet(R375_BEAppliedKey(ticket), 1.0);
+  }
+
+string R389_OrigVolKey(const ulong ticket)
+  {
+   return StringFormat("R389_OrigVol_%I64u_%s_%I64u",
+                       (ulong)AccountInfoInteger(ACCOUNT_LOGIN), _Symbol, ticket);
+  }
+
+void R389_RememberOriginalVolume(const ulong ticket, const double volume)
+  {
+   if(ticket == 0 || volume <= 0.0)
+      return;
+   const string key = R389_OrigVolKey(ticket);
+   if(GlobalVariableCheck(key))
+     {
+      const double stored = GlobalVariableGet(key);
+      // Tester/runtime safety: if stale GV from an older run carried a smaller
+      // lot for this ticket, refresh it to the current live volume so scale-out
+      // percentages are based on the real original size.
+      if(stored + 1e-12 >= volume)
+         return;
+     }
+   GlobalVariableSet(key, volume);
+  }
+
+double R389_GetOriginalVolume(const ulong ticket, const double fallbackCurrent)
+  {
+   double stored = 0.0;
+   if(GlobalVariableCheck(R389_OrigVolKey(ticket)))
+      stored = GlobalVariableGet(R389_OrigVolKey(ticket));
+   return MathMax(stored, fallbackCurrent);
+  }
+
+string R389_StageKey(const ulong ticket, const int stage)
+  {
+   return StringFormat("R389_Stage%d_%I64u_%s_%I64u",
+                       stage, (ulong)AccountInfoInteger(ACCOUNT_LOGIN), _Symbol, ticket);
+  }
+
+bool R389_IsStageDone(const ulong ticket, const int stage)
+  {
+   return GlobalVariableCheck(R389_StageKey(ticket, stage)) &&
+          GlobalVariableGet(R389_StageKey(ticket, stage)) > 0.5;
+  }
+
+void R389_MarkStageDone(const ulong ticket, const int stage)
+  {
+   GlobalVariableSet(R389_StageKey(ticket, stage), 1.0);
+  }
+
+bool CloseGridPositionProfit(const ulong ticket, const string reason)
+  {
+   if(!PreProtectionTradeGuard("PositionScaleOut"))
+      return false;
+   CPositionInfo pos;
+   if(!pos.SelectByTicket(ticket) || pos.Symbol() != _Symbol || pos.Magic() != (ulong)EXPERT_MAGIC)
+      return false;
+   const double vol = pos.Volume();
+   if(!ExecuteTradeOp("PositionClose(PROFIT)", g_trade.PositionClose(ticket),
+                      StringFormat("ticket=%I64u vol=%.2f reason=%s", ticket, vol, reason)))
+      return false;
+   PrintFormat("TGM [R398]: BOOKED profit close #%I64u (%s) vol=%.2f", ticket, reason, vol);
+   return true;
+  }
+
+// Close a fixed % of live volume. Min-lot positions cannot partial — full close books the profit.
+bool ExecutePartialCloseOfOriginal(const ulong ticket, const double originalVol, const double pctOfOriginal)
+  {
+   if(!PreProtectionTradeGuard("PositionScaleOut"))
+      return false;
+   if(pctOfOriginal <= 0.0)
+      return false;
+
+   CPositionInfo pos;
+   if(!pos.SelectByTicket(ticket) || pos.Symbol() != _Symbol || pos.Magic() != (ulong)EXPERT_MAGIC)
+      return false;
+
+   const double currentLot = pos.Volume();
+   const double volMin  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   const double volStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   if(currentLot <= 0.0 || volStep <= 0.0)
+      return false;
+
+   // 0.01 (broker min) cannot close 25% — that left 2294-pip winners floating.
+   if(currentLot <= volMin + 1e-12)
+      return CloseGridPositionProfit(ticket, "MinLotFullBook");
+
+   const double working = MathMax(originalVol, currentLot);
+   double closeLot = NormalizeVolume(working * (pctOfOriginal / 100.0));
+   if(closeLot < volMin - 1e-12)
+      closeLot = volMin;
+
+   if(closeLot >= currentLot - volMin + 1e-12)
+      return CloseGridPositionProfit(ticket, "ScaleOutRemainder");
+
+   const ENUM_POSITION_TYPE posType = pos.PositionType();
+   const string opLabel = (posType == POSITION_TYPE_BUY) ? "PositionScaleOut(BUY)" : "PositionScaleOut(SELL)";
+   if(!ExecuteTradeOp(opLabel, g_trade.PositionClosePartial(ticket, closeLot),
+                      StringFormat("ticket=%I64u close=%.2f (%.0f%% of %.2f)",
+                                   ticket, closeLot, pctOfOriginal, working)))
+      return CloseGridPositionProfit(ticket, "PartialFailedFullBook");
+
+   if(!pos.SelectByTicket(ticket))
+      return true;
+   return (pos.Volume() + 1e-12 < currentLot);
+  }
+
+// Scale out so remaining volume ≈ remainPct% of original (stage 3: keep 20% runner).
+bool ExecuteScaleOutToRemainPercent(const ulong ticket, const double originalVol, const double remainPct)
+  {
+   if(!PreProtectionTradeGuard("PositionScaleOut"))
+      return false;
+
+   CPositionInfo pos;
+   if(!pos.SelectByTicket(ticket) || pos.Symbol() != _Symbol || pos.Magic() != (ulong)EXPERT_MAGIC)
+      return false;
+
+   const double currentLot = pos.Volume();
+   const double volMin  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   const double volStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   if(currentLot <= volMin + 1e-12 || volStep <= 0.0 || originalVol <= 0.0)
+      return CloseGridPositionProfit(ticket, "ScaleOutMinLot");
+
+   double targetRemain = NormalizeVolume(originalVol * (remainPct / 100.0));
+   if(targetRemain < volMin)
+      targetRemain = volMin;
+
+   if(currentLot <= targetRemain + 1e-12)
+      return true;
+
+   double closeLot = NormalizeVolume(currentLot - targetRemain);
+   double remainLot = NormalizeDouble(currentLot - closeLot, 8);
+   if(remainLot < volMin - 1e-12)
+     {
+      closeLot = NormalizeVolume(currentLot - volMin);
+      remainLot = NormalizeDouble(currentLot - closeLot, 8);
+     }
+   if(closeLot < volMin - 1e-12 || closeLot >= currentLot - 1e-12)
+      return false;
+
+   const ENUM_POSITION_TYPE posType = pos.PositionType();
+   const string opLabel = (posType == POSITION_TYPE_BUY) ? "PositionScaleOut(BUY)" : "PositionScaleOut(SELL)";
+   if(!ExecuteTradeOp(opLabel, g_trade.PositionClosePartial(ticket, closeLot),
+                      StringFormat("ticket=%I64u close=%.2f keep~%.2f (%.0f%% of orig %.2f)",
+                                   ticket, closeLot, remainLot, remainPct, originalVol)))
+      return false;
+
+   if(!pos.SelectByTicket(ticket))
+      return false;
+   return (pos.Volume() + 1e-12 < currentLot);
+  }
+
+bool R389_ApplyBreakEven(const ulong ticket, const ENUM_POSITION_TYPE posType,
+                         const double currentPrice, const double beSL)
+  {
+   if(!Enable_BreakEven || R375_IsBEApplied(ticket))
+      return false;
+   if(!IsBrokerStopDistanceOK(posType, currentPrice, beSL))
+      return false;
+
+   CPositionInfo pos;
+   if(!pos.SelectByTicket(ticket))
+      return false;
+   // Profit method: BE only — never keep/restore ATR TP (runner trails).
+   if(!SafePositionModify(ticket, beSL, 0.0, "R389_BE"))
+      return false;
+
+   R375_MarkBEApplied(ticket);
+   MarkProfitEngineArmed(ticket);
+   PrintFormat("TGM [R400]: %s #%I64u BE locked (TP stripped).",
+               (posType == POSITION_TYPE_BUY) ? "BUY" : "SELL", ticket);
+   return true;
   }
 
 void ManagePositionTradeLifecycle(const ulong ticket)
@@ -6224,83 +7387,75 @@ void ManagePositionTradeLifecycle(const ulong ticket)
    if(!IsOurBotGridParent(ticket))
       return;
 
-   // Already booked 80% + BE — leave 20% runner to ATR TP (no further management).
-   if(IsPartialClosedBeRunner(ticket) || IsTicketPartialCloseDone(ticket))
-      return;
+   RememberParentPendingSL(ticket);
+   R389_RememberOriginalVolume(ticket, pos.Volume());
+   const double origVol = R389_GetOriginalVolume(ticket, pos.Volume());
 
    const double profitPips = GetPositionProfitPips(ticket);
-   if(profitPips + 1e-9 < TGM_PARTIAL_BE_TRIGGER_PIPS)
-      return;
-
    const ENUM_POSITION_TYPE posType = pos.PositionType();
    const int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-   const double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-   if(point <= 0.0)
+   const double openPrice = pos.PriceOpen();
+   const double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   const double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   const double currentPrice = (posType == POSITION_TYPE_BUY) ? bid : ask;
+   const double buffer = GetSymbolSpreadPrice();
+   const double beSL = (posType == POSITION_TYPE_BUY) ? NormalizeDouble(openPrice + buffer, digits)
+                                                      : NormalizeDouble(openPrice - buffer, digits);
+   const double pip = Phase17_GetPipSize();
+   if(pip <= 0.0)
       return;
 
-   const double openPrice = pos.PriceOpen();
-   const double currentTP = pos.TakeProfit(); // keep ATR TP on runner
-   const double beSL = NormalizeDouble(openPrice, digits);
-   const double pct = (PartialClose_Percent > 0.0 && PartialClose_Percent < 100.0)
-                      ? PartialClose_Percent
-                      : TGM_PARTIAL_CLOSE_AT_30_PCT;
+   // R404: parent pending SL stays until broker hit. Never strip on hedge open / BE.
 
-   LogPhase28A("+30PIP_80PCT_BE", ticket,
-               StringFormat("pips=%.2f vol=%.2f closePct=%.0f TP=%.5f",
-                            profitPips, pos.Volume(), pct, currentTP));
-
-   // 1) Break-even SL, keep ATR TP on remaining runner.
-   if(Enable_BreakEven && !IsTicketAtBreakEven(openPrice, pos.StopLoss(), digits))
+   // R415: +30 pip -> FULL book immediately (no partial, no runner float).
+   if(profitPips + 1e-9 >= TGM_STAGE1_AT_PIPS)
      {
-      const double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-      const double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-      const double stops = GetSymbolStopsPrice();
-      bool room = false;
-      if(posType == POSITION_TYPE_BUY)
-         room = ((bid - beSL) > stops);
-      else
-         room = ((beSL - ask) > stops);
-
-      if(room)
-        {
-         if(!SafePositionModify(ticket, beSL, currentTP, "R420-BE-KeepATP"))
-           {
-            PrintFormat("TGM [R420]: #%I64u BE modify failed - will retry next tick.", ticket);
-            return;
-           }
-         PrintFormat("TGM [R420]: %s #%I64u +%.1fpip -> BE @ %.*f (ATR TP kept).",
-                     (posType == POSITION_TYPE_BUY) ? "BUY" : "SELL",
-                     ticket, profitPips, digits, beSL);
-        }
-      else
-        {
-         PrintFormat("TGM [R420]: #%I64u BE wait (stops level) - will retry.", ticket);
+      if(!pos.SelectByTicket(ticket))
          return;
+      if(pos.TakeProfit() > 0.0)
+         StripPositionTakeProfit(ticket, "ProfitMethodStart");
+      if(CloseGridPositionProfit(ticket, "R415_FullBook30"))
+        {
+         R389_MarkStageDone(ticket, 1);
+         R389_MarkStageDone(ticket, 2);
+         R389_MarkStageDone(ticket, 3);
+         R389_MarkStageDone(ticket, 4);
+         MarkProfitEngineArmed(ticket);
+         PrintFormat("TGM [R415]: %s #%I64u +%.1fpip -> FULL booked (balance sync).",
+                     (posType == POSITION_TYPE_BUY) ? "BUY" : "SELL", ticket, profitPips);
         }
      }
+  }
 
-   // 2) Book 80% — leave ~20% open to ATR TP.
-   if(Enable_PartialClose)
+//--- Watchdog: any grid winner +30 -> FULL close (R415).
+void ForceBookStuckFloatingWinners()
+  {
+   CPositionInfo pos;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
      {
-      if(!ExecutePartialClose(ticket, pct))
+      if(!pos.SelectByIndex(i))
+         continue;
+      if(pos.Symbol() != _Symbol || pos.Magic() != (ulong)EXPERT_MAGIC)
+         continue;
+      const ulong ticket = pos.Ticket();
+      if(!IsOurBotGridParent(ticket))
+         continue;
+
+      const double profitPips = GetPositionProfitPips(ticket);
+      if(profitPips + 1e-9 < TGM_STAGE1_AT_PIPS)
+         continue;
+
+      if(pos.TakeProfit() > 0.0)
+         StripPositionTakeProfit(ticket, "WatchdogStripTP");
+      if(CloseGridPositionProfit(ticket, "WatchdogFull30"))
         {
-         // Volume too small for partial: fall back to full close so profit is not left naked.
-         if(pos.SelectByTicket(ticket) && pos.Volume() <= SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN) + 1e-12)
-           {
-            ExecuteTradeOp("PositionClose",
-                           g_trade.PositionClose(ticket),
-                           StringFormat("ticket=%I64u reason=R420_FullBook_MinLot", ticket));
-           }
-         return;
+         R389_MarkStageDone(ticket, 1);
+         R389_MarkStageDone(ticket, 2);
+         R389_MarkStageDone(ticket, 3);
+         R389_MarkStageDone(ticket, 4);
+         MarkProfitEngineArmed(ticket);
+         PrintFormat("TGM [R415]: WATCHDOG FULL #%I64u @ +%.1fpip.", ticket, profitPips);
         }
-     }
-
-   if(pos.SelectByTicket(ticket))
-     {
-      MarkPartialClosedBeRunner(ticket);
-      PrintFormat("TGM [R420]: %s #%I64u +%.1fpip -> %.0f%% booked + BE | runner %.2f lots to ATR TP.",
-                  (posType == POSITION_TYPE_BUY) ? "BUY" : "SELL",
-                  ticket, profitPips, pct, pos.Volume());
      }
   }
 
@@ -6331,6 +7486,8 @@ void UniversalGoldTrailingEngine()
          return;
       ManagePositionTradeLifecycle(tickets[j]);
      }
+
+   ForceBookStuckFloatingWinners();
   }
 
 void CleanDeadGlobalVariables()
@@ -6377,6 +7534,18 @@ void CleanDeadGlobalVariables()
    const string gridTicketPrefix = StringFormat("TGM_GridTicket_%I64u_%s_",
                                                 (ulong)AccountInfoInteger(ACCOUNT_LOGIN),
                                                 _Symbol);
+   const string r373SecondPrefix = StringFormat("R373_2nd_%I64u_%s_",
+                                                (ulong)AccountInfoInteger(ACCOUNT_LOGIN),
+                                                _Symbol);
+   const string r373PeakPrefix = StringFormat("R373_Peak_%I64u_%s_",
+                                               (ulong)AccountInfoInteger(ACCOUNT_LOGIN),
+                                               _Symbol);
+   const string r375BEPrefix   = StringFormat("R375_BE_%I64u_%s_",
+                                               (ulong)AccountInfoInteger(ACCOUNT_LOGIN),
+                                               _Symbol);
+   const string r375PartPrefix = StringFormat("R375_Part_%I64u_%s_",
+                                               (ulong)AccountInfoInteger(ACCOUNT_LOGIN),
+                                               _Symbol);
    CPositionInfo pos;
 
    for(int i = GlobalVariablesTotal() - 1; i >= 0; i--)
@@ -6396,8 +7565,13 @@ void CleanDeadGlobalVariables()
       bool isHedgeRet = (StringFind(name, hedgeRetPrefix) == 0);
       bool isGridState = (StringFind(name, gridStatePrefix) == 0);
       bool isGridTicket = (StringFind(name, gridTicketPrefix) == 0);
+      bool isR373Second = (StringFind(name, r373SecondPrefix) == 0);
+      bool isR373Peak   = (StringFind(name, r373PeakPrefix) == 0);
+      bool isR375BE     = (StringFind(name, r375BEPrefix) == 0);
+      bool isR375Part   = (StringFind(name, r375PartPrefix) == 0);
       if(!isPart && !isPeak && !isHedge && !isBePending && !isHedgePeak && !isArmed && !isRunner &&
-         !isHedgeRearm && !isHedgeLive && !isHedgeTrigReady && !isHedgeBE && !isHedgeRet && !isGridState && !isGridTicket)
+         !isHedgeRearm && !isHedgeLive && !isHedgeTrigReady && !isHedgeBE && !isHedgeRet &&
+         !isGridState && !isGridTicket && !isR373Second && !isR373Peak && !isR375BE && !isR375Part)
          continue;
 
       int prefixLen = 0;
@@ -6414,6 +7588,10 @@ void CleanDeadGlobalVariables()
       else if(isHedgeRet) prefixLen = StringLen(hedgeRetPrefix);
       else if(isGridState) prefixLen = StringLen(gridStatePrefix);
       else if(isGridTicket) prefixLen = StringLen(gridTicketPrefix);
+      else if(isR373Second) prefixLen = StringLen(r373SecondPrefix);
+      else if(isR373Peak)   prefixLen = StringLen(r373PeakPrefix);
+      else if(isR375BE)     prefixLen = StringLen(r375BEPrefix);
+      else if(isR375Part)   prefixLen = StringLen(r375PartPrefix);
       else prefixLen = StringLen(hedgePrefix);
       if(isGridState)
          continue;
@@ -6893,7 +8071,7 @@ void InitDashboard()
    CreateUILabel("LblAcc",   "Account", labelColor, 9, "Arial");
    CreateUILabel("LblRisk",  "Risk", labelColor, 9, "Arial");
    CreateUILabel("LblPos",   "Running", labelColor, 9, "Arial");
-   CreateUILabel("LblTrail", "Profit Engine", labelColor, 9, "Arial");
+   CreateUILabel("LblTrail", "Trailing Engine", labelColor, 9, "Arial");
 
    CreateUISeparator("Sep1");
    CreateUILabel("LblLic",   "Market Status", labelColor, 9, "Arial");
@@ -7056,10 +8234,8 @@ void UpdateDashboard(const bool forceUpdate)
    g_lastDashboardUpdate = now;
 
    string accNum   = IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN));
-   string riskStr  = (RiskMode == RISK_AUTO_3_PERCENT_EQUITY) ? "Auto 3% Equity" : "Manual Lot";
-   string trailStatus = "OFF";
-   if(Enable_BreakEven || Enable_PartialClose)
-      trailStatus = StringFormat("+%.0f %.0f%%+BE", TGM_PARTIAL_BE_TRIGGER_PIPS, TGM_PARTIAL_CLOSE_AT_30_PCT);
+   string riskStr  = (RiskMode == RISK_AUTO_3_PERCENT_EQUITY) ? "Auto 3% Equity [R395]" : "Manual Lot [R395]";
+   string trailStatus = Enable_BreakEven ? "25@30+25@50+80@80+20trail" : "OFF";
    string marketState = GetDashboardMarketStatus();
 
    double sessionProfit = 0.0;
@@ -7081,8 +8257,6 @@ void UpdateDashboard(const bool forceUpdate)
    SetUILabelText("ValWinLoss", IntegerToString(sessionClosedTotal) + " (" +
                   IntegerToString(sessionClosedWins) + "W / " +
                   IntegerToString(sessionClosedLosses) + "L)");
-
-   GmP11B_UpdatePanel(g_uiX, g_uiY);
 
    if(g_isDragging) RenderDashboardLayout();
   }
@@ -7419,3 +8593,4 @@ void SetUILabelText(string name, string text)
       return;
    ObjectSetString(chartId, objName, OBJPROP_TEXT, text);
   }
+

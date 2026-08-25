@@ -1,58 +1,58 @@
-{
-  "productName": "THE GOLD MIND MARKET",
-  "shortDescription": "H4 grid EA: shared SL last+/-50pip, +30 FULL book, balance risk. Market-compliant. Trading involves risk of loss.",
-  "longDescriptionPath": "MarketEdition/Listing/PRODUCT_DESCRIPTION.md",
-  "version": "2.1.0",
-  "coreBuild": 417,
-  "releaseNotesPath": "MarketEdition/Listing/CHANGELOG.md",
-  "keywords": [
-    "expert advisor",
-    "mt5",
-    "h4 grid",
-    "xauusd",
-    "systematic",
-    "risk management",
-    "goldmind",
-    "rtas"
-  ],
-  "category": "Expert Advisors · Others",
-  "tags": [
-    "EA",
-    "MT5",
-    "H4",
-    "Grid",
-    "Systematic",
-    "Risk-aware",
-    "Market"
-  ],
-  "languageSupport": [
-    "English"
-  ],
-  "minimumMt5Build": 3800,
-  "compatibility": [
-    {
-      "item": "MetaTrader 5 (hedging & netting per broker)",
-      "status": "supported"
-    },
-    {
-      "item": "Windows MT5 terminal",
-      "status": "supported"
-    },
-    {
-      "item": "Strategy Tester",
-      "status": "supported"
-    },
-    {
-      "item": "Website Customer Portal",
-      "status": "excluded_from_market_package"
-    },
-    {
-      "item": "External PSP checkout",
-      "status": "excluded_from_market_package"
-    },
-    {
-      "item": "Core SHA-256 c7a251ef5769d597… (Build 417)",
-      "status": "required_match"
-    }
-  ]
+﻿{
+    "productName":  "THE GOLD MIND MARKET",
+    "shortDescription":  "H4 grid EA: shared SL last+/-50pip, +30 80%+BE, 3% equity risk. Market-compliant. Trading involves risk of loss.",
+    "longDescriptionPath":  "MarketEdition/Listing/PRODUCT_DESCRIPTION.md",
+    "version":  "2.2.0",
+    "coreBuild":  421,
+    "releaseNotesPath":  "MarketEdition/Listing/CHANGELOG.md",
+    "keywords":  [
+                     "expert advisor",
+                     "mt5",
+                     "h4 grid",
+                     "xauusd",
+                     "systematic",
+                     "risk management",
+                     "goldmind",
+                     "rtas"
+                 ],
+    "category":  "Expert Advisors · Others",
+    "tags":  [
+                 "EA",
+                 "MT5",
+                 "H4",
+                 "Grid",
+                 "Systematic",
+                 "Risk-aware",
+                 "Market"
+             ],
+    "languageSupport":  [
+                            "English"
+                        ],
+    "minimumMt5Build":  3800,
+    "compatibility":  [
+                          {
+                              "item":  "MetaTrader 5 (hedging \u0026 netting per broker)",
+                              "status":  "supported"
+                          },
+                          {
+                              "item":  "Windows MT5 terminal",
+                              "status":  "supported"
+                          },
+                          {
+                              "item":  "Strategy Tester",
+                              "status":  "supported"
+                          },
+                          {
+                              "item":  "Website Customer Portal",
+                              "status":  "excluded_from_market_package"
+                          },
+                          {
+                              "item":  "External PSP checkout",
+                              "status":  "excluded_from_market_package"
+                          },
+                          {
+                              "item":  "Core SHA-256 734b0cc4831dc15f… (Build 421)",
+                              "status":  "required_match"
+                          }
+                      ]
 }

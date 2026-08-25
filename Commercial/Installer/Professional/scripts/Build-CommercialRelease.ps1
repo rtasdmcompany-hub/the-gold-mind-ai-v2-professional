@@ -18,7 +18,8 @@ param(
   # When set, mq5 source SHA is reported but does not abort packaging (EX5 freeze gate still applies).
   [switch]$SkipMq5Gate,
   # Production freeze EX5 - packaging aborts if Experts binary differs (unless empty to skip).
-  [string]$ExpectedEx5Sha = "254D30B6B8EF6AFA9BC1184459664F5E951EC54AB2BA96FF98367729922AFEAD"
+  [string]$ExpectedEx5Sha = "254D30B6B8EF6AFA9BC1184459664F5E951EC54AB2BA96FF98367729922AFEAD",
+  [int]$CoreBuild = 421
 )
 
 $ErrorActionPreference = "Stop"
@@ -109,7 +110,7 @@ function New-Payload {
     coreMq5Sha = $CertSha
     coreEx5Sha = $ex5Hash
     coreFrozen = $true
-    coreBuild  = 417
+    coreBuild  = $CoreBuild
   }
   $verObj | ConvertTo-Json | Set-Content (Join-Path $PayloadRoot "config\version.json") -Encoding UTF8
   @{ portalBase = $PortalBase } | ConvertTo-Json | Set-Content (Join-Path $PayloadRoot "config\portal.json") -Encoding UTF8
@@ -133,7 +134,7 @@ function New-Payload {
     "Version $Version ($Channel)",
     "",
     "Commercial package - Customer Portal licensing + MT5 EA deployment.",
-    "Core Trading Engine is certified and frozen (Build 417).",
+    "Core Trading Engine certified Build $CoreBuild.",
     "",
     "Quick start:",
     "1. Run Setup.exe",
@@ -484,12 +485,13 @@ function Publish-PortalReleaseAsset([string]$zipPath) {
     signatureRequired = ($SignMode -ne "unsigned")
     signatureSubject  = if ($SignMode -eq "unsigned") { "Code signing pending" } else { "RTAS Group of Companies" }
     signatureStatus   = if ($SignMode -eq "unsigned") { "pending_code_sign" } else { "valid" }
-    releaseNotes      = "Commercial packaging release $Version - extract ZIP, run Setup.exe, activate with existing license email/key."
+    releaseNotes      = "Commercial $Version / Core Build ${CoreBuild}: Excel H4 grid, shared SL last+/-50pip, +30pip 80% close + BE (20% to ATR TP), 3% EQUITY lots, Phase11E AI Dynamic Exec removed, hedge OFF. Extract ZIP, run Setup.exe, activate with existing license."
     compatibility     = @{
       os         = @("Windows 10", "Windows 11")
       mt5        = "build 3800+"
       coreTag    = $Version
       coreFrozen = $true
+      coreBuild  = $CoreBuild
     }
   }
   $seedJson = ($seed | ConvertTo-Json -Depth 6) + "`n"

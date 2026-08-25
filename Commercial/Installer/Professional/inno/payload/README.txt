@@ -1,8 +1,8 @@
 ﻿THE GOLD MIND PROFESSIONAL
-Version 1.1.0 (stable)
+Version 1.2.0 (stable)
 
 Commercial package - Customer Portal licensing + MT5 EA deployment.
-Core Trading Engine is certified and frozen (Build 417).
+Core Trading Engine certified Build 421.
 
 Quick start:
 1. Run Setup.exe

@@ -1,0 +1,52 @@
+================================================================================
+MQL5 MARKET — SHORT DESCRIPTION
+(copy everything between the lines)
+================================================================================
+
+The Gold Mind Professional is an XAUUSD H4 grid Expert Advisor. Shared stop beyond the last level (+/-50 pip), +30 pip 80% book + break-even (20% to ATR TP), 3% equity risk per trade. Manual trades are ignored.
+
+================================================================================
+MQL5 MARKET — LONG DESCRIPTION
+(copy everything between the lines — paste into Description)
+================================================================================
+
+<b>The Gold Mind Professional</b> is an Expert Advisor for <b>XAUUSD (Gold)</b> on the <b>H4</b> chart.
+
+It places a structured pending-order grid from the previous H4 candle using Excel-style geometry (BUY = High−Diff×m, SELL = Low+Diff×m). All three levels on a side share one broker stop: 50 pips beyond the last level. At +30 pips the EA closes 80% and moves the remainder to break-even while keeping ATR take-profit on the runner. The EA does not hedge and does not use a dynamic AI lot-reduction panel.
+
+<b>What it does</b>
+- Gold H4 grid: up to 3 buy limits and 3 sell limits
+- Shared SL: last level +/- 50 pips (same SL on all 3 levels)
+- ATR-12 take-profit on each pending
+- +30 pips: 80% close + break-even; 20% runner to ATR TP
+- Equity-based lot size (default 3% of account equity per trade)
+- Timed drawdown pause instead of a permanent freeze
+- Any H4 range: both sides may arm
+- Ignores manual and other-EA trades (magic 112233 only)
+
+<b>How to use</b>
+1. Attach to XAUUSD / XAUUSDm, timeframe H4.
+2. Enable Algo Trading.
+3. Use Auto equity risk (recommended) or set a manual lot.
+4. Leave default protections on unless you understand the risk.
+5. The EA rebuilds the grid on each new H4 bar. If the bot has no live or pending orders of its own, it can rebuild the current H4 immediately after attach or reload.
+
+<b>Requirements</b>
+- MetaTrader 5
+- XAUUSD / XAUUSDm (3-digit gold quotes supported)
+- Chart: H4
+- Hedging account recommended
+- Algo Trading enabled
+
+<b>Notes</b>
+- Pending orders are only placed when the limit price is valid (buy below ask, sell above bid). If price has already passed a level, that side waits.
+- The EA manages only its own magic trades. Your manual positions are never closed, hedged, or used to block the grid on a new H4 bar.
+
+Past Strategy Tester results do not guarantee future profit. Gold is volatile. Always test on a demo account first.
+
+================================================================================
+SCREENSHOT FILES TO UPLOAD
+================================================================================
+
+Use the latest validated Strategy Tester screenshots under:
+Commercial/Documentation/MQL5_MARKET_LISTING/

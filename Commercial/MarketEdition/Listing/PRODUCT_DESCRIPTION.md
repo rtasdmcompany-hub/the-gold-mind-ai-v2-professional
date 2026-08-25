@@ -2,14 +2,14 @@
 
 **Product:** THE GOLD MIND MARKET  
 **Edition:** MQL5 Market (GM_EDITION_MARKET)  
-**Version:** 2.1.0  
-**Core Build:** 417 (v2.132)
+**Version:** 2.2.0  
+**Core Build:** 421 (v2.136)
 
 ---
 
 ## Short description
 
-Systematic MetaTrader 5 H4 grid Expert Advisor. Shared stop beyond last level, full profit book at +30 pips, balance-based risk sizing. **Trading involves substantial risk of loss.**
+Systematic MetaTrader 5 H4 grid Expert Advisor. Shared stop beyond last level, +30 pip 80% book + break-even, equity-based risk. **Trading involves substantial risk of loss.**
 
 ## Long description
 
@@ -17,10 +17,10 @@ THE GOLD MIND MARKET delivers the certified Core Trading Engine through the offi
 
 **What you get**
 
-- H4 grid: up to 3 BUY + 3 SELL levels each new H4 candle (any range)
+- H4 grid: up to 3 BUY + 3 SELL levels each new H4 candle (Excel geometry)
 - Shared broker stop-loss: last level +/- 50 pips on all three levels of a side
-- Profit method: full close at +30 pips (books floating profit into balance)
-- Auto lot sizing from account balance (hard lot cap supported)
+- Profit method: at +30 pips close 80% and move SL to break-even; leave 20% to ATR take-profit
+- Auto lot sizing from account equity (3% per trade; hard lot cap supported)
 - Magic-number isolation — EA manages only its own trades
 - Strategy Tester compatible for historical evaluation
 - MQL5 Market licensing and updates
@@ -30,6 +30,7 @@ THE GOLD MIND MARKET delivers the certified Core Trading Engine through the offi
 - Website Customer Portal  
 - External payment checkout via third-party website PSPs  
 - Website license keys or device activation servers  
+- Dynamic AI lot-reduction panel (Phase11E removed)  
 - Hedge / grid-lock loss engines  
 - Any claim of guaranteed or risk-free trading results (not offered)
 

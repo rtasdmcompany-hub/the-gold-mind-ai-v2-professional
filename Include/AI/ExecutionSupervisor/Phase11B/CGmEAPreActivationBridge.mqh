@@ -1,94 +1,78 @@
 //+------------------------------------------------------------------+
 //|                    CGmEAPreActivationBridge.mqh                  |
-//|  EA integration bridge — Phase 11E dynamic engine (thin hooks)   |
-//|  Keeps GmP11B_* API so EA trading logic wiring stays unchanged   |
+//|  EA integration bridge — Phase 11E REMOVED from strategy          |
+//|  GmP11B_* API kept as pass-through so EA wiring still compiles   |
 //+------------------------------------------------------------------+
 #ifndef GM_CGM_EA_PRE_ACTIVATION_BRIDGE_MQH
 #define GM_CGM_EA_PRE_ACTIVATION_BRIDGE_MQH
 #property copyright "Copyright 2026, RTAS Group of Companies"
 #property link      "https://rtas.group"
 
-#include "..\Phase11E\CPhase11EDynamicExecutionEngine.mqh"
+// Phase 11E Dynamic AI Execution Engine is permanently disabled for this product.
+// Stubs below never change lots, never freeze/cancel, never draw the AI panel.
 
-//--- Owner-configurable AI Execution inputs (Phase 11E evolves 11B)
-input group "--- PHASE 11E Dynamic AI Pre-Activation Engine ---"
-input bool           P11B_Enable_Supervisor        = true;  // Enable Dynamic AI Execution Engine
-input double         P11B_Max_Lot_Increase_Pct     = 20.0;  // Max lot increase vs original (%)
-input double         P11B_Max_Lot_Reduction_Pct    = 50.0;  // Max lot reduction vs original (%)
-input int            P11B_Max_Freeze_Minutes       = 30;    // Max freeze duration (minutes)
-input bool           P11B_Emergency_Cancel         = true;  // Cancel pendings below 40 confidence
-input bool           P11B_News_Protection          = true;  // News/session protection scoring
-input bool           P11B_Broker_Protection        = true;  // Broker quality failsafe
-input bool           P11B_Weekend_Protection       = true;  // Weekend protection scoring
-input bool           P11E_Dynamic_Lot_Monitor      = true;  // Continuously modify pending lots pre-activation
+#ifndef TGM_AI_PANEL_PREFIX
+#define TGM_AI_PANEL_PREFIX "TGM_AI_"
+#endif
 
-static CPhase11EDynamicExecutionEngine g_p11e;
+void GmP11B_WipeLegacyAiPanelObjects(void)
+  {
+   const long chartId = ChartID();
+   for(int i = ObjectsTotal(chartId, 0, -1) - 1; i >= 0; i--)
+     {
+      const string name = ObjectName(chartId, i, 0, -1);
+      if(StringFind(name, TGM_AI_PANEL_PREFIX) == 0)
+         ObjectDelete(chartId, name);
+     }
+  }
 
 void GmP11B_OnInit(const ulong magic, const double maxLotCap, const int atrHandle, const int panelX, const int panelY)
   {
-   g_p11e.Configure(magic, maxLotCap, atrHandle,
-                    P11B_Max_Lot_Increase_Pct, P11B_Max_Lot_Reduction_Pct, P11B_Max_Freeze_Minutes,
-                    P11B_Emergency_Cancel, P11B_News_Protection, P11B_Broker_Protection, P11B_Weekend_Protection,
-                    P11B_Enable_Supervisor, P11E_Dynamic_Lot_Monitor);
-   if(P11B_Enable_Supervisor)
-      g_p11e.InitPanel(panelX, panelY + 310);
+   // Intentionally empty: 11E engine not constructed.
+   GmP11B_WipeLegacyAiPanelObjects();
+   Print("TGM [P11E]: Dynamic AI Execution Engine DISABLED (removed from strategy).");
   }
 
 void GmP11B_OnDeinit(void)
   {
-   g_p11e.DestroyPanel();
+   GmP11B_WipeLegacyAiPanelObjects();
   }
 
 void GmP11B_OnTick(void)
   {
-   g_p11e.OnTickMonitor();
   }
 
 void GmP11B_OnTradeTransaction(const MqlTradeTransaction &trans)
   {
-   if(trans.type == TRADE_TRANSACTION_DEAL_ADD && trans.deal > 0)
-     {
-      if(HistoryDealSelect(trans.deal))
-        {
-         const long entry = HistoryDealGetInteger(trans.deal, DEAL_ENTRY);
-         if(entry == DEAL_ENTRY_IN)
-            g_p11e.OnPositionActivated(HistoryDealGetInteger(trans.deal, DEAL_POSITION_ID));
-        }
-     }
   }
 
 double GmP11B_AdjustLot(const double engineLots, const int levelIndex, const string comment, const bool isBuy)
   {
-   return g_p11e.AdjustLotForPlacement(engineLots, levelIndex, comment, isBuy);
+   return engineLots; // never scale lots
   }
 
 bool GmP11B_AllowPlacement(const string comment, const int levelIndex)
   {
-   return g_p11e.AllowPlacement(comment, levelIndex);
+   return true; // never freeze / block placement
   }
 
 void GmP11B_RegisterPlaced(const ulong ticket, const string comment, const int levelIndex)
   {
-   g_p11e.RegisterPlacedOrder(ticket, comment, levelIndex);
   }
 
 void GmP11B_UpdatePanel(const int panelX, const int panelY)
   {
-   if(!P11B_Enable_Supervisor)
-      return;
-   g_p11e.UpdatePanel(panelX, panelY);
+   GmP11B_WipeLegacyAiPanelObjects(); // keep chart clean if old objects linger
   }
 
 bool GmP11B_OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
   {
-   if(!P11B_Enable_Supervisor)
-      return false;
-   return g_p11e.OnChartEvent(id, lparam, dparam, sparam);
+   return false;
   }
 
 bool GmP11B_IsActive(void)
   {
-   return g_p11e.IsSupervisorActive();
+   return false;
   }
 
 #endif // GM_CGM_EA_PRE_ACTIVATION_BRIDGE_MQH

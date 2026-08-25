@@ -1,5 +1,16 @@
 # CHANGELOG.md
 
+## 2.2.0 — Build 421 method update (2026-08-25)
+
+- Core Build **421** / property version **2.136**
+- Shared SL: last grid level +/- 50 pip on all 3 levels (BUY = buy3−50, SELL = sell3+50)
+- Profit booking: +30 pip → **80% close + break-even**; **20% runner** stays to ATR TP
+- Lot sizing: **3% of account EQUITY** (distance = |entry → shared SL| per level)
+- Excel entry geometry: BUY = High−Diff×m, SELL = Low+Diff×m
+- Phase11E AI Dynamic Execution Engine removed (no lot reduce / AI panel)
+- Hedge system remains OFF; H4 range lock OFF
+- Same Core as Website Professional commercial release **1.2.0**
+
 ## 2.1.0 — Build 417 method update (2026-08-25)
 
 - Core Build **417** / property version **2.132**

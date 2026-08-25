@@ -1,27 +1,19 @@
-# FILE_LIST.txt
-
-Market commercial package inventory (Core referenced, not duplicated as editable source):
-
-1. CORE (certified Build 417 / v2.132)
-   - Experts/TheGoldMindAI_Professional.mq5
-   - Experts/TheGoldMindAI_Professional.ex5 (compiled binary for upload)
-   - MarketEdition/Package/bin/TheGoldMindAI_Professional.ex5 (packaged copy)
-   - Include/** (as required by Core compile — unchanged)
-
-2. MARKET LISTING
-   - MarketEdition/Listing/*.md
-   - MarketEdition/Package/MANIFEST.json
-   - MarketEdition/Package/STORE_METADATA.json
-   - MarketEdition/Package/CORE_TAG.txt
-
-3. ASSETS
-   - Assets/Market/Icons/*
-   - Assets/Market/Logos/*
-   - Assets/Market/Banners/*
-   - Assets/Market/Covers/*
-   - Assets/Market/Screenshots/* (live captures before upload)
-
-EXCLUDED (Website Professional only):
-   - Commercial/CustomerPortal/**
-   - Commercial/Installer/Professional/**
-   - Payment / Website license activation flows
+﻿FILE_LIST (Market 2.2.0 / Core Build 421)
+Commercial\MarketEdition\README.md
+Commercial\MarketEdition\Compliance\MQL5_COMPLIANCE_CHECKLIST.md
+Commercial\MarketEdition\Compliance\MQL5_MARKET_READINESS_POINTER.md
+Commercial\MarketEdition\Listing\CHANGELOG.md
+Commercial\MarketEdition\Listing\DISCLAIMER.md
+Commercial\MarketEdition\Listing\FAQ.md
+Commercial\MarketEdition\Listing\FEATURE_LIST.md
+Commercial\MarketEdition\Listing\INSTALLATION_GUIDE.md
+Commercial\MarketEdition\Listing\KNOWN_LIMITATIONS.md
+Commercial\MarketEdition\Listing\PRODUCT_DESCRIPTION.md
+Commercial\MarketEdition\Listing\QUICK_START_GUIDE.md
+Commercial\MarketEdition\Listing\USER_MANUAL.md
+Commercial\MarketEdition\Package\CORE_TAG.txt
+Commercial\MarketEdition\Package\FILE_LIST.txt
+Commercial\MarketEdition\Package\MANIFEST.json
+Commercial\MarketEdition\Package\STORE_METADATA.json
+Commercial\MarketEdition\Package\bin\TheGoldMindAI_Professional.ex5
+Commercial\MarketEdition\Package\bin\TheGoldMindAI_Professional.mq5

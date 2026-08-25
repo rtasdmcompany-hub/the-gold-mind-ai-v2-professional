@@ -208,7 +208,7 @@ const timezone = firstEnv(
   "UTC"
 );
 
-const stablePackageId = firstEnv(["PRODUCT_STABLE_PACKAGE_ID"], "rel_110_stable");
+const stablePackageId = firstEnv(["PRODUCT_STABLE_PACKAGE_ID"], "rel_120_stable");
 
 /**
  * Canonical product object â€” import `{ product }` everywhere product config is needed.

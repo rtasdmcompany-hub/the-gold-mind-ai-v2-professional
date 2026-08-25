@@ -1,8 +1,8 @@
 ﻿Core source (mq5) SHA-256 (certified frozen):
-c7a251ef5769d597f50f7515165106a937471ed765a491f59f7e542d05e165da
+734b0cc4831dc15fadb2cd838776928e8e9fbe611d7880a6801c548548591f4e
 
 Packaged binary (ex5) SHA-256:
-254d30b6b8ef6afa9bc1184459664f5e951ec54ab2ba96ff98367729922afead
+736305944c488755a8fdd8aac77d7d2a688be936b8ec0f50f024a6d00fb7b084
 
 Rule: Commercial packaging copies the certified binary only.
 Trading / Risk / Recovery / Money / Entry / Exit / Order logic: NOT MODIFIED.
