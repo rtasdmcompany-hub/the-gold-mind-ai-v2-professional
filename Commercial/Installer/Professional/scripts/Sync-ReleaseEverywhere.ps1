@@ -16,11 +16,11 @@
   .\Sync-ReleaseEverywhere.ps1 -Version 1.0.1 -WhatIf
 #>
 param(
-  [string]$Version = "1.0.1",
+  [string]$Version = "1.1.0",
   [string]$Channel = "stable",
   [string]$PortalBase = "https://the-gold-mind-ai-v2-professional.vercel.app",
   # Production freeze binary - change only with explicit Owner authorization
-  [string]$ExpectedEx5Sha = "21503FA83938CF80AA24947A512EBE2F238AC7512BF9E48A21FBFF647D77F9B7",
+  [string]$ExpectedEx5Sha = "254D30B6B8EF6AFA9BC1184459664F5E951EC54AB2BA96FF98367729922AFEAD",
   [switch]$Push,
   [switch]$SkipBuild,
   [switch]$SkipValidate,

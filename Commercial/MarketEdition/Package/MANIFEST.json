@@ -1,10 +1,13 @@
 {
   "sku": "GM_EDITION_MARKET",
   "productName": "THE GOLD MIND MARKET",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "channel": "market-rc",
   "coreFile": "Experts/TheGoldMindAI_Professional.mq5",
-  "coreSha256": "1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e",
+  "coreBuild": 417,
+  "corePropertyVersion": "2.132",
+  "coreSha256": "c7a251ef5769d597f50f7515165106a937471ed765a491f59f7e542d05e165da",
+  "ex5Sha256": "254d30b6b8ef6afa9bc1184459664f5e951ec54ab2ba96ff98367729922afead",
   "copyright": "Copyright 2026, THE GOLD MIND",
   "division": "THE GOLD MIND",
   "delivery": "MQL5 Market one-click (no Website installer)",
@@ -21,6 +24,7 @@
     "Assets/Market/*",
     "Licensing/Market policy"
   ],
-  "buildNote": "Compile Market profile from the SAME certified Core tag. Do not modify trading behaviour.",
-  "createdAt": "2026-07-26"
+  "methodSummary": "shared SL last+/-50pip | +30 FULL book | 2% BALANCE lots | any H4 range | no hedge",
+  "buildNote": "Compile Market profile from the SAME certified Core tag as Website Professional 1.1.0. Do not modify trading behaviour for Market packaging.",
+  "createdAt": "2026-08-25"
 }

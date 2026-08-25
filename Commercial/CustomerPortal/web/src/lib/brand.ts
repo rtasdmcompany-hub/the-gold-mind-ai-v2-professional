@@ -57,7 +57,7 @@ const productShortName = firstEnv(
 );
 const version = firstEnv(
   ["NEXT_PUBLIC_BRAND_VERSION", "BRAND_VERSION", "npm_package_version"],
-  "1.0.1"
+  "1.1.0"
 );
 const tagline = firstEnv(
   ["NEXT_PUBLIC_BRAND_TAGLINE", "BRAND_TAGLINE"],

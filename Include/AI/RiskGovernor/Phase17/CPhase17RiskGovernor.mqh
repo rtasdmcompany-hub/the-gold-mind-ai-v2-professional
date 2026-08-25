@@ -16,11 +16,50 @@ input bool   PHASE18_ENABLE_DD_GOVERNOR         = true;   // Hard account DD gov
 input double PHASE18_DD_FREEZE_PERCENT          = 30.0;   // >= freeze: block new exposure + cancel pendings
 input double PHASE18_DD_HARD_LIMIT_PERCENT      = 35.0;   // Hard safety ceiling (HALT tier)
 input double PHASE18_DD_RISK_REDUCTION_PERCENT  = 25.0;   // Risk-reduction tier (re-arm block)
-input bool   PHASE18_ENABLE_DAILY_PROFIT_LOCK   = true;   // Lock NEW exposure after realized daily target
-input double PHASE18_DAILY_PROFIT_LOCK_PERCENT  = 5.0;    // % of day-start capital (realized only)
-input bool   PHASE18_ENABLE_H4_RANGE_FILTER     = true;   // Reject H4 cycle if closed range too wide
-input double PHASE18_MAX_H4_RANGE_PIPS          = 250.0;  // Max closed-H4 range (LOCKED 250 — Phase34 rejected 400)
-input int    PHASE18_MAX_LEVEL_ACTIVATIONS_H4   = 1;      // 1 = no re-arm (Phase30: max=2 re-arm REJECTED vs control)
+input bool   PHASE18_ENABLE_DAILY_PROFIT_LOCK   = false;  // OFF: profit jitna marzi — no daily lock
+input double PHASE18_DAILY_PROFIT_LOCK_PERCENT  = 5.0;    // unused while daily lock OFF
+input bool   PHASE18_ENABLE_H4_RANGE_FILTER     = true;   // R382: reject H4 if closed range too wide
+input double PHASE18_MAX_H4_RANGE_PIPS          = 200.0;  // R382: max closed-H4 range = 200 pip
+input int    PHASE18_MAX_LEVEL_ACTIVATIONS_H4   = 1;      // R382: each level once per H4 (no re-arm)
+input int    PHASE18_DD_DEFENSIVE_PAUSE_HOURS   = 24;     // Timed pause new exposure at 30% DD (not permanent latch)
+input int    PHASE18_DD_HALT_PAUSE_HOURS        = 48;     // Timed pause at 35% DD hard tier
+
+#ifndef TGM_FORCE_DISABLE_DAILY_PROFIT_LOCK
+#define TGM_FORCE_DISABLE_DAILY_PROFIT_LOCK 0
+#endif
+#ifndef TGM_FORCE_H4_RANGE_MAX_PIPS
+#define TGM_FORCE_H4_RANGE_MAX_PIPS 0.0
+#endif
+#ifndef TGM_FORCE_DD_DEFENSIVE_PAUSE_HOURS
+#define TGM_FORCE_DD_DEFENSIVE_PAUSE_HOURS 0
+#endif
+#ifndef TGM_FORCE_DD_HALT_PAUSE_HOURS
+#define TGM_FORCE_DD_HALT_PAUSE_HOURS 0
+#endif
+#ifndef TGM_R385_DD_25_LOT_SCALE_ONLY
+#define TGM_R385_DD_25_LOT_SCALE_ONLY 0
+#endif
+
+double Phase17_EffectiveMaxH4RangePips()
+  {
+   if(TGM_FORCE_H4_RANGE_MAX_PIPS > 0.0)
+      return TGM_FORCE_H4_RANGE_MAX_PIPS;
+   return PHASE18_MAX_H4_RANGE_PIPS;
+  }
+
+int Phase17_EffectiveDefensivePauseHours()
+  {
+   if(TGM_FORCE_DD_DEFENSIVE_PAUSE_HOURS > 0)
+      return TGM_FORCE_DD_DEFENSIVE_PAUSE_HOURS;
+   return PHASE18_DD_DEFENSIVE_PAUSE_HOURS;
+  }
+
+int Phase17_EffectiveHaltPauseHours()
+  {
+   if(TGM_FORCE_DD_HALT_PAUSE_HOURS > 0)
+      return TGM_FORCE_DD_HALT_PAUSE_HOURS;
+   return PHASE18_DD_HALT_PAUSE_HOURS;
+  }
 
 enum ENUM_P17_DD_LEVEL
   {
@@ -74,6 +113,8 @@ datetime g_p17_lastFullUpdate       = 0;
 bool     g_p17_pendingCancelRequest = false; // set on rising-edge Defensive/Halt — EA cancels pendings
 int      g_p17_cnt_pending_cancels  = 0;
 int      g_p17_cnt_block_rearm      = 0;
+datetime g_p17_defensivePauseUntil   = 0;
+datetime g_p17_haltPauseUntil        = 0;
 
 double Phase17_GetPipSize()
   {
@@ -100,6 +141,25 @@ datetime Phase17_DayFloor(const datetime t)
    TimeToStruct(t, dt);
    dt.hour = 0; dt.min = 0; dt.sec = 0;
    return StructToTime(dt);
+  }
+
+// EA magic book only — manual / foreign open P/L is invisible to DD governor.
+double Phase17_GetBotFloatingPL()
+  {
+   double pl = 0.0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      const ulong ticket = PositionGetTicket(i);
+      if(ticket == 0)
+         continue;
+      if(PositionGetString(POSITION_SYMBOL) != _Symbol)
+         continue;
+      if((long)PositionGetInteger(POSITION_MAGIC) != (long)EXPERT_MAGIC)
+         continue;
+      pl += PositionGetDouble(POSITION_PROFIT)
+          + PositionGetDouble(POSITION_SWAP);
+     }
+   return pl;
   }
 
 double Phase17_GetRealizedDailyProfit()
@@ -155,6 +215,12 @@ void Phase17_UpdateDailyProfitLock()
   {
    Phase17_EnsureDayStart();
 
+   if(TGM_FORCE_DISABLE_DAILY_PROFIT_LOCK != 0)
+     {
+      g_p17_dailyProfitLocked = false;
+      return;
+     }
+
    if(!PHASE18_ENABLE_DAILY_PROFIT_LOCK)
      {
       g_p17_dailyProfitLocked = false;
@@ -196,14 +262,20 @@ string Phase17_DdLevelToString()
 
 void Phase17_UpdateDrawdownGovernor()
   {
-   const double equity = AccountInfoDouble(ACCOUNT_EQUITY);
-   if(equity > g_p17_peakEquity)
-      g_p17_peakEquity = equity;
-   if(g_p17_peakEquity <= 0.0)
-      g_p17_peakEquity = equity;
+   // Bot-only DD curve: balance + our magic floating (manual open P/L excluded).
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   if(balance <= 0.0)
+      balance = AccountInfoDouble(ACCOUNT_EQUITY);
+   const double botPL = Phase17_GetBotFloatingPL();
+   const double botBookEquity = balance + botPL;
 
-   if(g_p17_peakEquity > 0.0 && equity < g_p17_peakEquity)
-      g_p17_equityDdPercent = (g_p17_peakEquity - equity) / g_p17_peakEquity * 100.0;
+   if(botBookEquity > g_p17_peakEquity)
+      g_p17_peakEquity = botBookEquity;
+   if(g_p17_peakEquity <= 0.0)
+      g_p17_peakEquity = botBookEquity;
+
+   if(g_p17_peakEquity > 0.0 && botBookEquity < g_p17_peakEquity)
+      g_p17_equityDdPercent = (g_p17_peakEquity - botBookEquity) / g_p17_peakEquity * 100.0;
    else
       g_p17_equityDdPercent = 0.0;
 
@@ -224,25 +296,45 @@ void Phase17_UpdateDrawdownGovernor()
    else
       g_p17_ddLevel = P17_DD_NORMAL;
 
-   // Phase 17B Cycle-1: freeze NEW exposure at Defensive (30%), not only at 35% Halt.
-   // Gives open-book headroom under the hard 35% ceiling. Does NOT force-close positions.
-   g_p17_ddTradingHalted = (g_p17_ddLevel >= P17_DD_DEFENSIVE);
-
-   // Rising-edge into Defensive or Halt → request pending cancel (EA executes; no position close).
-   if(g_p17_ddTradingHalted && prev < P17_DD_DEFENSIVE)
+   // Timed pause at Defensive/Halt — NOT permanent until DD recovers below risk-reduction.
+   const datetime now = TimeCurrent();
+   if(g_p17_ddLevel >= P17_DD_DEFENSIVE && prev < P17_DD_DEFENSIVE)
      {
+      g_p17_defensivePauseUntil = now + (datetime)(MathMax(1, Phase17_EffectiveDefensivePauseHours()) * 3600);
       g_p17_pendingCancelRequest = true;
       g_p17_cnt_pending_cancels++;
-      PrintFormat("TGM [P17B]: NEW_EXPOSURE_FREEZE + PENDING_CANCEL requested | EQUITY_DD=%.2f LEVEL=%s (opens not force-closed)",
-                  g_p17_equityDdPercent, Phase17_DdLevelToString());
+      PrintFormat("TGM [P18]: DEFENSIVE_PAUSE %dh until %s | EQUITY_DD=%.2f | pendings cancel",
+                  Phase17_EffectiveDefensivePauseHours(),
+                  TimeToString(g_p17_defensivePauseUntil, TIME_DATE|TIME_SECONDS),
+                  g_p17_equityDdPercent);
+     }
+   if(g_p17_ddLevel >= P17_DD_HALT && prev < P17_DD_HALT)
+     {
+      g_p17_haltPauseUntil = now + (datetime)(MathMax(1, Phase17_EffectiveHaltPauseHours()) * 3600);
+      g_p17_pendingCancelRequest = true;
+      g_p17_cnt_pending_cancels++;
+      PrintFormat("TGM [P18]: HALT_PAUSE %dh until %s | EQUITY_DD=%.2f | pendings cancel",
+                  Phase17_EffectiveHaltPauseHours(),
+                  TimeToString(g_p17_haltPauseUntil, TIME_DATE|TIME_SECONDS),
+                  g_p17_equityDdPercent);
+     }
+
+   const bool inDefPause  = (g_p17_defensivePauseUntil > 0 && now < g_p17_defensivePauseUntil);
+   const bool inHaltPause = (g_p17_haltPauseUntil > 0 && now < g_p17_haltPauseUntil);
+   g_p17_ddTradingHalted = (inDefPause || inHaltPause);
+
+   if(g_p17_ddLevel < P17_DD_RISK_REDUCTION)
+     {
+      g_p17_defensivePauseUntil = 0;
+      g_p17_haltPauseUntil = 0;
      }
 
    if(g_p17_ddLevel == P17_DD_DEFENSIVE && prev != P17_DD_DEFENSIVE && !g_p17_logged_defensive)
      {
       g_p17_cnt_dd_defensive++;
       g_p17_logged_defensive = true;
-      PrintFormat("TGM [P18]: DD_RISK_LEVEL=DEFENSIVE EQUITY_DD_PERCENT=%.2f peak=%.2f equity=%.2f",
-                  g_p17_equityDdPercent, g_p17_peakEquity, equity);
+      PrintFormat("TGM [P18]: DD_RISK_LEVEL=DEFENSIVE BOT_DD_PERCENT=%.2f peak=%.2f bot_book=%.2f",
+                  g_p17_equityDdPercent, g_p17_peakEquity, botBookEquity);
      }
    if(g_p17_ddLevel == P17_DD_HALT && prev != P17_DD_HALT)
      {
@@ -268,17 +360,32 @@ bool Phase17_AllowReArm(const int activationCountThisH4)
   {
    if(!PHASE18_ENABLE_DD_GOVERNOR)
       return true;
-   if(g_p17_ddLevel >= P17_DD_DEFENSIVE)
+   if(g_p17_ddTradingHalted)
      {
       g_p17_cnt_block_rearm++;
       return false;
      }
+   if(TGM_R385_DD_25_LOT_SCALE_ONLY != 0 && g_p17_ddLevel == P17_DD_RISK_REDUCTION)
+      return true;
    if(g_p17_ddLevel >= P17_DD_RISK_REDUCTION && activationCountThisH4 >= 1)
      {
       g_p17_cnt_block_rearm++;
       return false;
      }
    return true;
+  }
+
+double Phase17_GetLotExposureMultiplier()
+  {
+   if(!PHASE18_ENABLE_DD_GOVERNOR)
+      return 1.0;
+   if(g_p17_equityDdPercent >= PHASE18_DD_HARD_LIMIT_PERCENT)
+      return 0.35;
+   if(g_p17_equityDdPercent >= PHASE18_DD_FREEZE_PERCENT)
+      return 0.50;
+   if(g_p17_equityDdPercent >= PHASE18_DD_RISK_REDUCTION_PERCENT)
+      return 0.70;
+   return 1.0;
   }
 
 bool Phase17_EvaluateH4RangeFilter()
@@ -300,7 +407,7 @@ bool Phase17_EvaluateH4RangeFilter()
    g_p17_h4RangePoints = Phase17_PriceToPoints(g_p17_h4RangePrice);
    g_p17_h4RangePips   = g_p17_h4RangePrice / g_p17_pipSize;
 
-   const bool reject = (PHASE18_ENABLE_H4_RANGE_FILTER && g_p17_h4RangePips > PHASE18_MAX_H4_RANGE_PIPS);
+   const bool reject = (PHASE18_ENABLE_H4_RANGE_FILTER && g_p17_h4RangePips > Phase17_EffectiveMaxH4RangePips());
    g_p17_h4RangeRejected = reject;
 
    if(g_p17_h4BarOpenLogged != g_p17_h4CandleOpenTime)
@@ -324,7 +431,7 @@ bool Phase17_EvaluateH4RangeFilter()
                   SymbolInfoDouble(_Symbol, SYMBOL_POINT),
                   SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE),
                   (reject ? "true" : "false"),
-                  PHASE18_MAX_H4_RANGE_PIPS);
+                  Phase17_EffectiveMaxH4RangePips());
      }
 
    return !reject;
@@ -345,15 +452,17 @@ void Phase17_OnTickUpdate()
 
 void Phase17_OnInit()
   {
-   g_p17_peakEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+   g_p17_peakEquity = AccountInfoDouble(ACCOUNT_BALANCE) + Phase17_GetBotFloatingPL();
+   if(g_p17_peakEquity <= 0.0)
+      g_p17_peakEquity = AccountInfoDouble(ACCOUNT_EQUITY);
    Phase17_EnsureDayStart();
    Phase17_EvaluateH4RangeFilter();
-   PrintFormat("TGM [P18]: RiskGovernor ON | DD_freeze=%.1f%% DD_hard=%.1f%% DailyLock=%s(%.1f%%) H4RangeFilter=%s(max=%.1f pips) MaxActPerLevelH4=%d PIP_SIZE=%.5f",
+   PrintFormat("TGM [P18]: RiskGovernor ON (bot-only DD) | DD_pause=%dh/%dh | DD_freeze=%.1f%% DD_hard=%.1f%% lot_scale=70/50/35%% DailyLock=%s H4Range=%s MaxAct=%d",
+               PHASE18_DD_DEFENSIVE_PAUSE_HOURS, PHASE18_DD_HALT_PAUSE_HOURS,
                PHASE18_DD_FREEZE_PERCENT, PHASE18_DD_HARD_LIMIT_PERCENT,
-               (PHASE18_ENABLE_DAILY_PROFIT_LOCK ? "ON" : "OFF"), PHASE18_DAILY_PROFIT_LOCK_PERCENT,
-               (PHASE18_ENABLE_H4_RANGE_FILTER ? "ON" : "OFF"), PHASE18_MAX_H4_RANGE_PIPS,
-               PHASE18_MAX_LEVEL_ACTIVATIONS_H4,
-               Phase17_GetPipSize());
+               (PHASE18_ENABLE_DAILY_PROFIT_LOCK ? "ON" : "OFF"),
+               (PHASE18_ENABLE_H4_RANGE_FILTER ? "ON" : "OFF"),
+               PHASE18_MAX_LEVEL_ACTIVATIONS_H4);
   }
 
 bool Phase17_AllowNewExposure(const string context, string &rejectReason)
@@ -363,9 +472,10 @@ bool Phase17_AllowNewExposure(const string context, string &rejectReason)
 
    if(PHASE18_ENABLE_DD_GOVERNOR && g_p17_ddTradingHalted)
      {
-      rejectReason = StringFormat("DD_NEW_EXPOSURE_FROZEN LEVEL=%s EQUITY_DD_PERCENT=%.2f (freeze>=%.1f hard_ceil=%.1f)",
+      rejectReason = StringFormat("DD_TIMED_PAUSE until %s LEVEL=%s EQUITY_DD=%.2f lot_mult=%.2f",
+                                  TimeToString(MathMax(g_p17_defensivePauseUntil, g_p17_haltPauseUntil), TIME_DATE|TIME_SECONDS),
                                   Phase17_DdLevelToString(), g_p17_equityDdPercent,
-                                  PHASE18_DD_FREEZE_PERCENT, PHASE18_DD_HARD_LIMIT_PERCENT);
+                                  Phase17_GetLotExposureMultiplier());
       if(g_p17_lastRejectReason != rejectReason)
          g_p17_cnt_block_dd++;
       g_p17_lastRejectReason = rejectReason;
@@ -382,15 +492,17 @@ bool Phase17_AllowNewExposure(const string context, string &rejectReason)
       return false;
      }
 
+#ifndef TGM_R380_FORCE_NO_H4_RANGE_FILTER
    if(PHASE18_ENABLE_H4_RANGE_FILTER && g_p17_h4RangeRejected)
      {
       rejectReason = StringFormat("H4_RANGE_REJECTED pips=%.1f>%.1f",
-                                  g_p17_h4RangePips, PHASE18_MAX_H4_RANGE_PIPS);
+                                  g_p17_h4RangePips, Phase17_EffectiveMaxH4RangePips());
       if(g_p17_lastRejectReason != rejectReason)
          g_p17_cnt_block_h4_range++;
       g_p17_lastRejectReason = rejectReason;
       return false;
      }
+#endif
 
    g_p17_lastRejectReason = "";
    return true;
@@ -412,12 +524,47 @@ bool Phase17_AllowNewExposureSimple(const string context)
    return ok;
   }
 
+// Fresh H4 cycle: place 6 pendings unless daily profit lock (or optional H4 range) blocks.
+// DD pause still bypassed on new H4 bar; daily 5% profit lock is day-wide (R380).
+bool Phase17_AllowFreshH4GridPlacement(const string context)
+  {
+   Phase17_OnTickUpdate();
+
+   if(PHASE18_ENABLE_DAILY_PROFIT_LOCK && g_p17_dailyProfitLocked)
+     {
+      const datetime now = TimeCurrent();
+      if((now - g_p17_lastBlockLogTime) >= 60)
+        {
+         g_p17_lastBlockLogTime = now;
+         PrintFormat("TGM [P18]: %s blocked (fresh H4) — DAILY_PROFIT_LOCKED profit=%.2f target=%.2f",
+                     context, g_p17_dailyProfit, g_p17_dailyTarget);
+        }
+      g_p17_cnt_block_daily++;
+      return false;
+     }
+
+#ifndef TGM_R380_FORCE_NO_H4_RANGE_FILTER
+   if(PHASE18_ENABLE_H4_RANGE_FILTER && g_p17_h4RangeRejected)
+     {
+      const datetime now = TimeCurrent();
+      if((now - g_p17_lastBlockLogTime) >= 60)
+        {
+         g_p17_lastBlockLogTime = now;
+         PrintFormat("TGM [P18]: %s blocked (fresh H4) — H4_RANGE_REJECTED pips=%.1f>%.1f",
+                     context, g_p17_h4RangePips, PHASE18_MAX_H4_RANGE_PIPS);
+        }
+      return false;
+     }
+#endif
+   return true;
+  }
+
 void Phase17_LogSummary()
   {
    PrintFormat("TGM [P17 SUMMARY]: H4_cycles=%d rejected=%d accepted=%d | daily_locks=%d | dd_defensive=%d dd_halts=%d pending_cancels=%d",
                g_p17_cnt_h4_cycles, g_p17_cnt_h4_rejected, g_p17_cnt_h4_accepted,
                g_p17_cnt_daily_locks, g_p17_cnt_dd_defensive, g_p17_cnt_dd_hard_halts, g_p17_cnt_pending_cancels);
-   PrintFormat("TGM [P17 SUMMARY]: blocked_by_daily=%d blocked_by_h4=%d blocked_by_dd=%d blocked_rearm=%d | EQUITY_DD=%.2f LEVEL=%s",
+   PrintFormat("TGM [P17 SUMMARY]: blocked_by_daily=%d blocked_by_h4=%d blocked_by_dd=%d blocked_rearm=%d | BOT_DD=%.2f LEVEL=%s",
                g_p17_cnt_block_daily, g_p17_cnt_block_h4_range, g_p17_cnt_block_dd, g_p17_cnt_block_rearm,
                g_p17_equityDdPercent, Phase17_DdLevelToString());
   }

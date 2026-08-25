@@ -1,6 +1,6 @@
 {
   "name": "tgm-customer-portal",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "description": "THE GOLD MIND PROFESSIONAL Customer Portal (no Core Trading Engine dependency)",
   "scripts": {

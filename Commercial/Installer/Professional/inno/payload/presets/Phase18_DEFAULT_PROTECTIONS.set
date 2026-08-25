@@ -1,5 +1,6 @@
-; PHASE 18 — Consolidated Professional defaults (protections permanent)
-; E1/E2 NOT merged. No optimization.
+; PHASE 18 — ATR3050+DDv2 production defaults (build 368)
+; ATR-12 SL/TP | +30pip 50%+BE | +50pip 100% | timed DD pause | lot scale
+; Manual/foreign trades invisible. H4 close: EQUITY x 9% per level, 6 pendings.
 P11B_Enable_Supervisor=true
 P11B_Max_Lot_Increase_Pct=20.0
 P11B_Max_Lot_Reduction_Pct=50.0
@@ -15,8 +16,8 @@ RiskMode=0
 Manual_Lot_Size=0.5
 Max_Lot_Size=5.0
 InpFixedStopLossUSD=3.0
-ATR_Period=14
-Enable_ATR_StopLoss=false
+ATR_Period=12
+Enable_ATR_StopLoss=true
 SL_ATR_Multiplier=1.0
 TP_ATR_Multiplier=1.0
 InpProfitBE=5.0
@@ -28,7 +29,7 @@ Emergency_Close_DD_Percent=18.0
 Max_Daily_Loss_Percent=15.0
 Enable_BreakEven=true
 Enable_PartialClose=true
-PartialClose_Percent=80.0
+PartialClose_Percent=50.0
 PHASE18_ENABLE_DD_GOVERNOR=true
 PHASE18_DD_FREEZE_PERCENT=30.0
 PHASE18_DD_HARD_LIMIT_PERCENT=35.0
@@ -36,6 +37,7 @@ PHASE18_DD_RISK_REDUCTION_PERCENT=25.0
 PHASE18_ENABLE_DAILY_PROFIT_LOCK=true
 PHASE18_DAILY_PROFIT_LOCK_PERCENT=5.0
 PHASE18_ENABLE_H4_RANGE_FILTER=true
-PHASE18_MAX_H4_RANGE_PIPS=250.0
-; Phase30 isolation: max=2 re-arm REJECTED (OOS PF 0.84→0.44). Keep max=1.
+PHASE18_MAX_H4_RANGE_PIPS=350.0
 PHASE18_MAX_LEVEL_ACTIVATIONS_H4=1
+PHASE18_DD_DEFENSIVE_PAUSE_HOURS=24
+PHASE18_DD_HALT_PAUSE_HOURS=48

@@ -58,8 +58,12 @@
 
 ## 5. Verdict (architecture)
 
-Market Edition is **architecturally separable** and compliance-aware on paper.  
-**Not launch-READY** until packaging audit, screenshots, and live rules check complete.
+Market Edition is **architecturally separable** and packaging metadata is aligned to **Core Build 417** (same SHA as Website Professional **1.1.0**).
+
+**Packaging READY** for MetaQuotes submission prep (MANIFEST / listing / Core tag updated 2026-08-25).
+
+**Upload READY only after:** fresh Market-build screenshots, live MQL5 rules re-read, and compile/upload of the certified `.ex5` in MetaEditor Market product form — not the Website installer ZIP.
+
 
 ---
 

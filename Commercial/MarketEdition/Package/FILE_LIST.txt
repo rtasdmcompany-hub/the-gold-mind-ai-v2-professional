@@ -2,8 +2,10 @@
 
 Market commercial package inventory (Core referenced, not duplicated as editable source):
 
-1. CORE (certified, frozen)
+1. CORE (certified Build 417 / v2.132)
    - Experts/TheGoldMindAI_Professional.mq5
+   - Experts/TheGoldMindAI_Professional.ex5 (compiled binary for upload)
+   - MarketEdition/Package/bin/TheGoldMindAI_Professional.ex5 (packaged copy)
    - Include/** (as required by Core compile — unchanged)
 
 2. MARKET LISTING

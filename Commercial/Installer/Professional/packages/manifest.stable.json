@@ -1,21 +1,22 @@
 ﻿{
     "edition":  "Website",
     "channel":  "stable",
-    "releaseNotes":  "Commercial packaging release 1.0.0 - Core frozen.",
-    "releasedAt":  "2026-07-30T20:26:29.8690640Z",
-    "packageFile":  "TGM_PROFESSIONAL_1.0.0_stable.zip",
-    "packageSizeBytes":  863565,
-    "buildNumber":  "26211",
+    "releaseNotes":  "Commercial 1.1.0 / Core Build 417: shared SL last+/-50pip, +30 FULL book, 2% BALANCE lots, H4 range lock OFF, hedge OFF.",
+    "releasedAt":  "2026-08-25T03:38:59.4877453Z",
+    "packageFile":  "TGM_PROFESSIONAL_1.1.0_stable.zip",
+    "packageSizeBytes":  872793,
+    "buildNumber":  "26237",
     "signature":  {
                       "subject":  "Code signing pending",
                       "status":  "pending_code_sign",
                       "type":  "authenticode",
                       "required":  false
                   },
-    "version":  "1.0.0",
+    "version":  "1.1.0",
     "product":  "THE GOLD MIND PROFESSIONAL",
     "compatibility":  {
-                          "coreTag":  "1.0.0",
+                          "coreTag":  "1.1.0",
+                          "coreBuild":  417,
                           "coreFrozen":  true,
                           "mt5":  "build 3800+",
                           "os":  [
@@ -24,5 +25,5 @@
                                  ]
                       },
     "httpsOnly":  true,
-    "sha256":  "e61120628ba0d43d9d0f84d931cb0cd863890fa95a0e997b04d13a951d83229a"
+    "sha256":  "69f125cc44e729b966b8cd6ac8c773c22196a221593503d17bf4d628eedfb697"
 }

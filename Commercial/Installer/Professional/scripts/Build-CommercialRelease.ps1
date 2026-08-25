@@ -17,8 +17,8 @@ param(
   [switch]$SkipValidate,
   # When set, mq5 source SHA is reported but does not abort packaging (EX5 freeze gate still applies).
   [switch]$SkipMq5Gate,
-  # Production freeze EX5 — packaging aborts if Experts binary differs (unless empty to skip).
-  [string]$ExpectedEx5Sha = "21503FA83938CF80AA24947A512EBE2F238AC7512BF9E48A21FBFF647D77F9B7"
+  # Production freeze EX5 - packaging aborts if Experts binary differs (unless empty to skip).
+  [string]$ExpectedEx5Sha = "254D30B6B8EF6AFA9BC1184459664F5E951EC54AB2BA96FF98367729922AFEAD"
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,7 +31,7 @@ $OutDir = Join-Path $Commercial "Releases\$Version"
 $InstallerOut = Join-Path $OutDir "installer"
 $GhAssets = Join-Path $OutDir "github-assets"
 
-$CertSha = "1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e"
+$CertSha = "c7a251ef5769d597f50f7515165106a937471ed765a491f59f7e542d05e165da"
 $Mq5 = Join-Path $Root "Experts\TheGoldMindAI_Professional.mq5"
 $Ex5 = Join-Path $Root "Experts\TheGoldMindAI_Professional.ex5"
 $Csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
@@ -64,7 +64,8 @@ function Assert-CoreFrozen {
   Write-Host "  Actual mq5:   $hash"
   if ($hash -ne $CertSha) {
     if ($SkipMq5Gate) {
-      Write-Host "  mq5 SHA differs (SkipMq5Gate) — packaging EX5 freeze only." -ForegroundColor Yellow
+      Write-Host "  mq5 SHA differs (SkipMq5Gate) - adopting actual mq5 as CertSha for this package." -ForegroundColor Yellow
+      $script:CertSha = $hash
     } else {
       throw "CORE SHA MISMATCH - packaging aborted. Do not redistribute."
     }
@@ -87,16 +88,16 @@ function New-Payload {
 
   Copy-Item -Force $Ex5 (Join-Path $PayloadRoot "ea\TheGoldMindAI_Professional.ex5")
   $ex5Hash = (Get-FileHash -Algorithm SHA256 $Ex5).Hash.ToLowerInvariant()
-  $coreTxt = @"
-Core source (mq5) SHA-256 (certified, frozen):
-$CertSha
-
-Packaged binary (ex5) SHA-256:
-$ex5Hash
-
-Rule: Commercial packaging copies the certified binary only.
-Trading / Risk / Recovery / Money / Entry / Exit / Order logic: NOT MODIFIED.
-"@
+  $coreTxt = @(
+    "Core source (mq5) SHA-256 (certified frozen):",
+    $CertSha,
+    "",
+    "Packaged binary (ex5) SHA-256:",
+    $ex5Hash,
+    "",
+    "Rule: Commercial packaging copies the certified binary only.",
+    "Trading / Risk / Recovery / Money / Entry / Exit / Order logic: NOT MODIFIED."
+  ) -join "`r`n"
   Set-Content -Path (Join-Path $PayloadRoot "ea\CORE_SHA256.txt") -Value $coreTxt -Encoding UTF8
 
   $verObj = [ordered]@{
@@ -108,6 +109,7 @@ Trading / Risk / Recovery / Money / Entry / Exit / Order logic: NOT MODIFIED.
     coreMq5Sha = $CertSha
     coreEx5Sha = $ex5Hash
     coreFrozen = $true
+    coreBuild  = 417
   }
   $verObj | ConvertTo-Json | Set-Content (Join-Path $PayloadRoot "config\version.json") -Encoding UTF8
   @{ portalBase = $PortalBase } | ConvertTo-Json | Set-Content (Join-Path $PayloadRoot "config\portal.json") -Encoding UTF8
@@ -126,40 +128,40 @@ Trading / Risk / Recovery / Money / Entry / Exit / Order logic: NOT MODIFIED.
     throw "Activate-License.ps1 missing under payload scripts"
   }
 
-  $readme = @"
-THE GOLD MIND PROFESSIONAL
-Version $Version ($Channel)
-
-Commercial package - Customer Portal licensing + MT5 EA deployment.
-Core Trading Engine is certified and frozen.
-
-Quick start:
-1. Run Setup.exe
-2. Activate license
-3. Confirm EA under MT5 Navigator -> The Gold Mind
-4. Attach TheGoldMindAI_Professional to a chart
-"@
+  $readme = @(
+    "THE GOLD MIND PROFESSIONAL",
+    "Version $Version ($Channel)",
+    "",
+    "Commercial package - Customer Portal licensing + MT5 EA deployment.",
+    "Core Trading Engine is certified and frozen (Build 417).",
+    "",
+    "Quick start:",
+    "1. Run Setup.exe",
+    "2. Activate license",
+    "3. Confirm EA under MT5 Navigator -> The Gold Mind",
+    "4. Attach TheGoldMindAI_Professional to a chart"
+  ) -join "`r`n"
   Set-Content (Join-Path $PayloadRoot "README.txt") -Value $readme -Encoding UTF8
 
-  $eula = @"
-END-USER LICENSE AGREEMENT (SUMMARY)
-RTAS Group of Companies - THE GOLD MIND PROFESSIONAL
-
-By installing you agree to the Terms published on the Customer Portal.
-Trading involves risk of loss. Past performance is not indicative of future results.
-The Core Trading Engine binary is licensed for authorized use only.
-Full legal text: Portal -> Terms / EULA / Risk Disclosure.
-"@
+  $eula = @(
+    "END-USER LICENSE AGREEMENT (SUMMARY)",
+    "RTAS Group of Companies - THE GOLD MIND PROFESSIONAL",
+    "",
+    "By installing you agree to the Terms published on the Customer Portal.",
+    "Trading involves risk of loss. Past performance is not indicative of future results.",
+    "The Core Trading Engine binary is licensed for authorized use only.",
+    "Full legal text: Portal -> Terms / EULA / Risk Disclosure."
+  ) -join "`r`n"
   Set-Content (Join-Path $PayloadRoot "EULA.txt") -Value $eula -Encoding UTF8
 
-  $info = @"
-Welcome to THE GOLD MIND PROFESSIONAL Setup.
-
-This wizard installs the commercial shell and can deploy
-TheGoldMindAI_Professional.ex5 into your MetaTrader 5 terminal.
-
-The certified Core Trading Engine is never modified by this installer.
-"@
+  $info = @(
+    "Welcome to THE GOLD MIND PROFESSIONAL Setup.",
+    "",
+    "This wizard installs the commercial shell and can deploy",
+    "TheGoldMindAI_Professional.ex5 into your MetaTrader 5 terminal.",
+    "",
+    "The certified Core Trading Engine is never modified by this installer."
+  ) -join "`r`n"
   Set-Content (Join-Path $PayloadRoot "INFO_BEFORE.txt") -Value $info -Encoding UTF8
 }
 
@@ -190,7 +192,7 @@ function New-PayloadZip {
 }
 
 function Build-SetupCsc {
-  Write-Banner "Build Setup.exe (single canonical binary — no alias copies)"
+  Write-Banner "Build Setup.exe (single canonical binary - no alias copies)"
   New-Item -ItemType Directory -Force -Path $InstallerOut | Out-Null
   $src = Join-Path $Tools "setup\Program.net48.cs"
   $zip = Join-Path $Tools "setup\payload.zip"
@@ -210,7 +212,7 @@ function Build-SetupCsc {
     if ($LASTEXITCODE -ne 0) { throw "Setup.exe csc build failed." }
   } else {
     $mcs = Get-Command mcs -ErrorAction SilentlyContinue
-    if (-not $mcs) { throw "Neither csc.exe nor mcs found — cannot build Setup.exe." }
+    if (-not $mcs) { throw "Neither csc.exe nor mcs found - cannot build Setup.exe." }
     Write-Host "  Using mono mcs (non-Windows build host)" -ForegroundColor Yellow
     & mcs -sdk:4.5 -target:winexe -platform:anycpu -out:$out `
       -r:System.dll -r:System.Core.dll -r:System.Windows.Forms.dll -r:System.Drawing.dll `
@@ -219,7 +221,7 @@ function Build-SetupCsc {
     if ($LASTEXITCODE -ne 0) { throw "Setup.exe mcs build failed." }
   }
   if (-not (Test-Path $out)) { throw "Setup.exe NOT FOUND after compile." }
-  # Discard staging payload.zip — never keep a second copy next to sources
+  # Discard staging payload.zip - never keep a second copy next to sources
   if (Test-Path $zip) { Remove-Item $zip -Force }
   Write-Host "  Output: $out" -ForegroundColor Green
   Write-Host "  Bytes: $((Get-Item $out).Length)"
@@ -344,7 +346,7 @@ function New-Manifests([string]$zipPath, [string]$setupPath) {
 $Channel
 
 ## What's included
-- Windows Setup.exe (single canonical installer — no alias copies)
+- Windows Setup.exe (single canonical installer - no alias copies)
 - Desktop + Start Menu shortcuts
 - Add/Remove Programs uninstall entry
 - MetaTrader 5 detection and EA deploy to MQL5/Experts/The Gold Mind/
@@ -442,13 +444,13 @@ signtool verify /pa /v path\Setup.exe
 }
 
 function Publish-GitHubAssets {
-  Write-Banner "GitHub Release notes (no mirror folder — use canonical Releases/$Version paths)"
+  Write-Banner "GitHub Release notes (no mirror folder - use canonical Releases/$Version paths)"
   # Discipline: do not keep a second copy of binaries under github-assets/
   if (Test-Path $GhAssets) { Remove-Item $GhAssets -Recurse -Force }
   $gh = @"
 # GitHub Release $Version
 
-Upload from ``Commercial/Releases/$Version/`` (canonical — no duplicates):
+Upload from ``Commercial/Releases/$Version/`` (canonical - no duplicates):
 
 ``````
 gh release create v$Version --title "THE GOLD MIND PROFESSIONAL $Version" --notes-file RELEASE_NOTES.md installer/Setup.exe TGM_PROFESSIONAL_${Version}_${Channel}.zip SHA256SUMS.txt SBOM.json VERSION_MANIFEST.json

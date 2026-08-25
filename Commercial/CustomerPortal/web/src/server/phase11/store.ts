@@ -146,7 +146,7 @@ export function latestPhase11Run(kind: Phase11RunKind) {
 }
 
 export const CORE_CERT_SHA =
-  "1965551f7b88f403cf8a0af5475211a562b9c05500a0bb530e0136d38d403f1e";
+  "c7a251ef5769d597f50f7515165106a937471ed765a491f59f7e542d05e165da";
 
 export function commercialRoot(): string {
   return path.resolve(process.cwd(), "..", "..");
