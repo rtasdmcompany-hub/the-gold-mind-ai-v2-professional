@@ -25,6 +25,13 @@ const SECTIONS = [
     ],
   },
   {
+    title: "Verified Performance",
+    items: [
+      { href: "#myfxbook", label: "Myfxbook Track Record" },
+      { href: "#mql5", label: "MQL5 Market" },
+    ],
+  },
+  {
     title: "Developer Docs",
     items: [
       { href: "/developers", label: "Developer Portal" },
@@ -47,30 +54,46 @@ const SECTIONS = [
 const FAQ = [
   {
     q: "How do I activate my license?",
-    a: "Sign in to the Customer Portal, navigate to Licenses, and enter your license key. Device binding occurs automatically on first MT5 connection.",
+    a: "Sign in to the Customer Portal, navigate to Licenses, and enter your license key. Device binding occurs automatically on first MT5 connection. Ensure you are running the latest MT5 build.",
   },
   {
     q: "Where do I download the installer?",
-    a: "Authenticated customers can download checksum-verified installers from Portal → Downloads. Each package includes SHA-256 checksums and release notes.",
+    a: "Authenticated customers can download checksum-verified installers from Portal → Downloads. Each package includes SHA-256 checksums and release notes. Always verify the checksum before installation.",
   },
   {
     q: "Is the Trading Engine modified by the portal?",
-    a: "No. The certified Core Expert Advisor operates exclusively on MetaTrader 5. The portal handles licensing, billing, and updates only.",
+    a: "No. The verified Core Expert Advisor operates exclusively on MetaTrader 5. The portal handles licensing, billing, and updates only. The EA file is never altered by the web infrastructure.",
   },
   {
     q: "What payment methods are supported?",
-    a: "Paddle is the supported checkout provider once configured for your account plan.",
+    a: "We support major credit/debit cards (Visa, Mastercard, Amex) and select digital payment methods through our secure payment provider (Paddle). All transactions are encrypted.",
+  },
+  {
+    q: "Can I use this on multiple devices?",
+    a: "Each license is bound to one device at a time. If you need to switch devices, contact support to deactivate the current binding. Enterprise multi-device licenses are available on request.",
+  },
+  {
+    q: "What brokers are compatible?",
+    a: `${brand.brandName} works with any MT5-compatible broker. We recommend ECN/Raw spread accounts for optimal execution. Ensure XAUUSD is available on your broker's platform.`,
+  },
+  {
+    q: "How do I update the software?",
+    a: "Updates are distributed through the Customer Portal → Downloads section. Each update includes release notes and a new SHA-256 checksum. Yearly and Lifetime plans include all future updates.",
+  },
+  {
+    q: "What is the minimum account size?",
+    a: "We recommend a minimum of $500 for standard lot sizing. For micro-lot accounts, $200 minimum. The EA includes dynamic position sizing based on account equity.",
   },
 ];
 
 const CONTENT: Record<string, { title: string; body: string }> = {
   overview: {
     title: "Overview",
-    body: `${brand.productFullName} is a certified MetaTrader 5 Expert Advisor with enterprise licensing, updates, and support delivered through the official Customer Portal. This documentation covers installation, activation, portal usage, and developer integration.`,
+    body: `${brand.productFullName} is a verified MetaTrader 5 Expert Advisor with enterprise licensing, updates, and support delivered through the official Customer Portal. This documentation covers installation, activation, portal usage, and developer integration.`,
   },
   installation: {
     title: "Installation Guide",
-    body: `Download the latest checksum-verified installer from Portal → Downloads. Run ${product.installer.name} as administrator. The installer deploys the EA to your MT5 Experts directory. Verify SHA-256 checksum before installation. Do not modify Core files — the SHA is frozen.`,
+    body: `Step 1: Download the latest checksum-verified installer from Portal → Downloads. Step 2: Verify SHA-256 checksum matches the one provided in Portal. Step 3: Run ${product.installer.name} as administrator. Step 4: The installer deploys the EA to your MT5 Experts directory. Step 5: Do not modify Core files — the SHA is verified and frozen. Step 6: Attach EA to XAUUSD chart and enable AutoTrading.`,
   },
   activation: {
     title: "License Activation",
@@ -78,7 +101,7 @@ const CONTENT: Record<string, { title: string; body: string }> = {
   },
   "first-run": {
     title: "First Run Checklist",
-    body: `1. Create portal account and generate a license key. 2. Run ${product.installer.name} and paste email + key (required). 3. Wait for License: ACTIVATED. 4. Attach EA to chart. 5. Confirm Active on Portal Dashboard / Devices.`,
+    body: `1. Create portal account and generate a license key. 2. Run ${product.installer.name} and paste email + key (required). 3. Wait for License: ACTIVATED. 4. Attach EA to XAUUSD chart. 5. Confirm Active on Portal Dashboard / Devices. 6. Ensure AutoTrading button is enabled (green). 7. Monitor via Journal/Experts tabs. 8. Use VPS for 24/7 operation.`,
   },
   portal: {
     title: "Customer Portal",
@@ -95,6 +118,14 @@ const CONTENT: Record<string, { title: string; body: string }> = {
   billing: {
     title: "Billing & Subscriptions",
     body: "Portal → Billing shows current plan, invoices, and checkout. Subscription renewals are processed via the configured payment provider.",
+  },
+  myfxbook: {
+    title: "Myfxbook Verified Track Record",
+    body: `${brand.brandName} maintains an independently verified trading track record on Myfxbook. You can view live, real-time performance data including win rate, drawdown, profit factor, and trade history. Visit our verified Myfxbook portfolio at: https://www.myfxbook.com/portfolio/gold-mind-ai/12200748 — All performance claims should be independently verified through third-party tracking services before making any purchasing decisions.`,
+  },
+  mql5: {
+    title: "MQL5 Market",
+    body: `${brand.productFullName} is available on the official MQL5 Market — the MetaTrader marketplace. You can find product details, user reviews, and signal data at: https://www.mql5.com/en/market/product/183685 — The MQL5 Market listing provides verified product information and community feedback.`,
   },
 };
 
@@ -165,6 +196,34 @@ export function DocsClient() {
         <div className="e-prose" style={{ maxWidth: "none" }}>
           <p>{content.body}</p>
         </div>
+
+        {active === "myfxbook" && (
+          <div style={{ marginTop: 24 }}>
+            <a
+              href="https://www.myfxbook.com/portfolio/gold-mind-ai/12200748"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="e-btn e-btn-primary"
+              style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+            >
+              View Live Track Record on Myfxbook ↗
+            </a>
+          </div>
+        )}
+
+        {active === "mql5" && (
+          <div style={{ marginTop: 24 }}>
+            <a
+              href="https://www.mql5.com/en/market/product/183685"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="e-btn e-btn-primary"
+              style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+            >
+              View on MQL5 Market ↗
+            </a>
+          </div>
+        )}
 
         <hr className="e-divider-glass" id="faq" />
 
