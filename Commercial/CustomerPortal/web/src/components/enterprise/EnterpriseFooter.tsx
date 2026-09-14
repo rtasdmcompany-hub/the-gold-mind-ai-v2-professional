@@ -162,7 +162,7 @@ export function EnterpriseFooter() {
           <span className="e-footer-risk">{site.footer.riskLine}</span>
         </div>
 
-        <div
+               <div
           style={{
             textAlign: "center",
             paddingTop: 16,
@@ -172,19 +172,10 @@ export function EnterpriseFooter() {
           }}
         >
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: "4px 0" }}>
-            Site created and managed by{" "}
+            © {new Date().getFullYear()} RTAS Digital Marketing Company. All rights reserved.{" "}
             <strong style={{ color: "rgba(255,255,255,0.7)" }}>
-              RTAS Digital Marketing Company
-            </strong>
-          </p>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: "4px 0" }}>
-            A Project By:{" "}
-            <strong style={{ color: "rgba(255,255,255,0.7)" }}>
-              RTAS Group Of Companies
-            </strong>
+              THE GOLD MIND AI PROFESSIONAL
+            </strong>{" "}
+            is developed and operated by RTAS Digital Marketing Company. A Project of RTAS GROUP OF COMPANIES.
           </p>
         </div>
-      </div>
-    </footer>
-  );
-}
