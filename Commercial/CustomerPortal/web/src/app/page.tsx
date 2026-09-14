@@ -14,14 +14,14 @@ import { brand } from "@/lib/brand";
 export const metadata: Metadata = {
   title: "Official Website",
   description:
-    `${brand.productFullName} — institutional-grade MetaTrader 5 Expert Advisor. Licensed, certified, and enterprise-ready.`,
+    `${brand.productFullName} — institutional-grade MetaTrader 5 Expert Advisor. Licensed, verified, and enterprise-ready.`,
 };
 
 const FEATURES = [
   {
     icon: "◆",
-    title: "Certified Core Engine",
-    desc: "Frozen SHA-256 certified trading core operating exclusively on MetaTrader 5 Professional.",
+    title: "Verified Core Engine",
+    desc: "SHA-256 verified trading core operating exclusively on MetaTrader 5 Professional.",
   },
   {
     icon: "◇",
