@@ -161,6 +161,29 @@ export function EnterpriseFooter() {
           <span className="e-footer-copy">{site.footer.copyrightLine}</span>
           <span className="e-footer-risk">{site.footer.riskLine}</span>
         </div>
+
+        <div
+          style={{
+            textAlign: "center",
+            paddingTop: 16,
+            paddingBottom: 8,
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            marginTop: 12,
+          }}
+        >
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: "4px 0" }}>
+            Site created and managed by{" "}
+            <strong style={{ color: "rgba(255,255,255,0.7)" }}>
+              RTAS Digital Marketing Company
+            </strong>
+          </p>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: "4px 0" }}>
+            A Project By:{" "}
+            <strong style={{ color: "rgba(255,255,255,0.7)" }}>
+              RTAS Group Of Companies
+            </strong>
+          </p>
+        </div>
       </div>
     </footer>
   );
