@@ -14,23 +14,23 @@ export const metadata: Metadata = {
 const ORDER = product.planOrder;
 
 const FEATURES = [
-  "Certified Core EA (MT5)",
-  "Customer Portal access",
-  "License activation & device binding",
+  "MT5 Expert Advisor (.ex5 binary)",
+  "Core Gold (XAUUSD) Strategy Access",
+  "Built-in Risk Management Controls",
+  "Customer Portal & License Manager",
   "Checksum-verified installer downloads",
-  "Update center & release notes",
-  "Support ticket intake",
-  "Knowledge base access",
-  "AI commercial assistant",
+  "Automatic Strategy Updates",
+  "Knowledge Base & Installation Guide",
+  "Priority Customer Support",
 ];
 
 const COMPARE = [
-  { feature: "Certified Core EA", trial: true, monthly: true, yearly: true, lifetime: true },
+  { feature: "MT5 Expert Advisor (.ex5)", trial: true, monthly: true, yearly: true, lifetime: true },
   { feature: "Customer Portal", trial: true, monthly: true, yearly: true, lifetime: true },
   { feature: "Device activation", trial: true, monthly: true, yearly: true, lifetime: true },
   { feature: "Installer downloads", trial: true, monthly: true, yearly: true, lifetime: true },
   { feature: "Update pipeline", trial: true, monthly: true, yearly: true, lifetime: true },
-  { feature: "Priority support", trial: false, monthly: false, yearly: true, lifetime: true },
+  { feature: "Priority support", trial: false, false: false, yearly: true, lifetime: true },
   { feature: "Lifetime updates", trial: false, monthly: false, yearly: false, lifetime: true },
 ];
 
@@ -42,8 +42,7 @@ export default function PricingPage() {
           <p className="e-eyebrow">Enterprise Licensing</p>
           <h1 className="e-section-title">Professional Pricing</h1>
           <p className="e-section-sub">
-            Website Edition licensing via Customer Portal. No guaranteed profits. Past performance is not future
-            results.
+            Enterprise licensing via Customer Portal. No guaranteed profits. Past performance is not indicative of future results.
           </p>
         </ScrollReveal>
       </div>
@@ -73,7 +72,7 @@ export default function PricingPage() {
                       ))}
                     </ul>
                     <Link href="/login" className={`e-btn ${featured ? "e-btn-primary" : "e-btn-ghost"}`} style={{ width: "100%" }}>
-                      Get Started
+                      {code === "trial" ? "Start Free Trial" : "Get Access"}
                     </Link>
                   </div>
                 </ScrollReveal>
@@ -122,6 +121,29 @@ export default function PricingPage() {
           <p style={{ textAlign: "center", marginTop: 32, fontSize: 13, color: "var(--e-text-dim)" }}>
             Checkout is processed securely through our configured payment provider.
           </p>
+        </div>
+      </section>
+
+      <hr className="e-divider" />
+
+      <section className="e-section">
+        <div className="e-container" style={{ maxWidth: 720 }}>
+          <ScrollReveal>
+            <div
+              className="e-glass-card"
+              style={{ padding: 32 }}
+            >
+              <h3 style={{ fontSize: 16, color: "var(--e-gold)", marginBottom: 12 }}>
+                Refund Policy
+              </h3>
+              <p style={{ fontSize: 13, color: "var(--e-text-muted)", lineHeight: 1.7, marginBottom: 8 }}>
+                Due to the digital nature of this software, all sales are final once the license key has been activated. However, we offer a 14-day free trial so you can evaluate the software before purchasing.
+              </p>
+              <p style={{ fontSize: 13, color: "var(--e-text-muted)", lineHeight: 1.7 }}>
+                If you experience technical issues preventing activation or operation, contact support within 7 days of purchase for assistance.
+              </p>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
     </EnterpriseShell>
