@@ -162,7 +162,7 @@ export function EnterpriseFooter() {
           <span className="e-footer-risk">{site.footer.riskLine}</span>
         </div>
 
-               <div
+        <div
           style={{
             textAlign: "center",
             paddingTop: 16,
@@ -179,3 +179,7 @@ export function EnterpriseFooter() {
             is developed and operated by RTAS Digital Marketing Company. A Project of RTAS GROUP OF COMPANIES.
           </p>
         </div>
+      </div>
+    </footer>
+  );
+}
