@@ -102,6 +102,40 @@ export function SoftwareShowcase() {
             </div>
           </div>
         </ScrollReveal>
+        <ScrollReveal delay={2}>
+          <p
+            style={{
+              textAlign: "center",
+              fontSize: 11,
+              color: "var(--e-text-dim)",
+              marginTop: 16,
+              maxWidth: 700,
+              marginLeft: "auto",
+              marginRight: "auto",
+              lineHeight: 1.6,
+            }}
+          >
+            * Performance data shown is historical backtest / example demo data for illustrative purposes only. Past performance does not guarantee future results. Live trading results will vary based on market conditions, broker execution, and other factors. Verify live track record on{" "}
+            <a
+              href="https://www.myfxbook.com/portfolio/gold-mind-ai/12200748"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--e-gold, #b89b5f)", textDecoration: "underline" }}
+            >
+              Myfxbook
+            </a>{" "}
+            or{" "}
+            <a
+              href="https://www.mql5.com/en/market/product/183685"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--e-gold, #b89b5f)", textDecoration: "underline" }}
+            >
+              MQL5 Market
+            </a>
+            .
+          </p>
+        </ScrollReveal>
       </div>
     </section>
   );
