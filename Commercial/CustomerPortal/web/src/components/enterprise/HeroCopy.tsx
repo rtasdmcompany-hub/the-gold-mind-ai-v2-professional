@@ -10,7 +10,9 @@ export function HeroCopy() {
     <>
       <p className="e-eyebrow">{hero.eyebrow}</p>
       <h1 className="e-hero-title">{hero.title}</h1>
-      <p className="e-lead">{hero.lead}</p>
+      <p className="e-lead">
+        {(hero.lead || "").replace(/certified/gi, "verified")}
+      </p>
       <div className="e-btn-group">
         <Link href={hero.ctaPrimaryHref || "/pricing"} className="e-btn e-btn-primary">
           {hero.ctaPrimaryLabel || "View Pricing"}
