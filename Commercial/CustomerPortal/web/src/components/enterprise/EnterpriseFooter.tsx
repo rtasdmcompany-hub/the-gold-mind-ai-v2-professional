@@ -161,5 +161,7 @@ export function EnterpriseFooter() {
           <span className="e-footer-copy">{site.footer.copyrightLine}</span>
           <span className="e-footer-risk">{site.footer.riskLine}</span>
         </div>
+      </div>
+    </footer>
   );
 }
