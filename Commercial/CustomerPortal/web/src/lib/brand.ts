@@ -5,7 +5,7 @@
  * website, emails, copyright, and social links.
  *
  * Override any value via environment (prefer NEXT_PUBLIC_BRAND_* for display
- * strings so Client Components stay consistent). Defaults are THE GOLD MIND
+ * strings so Client Components stay consistent). Defaults are RTAS GOLD MIND
  * placeholders until custom domain cutover.
  *
  * Do not hardcode brand strings elsewhere â€” import from this module.
@@ -37,7 +37,7 @@ export const brandDomain = firstEnv(
 
 const brandName = firstEnv(
   ["NEXT_PUBLIC_BRAND_NAME", "BRAND_NAME"],
-  "THE GOLD MIND"
+  "RTAS GOLD MIND"
 );
 const companyName = firstEnv(
   ["NEXT_PUBLIC_BRAND_COMPANY", "BRAND_COMPANY"],
@@ -45,11 +45,11 @@ const companyName = firstEnv(
 );
 const productName = firstEnv(
   ["NEXT_PUBLIC_BRAND_PRODUCT", "BRAND_PRODUCT"],
-  "THE GOLD MIND PROFESSIONAL"
+  "RTAS GOLD MIND PROFESSIONAL"
 );
 const productFullName = firstEnv(
   ["NEXT_PUBLIC_BRAND_PRODUCT_FULL", "BRAND_PRODUCT_FULL"],
-  "THE GOLD MIND AI v2.0 PROFESSIONAL"
+  "RTAS GOLD MIND AI v2.0 PROFESSIONAL"
 );
 const productShortName = firstEnv(
   ["NEXT_PUBLIC_BRAND_PRODUCT_SHORT", "BRAND_PRODUCT_SHORT"],
@@ -141,9 +141,9 @@ export const brand = {
   brandName,
   /** Legal / company display name */
   companyName,
-  /** Commercial product lockup (e.g. THE GOLD MIND PROFESSIONAL) */
+  /** Commercial product lockup (e.g. RTAS GOLD MIND PROFESSIONAL) */
   productName,
-  /** Full product title including edition (e.g. THE GOLD MIND AI v2.0 PROFESSIONAL) */
+  /** Full product title including edition (e.g. RTAS GOLD MIND AI v2.0 PROFESSIONAL) */
   productFullName,
   /** Alias for brandName */
   productShortName,
@@ -193,9 +193,9 @@ export const brand = {
   },
 
   copyrightYear,
-  /** e.g. Â© 2026 THE GOLD MIND */
+  /** e.g. Â© 2026 RTAS GOLD MIND */
   copyright: `Â© ${copyrightYear} ${companyName}`,
-  /** e.g. Â© 2026 THE GOLD MIND PROFESSIONAL */
+  /** e.g. Â© 2026 RTAS GOLD MIND PROFESSIONAL */
   copyrightProduct: `Â© ${copyrightYear} ${productName}`,
   copyrightNotice: `Â© ${copyrightYear} ${companyName}. All rights reserved.`,
 
