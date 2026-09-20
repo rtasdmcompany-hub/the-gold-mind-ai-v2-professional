@@ -1,0 +1,17 @@
+{
+  "name": "THE GOLD MIND — Customer Portal",
+  "install": "npm install",
+  "terminals": [
+    {
+      "name": "portal-dev",
+      "command": "AUTH_URL=http://localhost:3000 NEXTAUTH_URL=http://localhost:3000 NEXT_PUBLIC_APP_URL=http://localhost:3000 npm run dev",
+      "description": "Next.js dev server for the Customer Portal (http://localhost:3000)."
+    }
+  ],
+  "ports": [
+    {
+      "name": "Customer Portal",
+      "port": 3000
+    }
+  ]
+}

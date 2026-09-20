@@ -65,7 +65,9 @@ Commercial/Installer/Professional/tools/launcher/obj/
 Experts/*.log
 
 # Cursor / agent
-.cursor/
+.cursor/*
+# Keep the Cloud Agent environment definition versioned with the repo.
+!.cursor/environment.json
 agent-transcripts/
 
 # Deferred until gh token has workflow scope
