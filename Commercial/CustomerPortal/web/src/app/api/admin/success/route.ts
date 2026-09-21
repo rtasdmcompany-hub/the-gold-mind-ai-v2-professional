@@ -20,35 +20,44 @@ export async function GET(req: Request) {
     async (ctx) => {
       const url = new URL(req.url);
       const view = url.searchParams.get("view") || "dashboard";
-      ensureDemoIssues();
-      ensureDemoFeedback();
+      
+      // ✅ FIX: Sabhi ensure functions ke aage await laga diya gaya hai
+      await ensureDemoIssues();
+      await ensureDemoFeedback();
+
       if (view === "customers") {
         return apiSuccess(
           {
-            summary: getCustomerSuccessSummary(),
-            directory: listCustomerHealthDirectory(url.searchParams.get("q") || undefined),
+            // ✅ FIX: Await added to be safe
+            summary: await getCustomerSuccessSummary(),
+            directory: await listCustomerHealthDirectory(url.searchParams.get("q") || undefined),
           },
           ctx.requestId
         );
       }
       if (view === "customer") {
         const email = url.searchParams.get("email") || "";
-        return apiSuccess({ profile: email ? getCustomerHealth(email) : null }, ctx.requestId);
+        // ✅ FIX: Await added to be safe
+        return apiSuccess({ profile: email ? await getCustomerHealth(email) : null }, ctx.requestId);
       }
       if (view === "support") {
-        return apiSuccess({ analytics: getSupportAnalytics() }, ctx.requestId);
+        // ✅ FIX: Await added to be safe
+        return apiSuccess({ analytics: await getSupportAnalytics() }, ctx.requestId);
       }
       if (view === "stabilization") {
         return apiSuccess({ stabilization: await getProductionStabilization() }, ctx.requestId);
       }
       if (view === "kb") {
-        return apiSuccess({ stats: getKbStats(), articles: listKbArticles() }, ctx.requestId);
+        // ✅ FIX: Await added to be safe
+        return apiSuccess({ stats: await getKbStats(), articles: await listKbArticles() }, ctx.requestId);
       }
       if (view === "issues") {
-        return apiSuccess({ summary: getIssueSummary() }, ctx.requestId);
+        // ✅ FIX: Await added to be safe
+        return apiSuccess({ summary: await getIssueSummary() }, ctx.requestId);
       }
       if (view === "feedback") {
-        return apiSuccess({ summary: getFeedbackSummary() }, ctx.requestId);
+        // ✅ FIX: Await added to be safe
+        return apiSuccess({ summary: await getFeedbackSummary() }, ctx.requestId);
       }
       return apiSuccess({ dashboard: await getSuccessExecutiveDashboard() }, ctx.requestId);
     }
