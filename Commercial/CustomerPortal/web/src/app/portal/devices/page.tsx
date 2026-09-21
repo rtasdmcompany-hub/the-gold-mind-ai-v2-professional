@@ -10,8 +10,11 @@ export default async function DevicesPage() {
   await ensureSeedData();
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
-  const devices = listDevicesForCustomer(session.user.email);
-  const licenses = listLicensesForCustomer(session.user.email);
+  
+  const devices = listDevicesForCustomer(session.user.email); // Ye abhi sync hai, isliye await nahi
+  // ✅ FIX: Yahan 'await' add kiya gaya hai
+  const licenses = await listLicensesForCustomer(session.user.email);
+  
   const limit = licenses.find((l) => l.status === "active" || l.status === "grace")?.seatsMax;
 
   return (
