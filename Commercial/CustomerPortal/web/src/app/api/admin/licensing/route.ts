@@ -22,9 +22,10 @@ export async function GET(req: Request) {
       });
     });
 
-    let licenses = listAllLicensesAdmin();
-    let devices = listAllDevicesAdmin();
-    let subscriptions = listAllSubscriptionsAdmin();
+    // ✅ Yahan await add kiya gaya hai
+    let licenses = await listAllLicensesAdmin();
+    let devices = await listAllDevicesAdmin();
+    let subscriptions = await listAllSubscriptionsAdmin();
     const audit = readStore().audit.slice(0, 100);
 
     if (q) {
