@@ -9,16 +9,20 @@ export async function GET(req: Request) {
     req,
     { auth: "admin", permission: "admin.dashboard", rateLimit: { limit: 60, windowSec: 60 }, auditAction: "admin_action" },
     async (ctx) => {
-      ensureSeedData();
+      // ✅ FIX: Yahan 'await' add kiya gaya hai
+      await ensureSeedData();
+      
       ensureDemoTickets();
       const url = new URL(req.url);
       const view = url.searchParams.get("view") || "dashboard";
+      
       if (view === "bi") {
         return apiSuccess({ bi: getBusinessIntelligence() }, ctx.requestId);
       }
       if (view === "customers") {
         return apiSuccess({ customers: searchCustomers(url.searchParams.get("q") || "") }, ctx.requestId);
       }
+      
       const dash = await getEnterpriseDashboardWithHealth();
       return apiSuccess({ dashboard: dash }, ctx.requestId);
     }
