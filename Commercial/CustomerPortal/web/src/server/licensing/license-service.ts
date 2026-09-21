@@ -77,7 +77,7 @@ async function findOldestTrialForEmailNorm(emailNorm: string): Promise<Partial<L
     .select("*")
     .eq("type", "trial")
     .neq("status", "revoked")
-    .eq("customer_email", emailNorm) // Using customer_email as fallback
+    .eq("customer_email", emailNorm)
     .order("created_at", { ascending: true })
     .limit(1)
     .single();
@@ -436,6 +436,6 @@ export async function validateLicenseOnline(input: {
 }
 
 export async function listAllLicensesAdmin(): Promise<LicenseRecord[]> {
-     const { data } = await supabaseAdmin.from("licenses").select("*");
-     return (data?.map(mapSupabaseLicense) as LicenseRecord[]) || [];
-   }
+  const { data } = await supabaseAdmin.from("licenses").select("*");
+  return (data?.map(mapSupabaseLicense) as LicenseRecord[]) || [];
+}
