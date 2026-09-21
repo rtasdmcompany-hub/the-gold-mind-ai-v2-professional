@@ -28,7 +28,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = activateLicense({
+    // ✅ FIX: Yahan 'await' add kar diya gaya hai
+    const result = await activateLicense({
       plaintextKey: licenseKey,
       customerEmail,
       deviceName,
