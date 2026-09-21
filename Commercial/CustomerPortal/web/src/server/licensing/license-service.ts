@@ -435,7 +435,7 @@ export async function validateLicenseOnline(input: {
   return { ok: true, status: lic.status as LicenseStatus, grace: lic.status === "grace", token: createValidationToken(lic.id!, device.id, email) };
 }
 
-export async function listAllLicensesAdmin(): Promise<Partial<LicenseRecord>[]> {
-  const { data } = await supabaseAdmin.from("licenses").select("*");
-  return data?.map(mapSupabaseLicense) || [];
-}
+export async function listAllLicensesAdmin(): Promise<LicenseRecord[]> {
+     const { data } = await supabaseAdmin.from("licenses").select("*");
+     return (data?.map(mapSupabaseLicense) as LicenseRecord[]) || [];
+   }

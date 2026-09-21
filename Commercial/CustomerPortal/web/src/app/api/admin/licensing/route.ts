@@ -22,39 +22,42 @@ export async function GET(req: Request) {
       });
     });
 
-    // ✅ Sirf licenses ko await karein (kyunke ye async hai)
-    let licenses = await listAllLicensesAdmin();
+    // ✅ Await the async function
+    const licensesData = await listAllLicensesAdmin();
     
-    // ❌ Ye bina await ke (kyunke ye abhi sync hain)
-    let devices = listAllDevicesAdmin();
-    let subscriptions = listAllSubscriptionsAdmin();
-    
+    // ✅ Ye sync hain
+    const devices = listAllDevicesAdmin();
+    const subscriptions = listAllSubscriptionsAdmin();
     const audit = readStore().audit.slice(0, 100);
 
-    if (q) {
-      licenses = licenses.filter(
-        (l) => l.customerEmail.includes(q) || l.id.includes(q) || l.keyPrefix.toLowerCase().includes(q)
-      );
-      const ids = new Set(licenses.map((l) => l.id));
-      const emails = new Set(licenses.map((l) => l.customerEmail));
-      devices = devices.filter((d) => ids.has(d.licenseId) || d.customerEmail.includes(q));
-      subscriptions = subscriptions.filter((s) => ids.has(s.licenseId) || emails.has(s.customerEmail));
-    }
+    // ✅ Safe filtering with fallbacks for TypeScript
+    const filteredLicenses = licensesData.filter(
+      (l) => 
+        (l.customerEmail || "").includes(q) || 
+        (l.id || "").includes(q) || 
+        (l.keyPrefix || "").toLowerCase().includes(q)
+    );
+
+    const ids = new Set(filteredLicenses.map((l) => l.id));
+    const emails = new Set(filteredLicenses.map((l) => l.customerEmail));
+    
+    const filteredDevices = devices.filter((d) => ids.has(d.licenseId) || (d.customerEmail || "").includes(q));
+    const filteredSubscriptions = subscriptions.filter((s) => ids.has(s.licenseId) || emails.has(s.customerEmail));
 
     return NextResponse.json({
-      licenses: licenses.map((l) => ({
-        id: l.id,
-        customerEmail: l.customerEmail,
-        customerName: l.customerName,
-        keyMasked: maskLicenseKey(`${l.keyPrefix}-****-****-${l.keyLast4}`),
+      licenses: filteredLicenses.map((l) => ({
+        id: l.id || "",
+        customerEmail: l.customerEmail || "",
+        customerName: l.customerName || "",
+        keyMasked: maskLicenseKey(`${l.keyPrefix || ""}-****-****-${l.keyLast4 || ""}`),
         type: l.type,
         status: l.status,
-        seatsMax: l.seatsMax,
+        seatsMax: l.seatsMax || 0,
         expiresAt: l.expiresAt,
         activatedAt: l.activatedAt,
         lastValidatedAt: l.lastValidatedAt,
       })),
-      devices: devices.map((d) => ({
+      devices: filteredDevices.map((d) => ({
         id: d.id,
         licenseId: d.licenseId,
         customerEmail: d.customerEmail,
@@ -63,7 +66,7 @@ export async function GET(req: Request) {
         activationDate: d.activationDate,
         lastActiveAt: d.lastActiveAt,
       })),
-      subscriptions,
+      subscriptions: filteredSubscriptions,
       audit,
     });
   } catch (e) {
