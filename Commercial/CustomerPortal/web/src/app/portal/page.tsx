@@ -24,10 +24,12 @@ export default async function DashboardPage() {
   const email = session?.user?.email?.toLowerCase() || "";
   const name = session?.user?.name || "Customer";
   
-  // ✅ FIX: Sabhi service calls ko await kar diya gaya hai taake Promise resolve ho jaye
+  // ✅ Sirf listLicensesForCustomer async hai, isliye sirf usay await karenge
   const licenses = email ? await listLicensesForCustomer(email) : [];
-  const devices = email ? await listDevicesForCustomer(email) : [];
-  const subs = email ? await listSubscriptionsForCustomer(email) : [];
+  
+  // ✅ Ye synchronous hain, isliye await nahi chahiye
+  const devices = email ? listDevicesForCustomer(email) : [];
+  const subs = email ? listSubscriptionsForCustomer(email) : [];
   
   const billing = email ? getBillingSummary(email) : { invoices: [], payments: [], subscriptions: [], emails: [] };
   const tickets = email ? listSupportTickets({ customerEmail: email }) : [];
