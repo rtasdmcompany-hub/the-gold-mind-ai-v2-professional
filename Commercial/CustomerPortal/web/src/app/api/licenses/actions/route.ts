@@ -23,7 +23,8 @@ export async function POST(req: Request) {
       }
       assertDurableStoreForLicensing();
       await ensureStoreLoaded();
-      const result = createLicense({
+      // ✅ FIX: await add kiya
+      const result = await createLicense({
         customerEmail: s.email,
         customerName: s.name,
         type,
@@ -41,7 +42,8 @@ export async function POST(req: Request) {
     if (action === "activate") {
       assertDurableStoreForLicensing();
       await ensureStoreLoaded();
-      const result = activateLicense({
+      // ✅ FIX: await add kiya
+      const result = await activateLicense({
         plaintextKey: String(body.licenseKey || ""),
         customerEmail: s.email,
         deviceName: String(body.deviceName || "API Device"),
@@ -54,7 +56,8 @@ export async function POST(req: Request) {
     if (action === "validate") {
       assertDurableStoreForLicensing();
       await ensureStoreLoaded();
-      const result = validateLicenseOnline({
+      // ✅ FIX: await add kiya
+      const result = await validateLicenseOnline({
         licenseId: String(body.licenseId || ""),
         deviceId: String(body.deviceId || ""),
         customerEmail: s.email,
