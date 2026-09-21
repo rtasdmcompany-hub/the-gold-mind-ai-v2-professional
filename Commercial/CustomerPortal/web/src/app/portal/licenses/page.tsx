@@ -13,11 +13,13 @@ export default async function LicensesPage() {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
 
-  let licenses: ReturnType<typeof listLicensesForCustomer> = [];
+  // ✅ FIX: Type ko Awaited mein update kiya gaya hai
+  let licenses: Awaited<ReturnType<typeof listLicensesForCustomer>> = [];
   let loadError: string | null = null;
   try {
     await ensureSeedData();
-    licenses = listLicensesForCustomer(session.user.email);
+    // ✅ FIX: Yahan 'await' add kiya gaya hai
+    licenses = await listLicensesForCustomer(session.user.email);
   } catch (e) {
     loadError = e instanceof Error ? e.message : "LICENSE_PAGE_LOAD_FAILED";
     console.error("[portal/licenses] load failed", loadError);
