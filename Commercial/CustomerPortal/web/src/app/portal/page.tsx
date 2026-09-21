@@ -19,16 +19,16 @@ export default async function DashboardPage() {
   await ensureSeedData();
   await ensureBillingStoreLoaded();
   await ensureSupportStoreLoaded();
+  
   const session = await auth();
   const email = session?.user?.email?.toLowerCase() || "";
   const name = session?.user?.name || "Customer";
   
-  // ✅ FIX: Yahan 'await' add kiya gaya hai
+  // ✅ FIX: Sabhi service calls ko await kar diya gaya hai taake Promise resolve ho jaye
   const licenses = email ? await listLicensesForCustomer(email) : [];
+  const devices = email ? await listDevicesForCustomer(email) : [];
+  const subs = email ? await listSubscriptionsForCustomer(email) : [];
   
-  // Ye abhi sync hain, isliye await nahi chahiye
-  const devices = email ? listDevicesForCustomer(email) : [];
-  const subs = email ? listSubscriptionsForCustomer(email) : [];
   const billing = email ? getBillingSummary(email) : { invoices: [], payments: [], subscriptions: [], emails: [] };
   const tickets = email ? listSupportTickets({ customerEmail: email }) : [];
   
