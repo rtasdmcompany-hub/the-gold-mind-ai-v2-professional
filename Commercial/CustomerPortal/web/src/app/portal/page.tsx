@@ -22,11 +22,16 @@ export default async function DashboardPage() {
   const session = await auth();
   const email = session?.user?.email?.toLowerCase() || "";
   const name = session?.user?.name || "Customer";
-  const licenses = email ? listLicensesForCustomer(email) : [];
+  
+  // ✅ FIX: Yahan 'await' add kiya gaya hai
+  const licenses = email ? await listLicensesForCustomer(email) : [];
+  
+  // Ye abhi sync hain, isliye await nahi chahiye
   const devices = email ? listDevicesForCustomer(email) : [];
   const subs = email ? listSubscriptionsForCustomer(email) : [];
   const billing = email ? getBillingSummary(email) : { invoices: [], payments: [], subscriptions: [], emails: [] };
   const tickets = email ? listSupportTickets({ customerEmail: email }) : [];
+  
   const active = licenses.find((l) => l.status === "active" || l.status === "grace");
   const activeDevices = devices.filter((d) => d.status === "active").length;
   const sub = subs[0] || billing.subscriptions[0];
