@@ -22,10 +22,13 @@ export async function GET(req: Request) {
       });
     });
 
-    // ✅ Yahan await add kiya gaya hai
+    // ✅ Sirf licenses ko await karein (kyunke ye async hai)
     let licenses = await listAllLicensesAdmin();
-    let devices = await listAllDevicesAdmin();
-    let subscriptions = await listAllSubscriptionsAdmin();
+    
+    // ❌ Ye bina await ke (kyunke ye abhi sync hain)
+    let devices = listAllDevicesAdmin();
+    let subscriptions = listAllSubscriptionsAdmin();
+    
     const audit = readStore().audit.slice(0, 100);
 
     if (q) {
