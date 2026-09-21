@@ -1,5 +1,4 @@
-import { createLicense } from "./license-service";
-import { activateLicense } from "./license-service";
+import { createLicense, activateLicense } from "./license-service";
 import { ensureStoreLoaded, flushStore, readStore } from "./store";
 
 const DEMO_EMAIL = "demo@goldmind.local";
@@ -24,7 +23,8 @@ export async function ensureSeedData(): Promise<{ demoKey?: string; adminKey?: s
     return {};
   }
 
-  const demo = createLicense({
+  // ✅ FIX: Yahan 'await' add kiya gaya hai
+  const demo = await createLicense({
     customerEmail: DEMO_EMAIL,
     customerName: "Demo Customer",
     type: "yearly",
@@ -32,7 +32,9 @@ export async function ensureSeedData(): Promise<{ demoKey?: string; adminKey?: s
     skipEmail: true,
     bypassIpCheck: true,
   });
-  const admin = createLicense({
+  
+  // ✅ FIX: Yahan 'await' add kiya gaya hai
+  const admin = await createLicense({
     customerEmail: ADMIN_EMAIL,
     customerName: "Portal Admin",
     type: "lifetime",
@@ -40,11 +42,13 @@ export async function ensureSeedData(): Promise<{ demoKey?: string; adminKey?: s
     skipEmail: true,
     bypassIpCheck: true,
   });
+  
   if (!demo.ok || !admin.ok) {
     throw new Error("SEED_LICENSE_CREATE_FAILED");
   }
 
-  activateLicense({
+  // ✅ FIX: Yahan 'await' add kiya gaya hai
+  await activateLicense({
     plaintextKey: demo.plaintextKey,
     customerEmail: DEMO_EMAIL,
     deviceName: "Trading-PC-Home",
