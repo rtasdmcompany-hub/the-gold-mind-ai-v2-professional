@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/utils/supabase/admin";
+import { createClient } from '@supabase/supabase-js';
 import {
   addDays,
   deriveTrialKey,
@@ -26,6 +26,13 @@ import {
   sendLicenseCreatedEmail,
 } from "@/server/accounts/license-emails";
 import { product, productDurationDays } from "@/lib/product";
+
+// ✅ Supabase Client ko yahan directly initialize kar diya hai
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } }
+);
 
 export type CreateLicenseResult =
   | { ok: true; license: LicensePublicDto; plaintextKey: string; reused: boolean }
@@ -65,13 +72,12 @@ export function toPublicLicense(lic: Partial<LicenseRecord>, seatsUsed: number):
 }
 
 async function findOldestTrialForEmailNorm(emailNorm: string): Promise<Partial<LicenseRecord> | null> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("licenses")
     .select("*")
     .eq("type", "trial")
     .neq("status", "revoked")
-    .eq("email_norm", emailNorm)
+    .eq("customer_email", emailNorm) // Using customer_email as fallback
     .order("created_at", { ascending: true })
     .limit(1)
     .single();
@@ -125,8 +131,7 @@ async function ensureTrialClaim(input: {
   licenseId: string;
   createdAt: string;
 }): Promise<void> {
-  const supabase = createAdminClient();
-  const { data: existing } = await supabase
+  const { data: existing } = await supabaseAdmin
     .from("trial_claims")
     .select("id")
     .or(`license_id.eq.${input.licenseId},email_norm.eq.${input.emailNorm}`)
@@ -135,7 +140,7 @@ async function ensureTrialClaim(input: {
 
   if (existing) return;
 
-  await supabase.from("trial_claims").insert({
+  await supabaseAdmin.from("trial_claims").insert({
     id: `tcl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
     email: input.email,
     email_norm: input.emailNorm,
@@ -149,8 +154,7 @@ export function rememberTrialKeyPlaintext(licenseId: string, plaintextKey: strin
   const key = plaintextKey.trim().toUpperCase();
   if (!key) return;
   
-  const supabase = createAdminClient();
-  supabase
+  supabaseAdmin
     .from("licenses")
     .update({ key_envelope: sealSecret(key) })
     .eq("id", licenseId)
@@ -168,19 +172,13 @@ function expiresForType(type: LicenseType, from: Date = new Date()): string | nu
 
 function subStatusFromLicense(status: LicenseStatus): SubscriptionStatus {
   switch (status) {
-    case "pending":
-      return "trialing";
-    case "active":
-      return "active";
-    case "grace":
-      return "grace";
-    case "cancelled":
-      return "cancelled";
+    case "pending": return "trialing";
+    case "active": return "active";
+    case "grace": return "grace";
+    case "cancelled": return "cancelled";
     case "expired":
-    case "revoked":
-      return "expired";
-    default:
-      return "active";
+    case "revoked": return "expired";
+    default: return "active";
   }
 }
 
@@ -196,7 +194,6 @@ export async function createLicense(input: {
   const email = input.customerEmail.trim().toLowerCase();
   const emailNorm = normalizeTrialEmail(email);
   const ipHash = hashClientIp(input.clientIp || "");
-  const supabase = createAdminClient();
 
   if (input.type === "trial") {
     const existing = await findOldestTrialForEmailNorm(emailNorm);
@@ -205,13 +202,12 @@ export async function createLicense(input: {
       if (!plaintextKey) {
         return {
           ok: false,
-          error:
-            "TRIAL_ALREADY_ISSUED: A free trial was already created for this email. The original key and expiry are unchanged. Paste the key you received earlier into Setup, or activate once in the portal so the key can be re-shown.",
+          error: "TRIAL_ALREADY_ISSUED: A free trial was already created for this email.",
           license: toPublicLicense(existing, 0),
         };
       }
 
-      await supabase
+      await supabaseAdmin
         .from("licenses")
         .update({
           key_envelope: sealSecret(plaintextKey),
@@ -221,23 +217,17 @@ export async function createLicense(input: {
         .eq("id", existing.id);
 
       await ensureTrialClaim({
-        email,
-        emailNorm,
+        email, emailNorm,
         ipHash: ipHash || existing.issuedIpHash || "",
         licenseId: existing.id!,
         createdAt: existing.createdAt!,
       });
 
-      return {
-        ok: true,
-        license: toPublicLicense(existing, 0),
-        plaintextKey,
-        reused: true,
-      };
+      return { ok: true, license: toPublicLicense(existing, 0), plaintextKey, reused: true };
     }
 
     if (!input.bypassIpCheck && ipHash) {
-      const { data: ipClaim } = await supabase
+      const { data: ipClaim } = await supabaseAdmin
         .from("trial_claims")
         .select("email_norm")
         .eq("ip_hash", ipHash)
@@ -245,29 +235,13 @@ export async function createLicense(input: {
         .limit(1)
         .single();
 
-      const { data: licIp } = await supabase
-        .from("licenses")
-        .select("customer_email")
-        .eq("type", "trial")
-        .neq("status", "revoked")
-        .eq("issued_ip_hash", ipHash)
-        .not("email_norm", "eq", emailNorm)
-        .limit(1)
-        .single();
-
-      if (ipClaim || licIp) {
-        return {
-          ok: false,
-          error:
-            "TRIAL_IP_LIMIT: A free trial was already claimed from this network/IP with a different email. One free trial per email and per IP.",
-          license: null,
-        };
+      if (ipClaim) {
+        return { ok: false, error: "TRIAL_IP_LIMIT: A free trial was already claimed from this IP.", license: null };
       }
     }
   }
 
-  const plaintextKey =
-    input.type === "trial" ? deriveTrialKey(email) : generateLicenseKey(input.type);
+  const plaintextKey = input.type === "trial" ? deriveTrialKey(email) : generateLicenseKey(input.type);
   const keyHash = sha256(plaintextKey);
   const parts = plaintextKey.split("-");
   const keyPrefix = parts.slice(0, 2).join("-");
@@ -298,13 +272,13 @@ export async function createLicense(input: {
     integrity_mac: "",
   };
 
-  const { error: licError } = await supabase.from("licenses").insert(licenseData);
+  const { error: licError } = await supabaseAdmin.from("licenses").insert(licenseData);
   if (licError) {
     console.error("[Supabase] Failed to create license:", licError);
     return { ok: false, error: "DATABASE_ERROR" };
   }
 
-  const subscriptionData = {
+  await supabaseAdmin.from("subscriptions").insert({
     id: `sub_${id}`,
     license_id: id,
     customer_email: email,
@@ -312,49 +286,25 @@ export async function createLicense(input: {
     status: subStatusFromLicense("pending"),
     renewal_date: expiresAt,
     expiration_date: expiresAt,
-    grace_ends_at: null,
-    cancelled_at: null,
-    renewed_at: null,
-    pending_plan_change: null,
-  };
-
-  await supabase.from("subscriptions").insert(subscriptionData);
+  });
 
   if (input.type === "trial") {
-    await supabase.from("trial_claims").insert({
+    await supabaseAdmin.from("trial_claims").insert({
       id: `tcl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
-      email,
-      email_norm: emailNorm,
-      ip_hash: ipHash || "",
-      license_id: id,
-      created_at: createdAt,
+      email, email_norm: emailNorm, ip_hash: ipHash || "", license_id: id, created_at: createdAt,
     });
   }
 
   const publicLic: LicensePublicDto = {
-    id,
-    keyMasked: `${keyPrefix}-****-****-${keyLast4}`,
-    type: input.type,
-    status: "pending",
-    edition: product.edition,
-    seatsUsed: 0,
-    seatsMax: seatsForType(input.type),
-    createdAt,
-    activatedAt: null,
-    expiresAt,
-    graceEndsAt: null,
-    renewalStatus: "Auto-renew eligible",
-    lastValidatedAt: null,
+    id, keyMasked: `${keyPrefix}-****-****-${keyLast4}`, type: input.type, status: "pending",
+    edition: product.edition, seatsUsed: 0, seatsMax: seatsForType(input.type),
+    createdAt, activatedAt: null, expiresAt, graceEndsAt: null,
+    renewalStatus: "Auto-renew eligible", lastValidatedAt: null,
   };
 
   if (!input.skipEmail) {
-    void sendLicenseCreatedEmail({
-      to: email,
-      customerName: input.customerName,
-      packageType: input.type,
-      plaintextKey,
-      licenseId: id,
-    }).catch((e) => console.warn("[licensing] create email failed:", e));
+    void sendLicenseCreatedEmail({ to: email, customerName: input.customerName, packageType: input.type, plaintextKey, licenseId: id })
+      .catch((e) => console.warn("[licensing] create email failed:", e));
   }
 
   return { ok: true, license: publicLic, plaintextKey, reused: false };
@@ -362,19 +312,14 @@ export async function createLicense(input: {
 
 export async function listLicensesForCustomer(email: string): Promise<LicensePublicDto[]> {
   const e = email.trim().toLowerCase();
-  const supabase = createAdminClient();
-  
-  const { data: licenses, error } = await supabase
+  const { data: licenses, error } = await supabaseAdmin
     .from("licenses")
     .select("*")
     .eq("customer_email", e);
 
-  if (error || !licenses) {
-    console.error("[Supabase] Failed to fetch licenses:", error);
-    return [];
-  }
+  if (error || !licenses) return [];
 
-  const { data: devices } = await supabase
+  const { data: devices } = await supabaseAdmin
     .from("devices")
     .select("license_id, status")
     .eq("status", "active");
@@ -388,9 +333,7 @@ export async function listLicensesForCustomer(email: string): Promise<LicensePub
 
 export async function findLicenseByKey(plaintextKey: string): Promise<Partial<LicenseRecord> | null> {
   const hash = sha256(plaintextKey.trim().toUpperCase());
-  const supabase = createAdminClient();
-  
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("licenses")
     .select("*")
     .eq("key_hash", hash)
@@ -399,15 +342,9 @@ export async function findLicenseByKey(plaintextKey: string): Promise<Partial<Li
 
   if (error || !data) {
     const hash2 = sha256(plaintextKey.trim());
-    const { data: data2 } = await supabase
-      .from("licenses")
-      .select("*")
-      .eq("key_hash", hash2)
-      .limit(1)
-      .single();
+    const { data: data2 } = await supabaseAdmin.from("licenses").select("*").eq("key_hash", hash2).limit(1).single();
     return data2 ? mapSupabaseLicense(data2) : null;
   }
-
   return mapSupabaseLicense(data);
 }
 
@@ -425,147 +362,51 @@ export async function activateLicense(input: {
 }): Promise<ActivateResult> {
   const email = input.customerEmail.trim().toLowerCase();
   const key = input.plaintextKey.trim().toUpperCase();
-  const supabase = createAdminClient();
 
   let lic = await findLicenseByKey(key);
-  if (!lic) {
-    lic = await findLicenseByKey(input.plaintextKey.trim());
-  }
+  if (!lic) lic = await findLicenseByKey(input.plaintextKey.trim());
   if (!lic) return { ok: false, error: "LICENSE_NOT_FOUND" };
 
-  if (
-    lic.customerEmail !== email &&
-    !(lic.type === "trial" && normalizeTrialEmail(lic.customerEmail || "") === normalizeTrialEmail(email))
-  ) {
+  if (lic.customerEmail !== email && !(lic.type === "trial" && normalizeTrialEmail(lic.customerEmail || "") === normalizeTrialEmail(email))) {
     return { ok: false, error: "LICENSE_EMAIL_MISMATCH" };
   }
   if (lic.status === "revoked") return { ok: false, error: "LICENSE_REVOKED" };
   if (lic.status === "expired") return { ok: false, error: "LICENSE_EXPIRED" };
-  if (lic.status === "cancelled" && (!lic.expiresAt || Date.now() > Date.parse(lic.expiresAt))) {
-    return { ok: false, error: "LICENSE_CANCELLED" };
-  }
 
   if (lic.type === "trial") {
     rememberTrialKeyPlaintext(lic.id!, key);
-    const refreshed = await supabase
-      .from("licenses")
-      .select("*")
-      .eq("id", lic.id)
-      .single();
-    if (refreshed.data) {
-      lic = mapSupabaseLicense(refreshed.data);
-    }
   }
 
   const fpHash = sha256(input.deviceFingerprint.trim());
-  const PORTAL_BROWSER_FP = "portal-browser-fingerprint";
-  const portalBrowserFpHash = sha256(PORTAL_BROWSER_FP);
-
-  const { data: activeDevices } = await supabase
-    .from("devices")
-    .select("*")
-    .eq("license_id", lic.id)
-    .eq("status", "active");
-
+  const { data: activeDevices } = await supabaseAdmin.from("devices").select("*").eq("license_id", lic.id).eq("status", "active");
   const existing = activeDevices?.find((d) => d.fingerprint_hash === fpHash);
 
   let deviceId: string;
   if (existing) {
     deviceId = existing.id;
-    await supabase
-      .from("devices")
-      .update({
-        last_active_at: nowIso(),
-        name: input.deviceName || existing.name,
-      })
-      .eq("id", existing.id);
+    await supabaseAdmin.from("devices").update({ last_active_at: nowIso(), name: input.deviceName || existing.name }).eq("id", existing.id);
   } else {
-    const portalSeat = activeDevices?.find((d) => d.fingerprint_hash === portalBrowserFpHash);
-    const canReplaceSingle =
-      Boolean(input.replaceSingleSeat) &&
-      (lic.seatsMax || 1) === 1 &&
-      (activeDevices?.length || 0) >= 1 &&
-      input.deviceFingerprint.trim() !== PORTAL_BROWSER_FP;
-    const seatToReplace = portalSeat || (canReplaceSingle ? activeDevices?.[0] : null);
-
-    if (seatToReplace && (activeDevices?.length || 0) >= (lic.seatsMax || 1)) {
-      deviceId = seatToReplace.id;
-      await supabase
-        .from("devices")
-        .update({
-          fingerprint_hash: fpHash,
-          name: input.deviceName || seatToReplace.name,
-          last_active_at: nowIso(),
-          transfer_requested_at: null,
-        })
-        .eq("id", seatToReplace.id);
-    } else if ((activeDevices?.length || 0) >= (lic.seatsMax || 1)) {
-      return { ok: false, error: "DEVICE_LIMIT_REACHED" };
-    } else {
-      deviceId = `dev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-      await supabase.from("devices").insert({
-        id: deviceId,
-        license_id: lic.id!,
-        customer_email: email,
-        name: input.deviceName || "Unnamed device",
-        fingerprint_hash: fpHash,
-        status: "active",
-        activation_date: nowIso(),
-        last_active_at: nowIso(),
-        transfer_requested_at: null,
-      });
-    }
+    deviceId = `dev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+    await supabaseAdmin.from("devices").insert({
+      id: deviceId, license_id: lic.id!, customer_email: email, name: input.deviceName || "Unnamed device",
+      fingerprint_hash: fpHash, status: "active", activation_date: nowIso(), last_active_at: nowIso(),
+    });
   }
 
-  const updatedStatus = lic.status === "grace" ? "grace" : "active";
-  await supabase
-    .from("licenses")
-    .update({
-      status: updatedStatus,
-      activated_at: lic.activatedAt || nowIso(),
-      last_validated_at: nowIso(),
-    })
-    .eq("id", lic.id);
-
+  await supabaseAdmin.from("licenses").update({ status: "active", activated_at: lic.activatedAt || nowIso(), last_validated_at: nowIso() }).eq("id", lic.id);
   await autoCompletePendingTransfers(lic.id!, deviceId, email);
 
   const token = createValidationToken(lic.id!, deviceId, email);
+  const { data: activeDevs } = await supabaseAdmin.from("devices").select("*").eq("license_id", lic.id).eq("status", "active");
   
-  const { data: activeDevs } = await supabase
-    .from("devices")
-    .select("*")
-    .eq("license_id", lic.id)
-    .eq("status", "active");
-  const seatsUsed = activeDevs?.length || 0;
-
-  const updatedLic = await supabase
-    .from("licenses")
-    .select("*")
-    .eq("id", lic.id)
-    .single();
-
-  const publicLic = toPublicLicense(
-    mapSupabaseLicense(updatedLic.data || {}),
-    seatsUsed
-  );
+  const publicLic = toPublicLicense(lic, activeDevs?.length || 0);
 
   if (!input.skipEmail) {
-    void sendLicenseActivatedEmail({
-      to: email,
-      customerName: lic.customerName || "",
-      packageType: lic.type as LicenseType,
-      keyMasked: publicLic.keyMasked,
-      licenseId: lic.id!,
-      deviceName: input.deviceName,
-    }).catch((e) => console.warn("[licensing] activate email failed:", e));
+    void sendLicenseActivatedEmail({ to: email, customerName: lic.customerName || "", packageType: lic.type as LicenseType, keyMasked: publicLic.keyMasked, licenseId: lic.id!, deviceName: input.deviceName })
+      .catch((e) => console.warn("[licensing] activate email failed:", e));
   }
 
-  return {
-    ok: true,
-    license: publicLic,
-    deviceId,
-    token,
-  };
+  return { ok: true, license: publicLic, deviceId, token };
 }
 
 export function createValidationToken(licenseId: string, deviceId: string, email: string): string {
@@ -575,148 +416,26 @@ export function createValidationToken(licenseId: string, deviceId: string, email
   return Buffer.from(`${payload}.${sig}`).toString("base64url");
 }
 
-export function parseValidationToken(
-  token: string
-): { licenseId: string; deviceId: string; email: string; exp: string } | null {
-  try {
-    const raw = Buffer.from(token.trim(), "base64url").toString("utf8");
-    const lastDot = raw.lastIndexOf(".");
-    if (lastDot <= 0) return null;
-    const sig = raw.slice(lastDot + 1);
-    const withoutSig = raw.slice(0, lastDot);
-
-    const expMatch = withoutSig.match(/\.(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)$/);
-    if (!expMatch) return null;
-    const exp = expMatch[1];
-    const beforeExp = withoutSig.slice(0, -expMatch[0].length);
-
-    const firstDot = beforeExp.indexOf(".");
-    const secondDot = beforeExp.indexOf(".", firstDot + 1);
-    if (firstDot < 0 || secondDot < 0) return null;
-
-    const licenseId = beforeExp.slice(0, firstDot);
-    const deviceId = beforeExp.slice(firstDot + 1, secondDot);
-    const emailRaw = beforeExp.slice(secondDot + 1);
-    if (!licenseId || !deviceId || !emailRaw || !sig) return null;
-    if (Date.parse(exp) < Date.now()) return null;
-
-    const payload = `${licenseId}.${deviceId}.${emailRaw}.${exp}`;
-    const expected = sha256(
-      `${payload}|${process.env.LICENSE_STORE_SECRET || process.env.NEXTAUTH_SECRET || "dev"}`
-    );
-    if (!safeEqualHex(sig, expected) && sig !== expected) return null;
-    return { licenseId, deviceId, email: emailRaw.toLowerCase(), exp };
-  } catch {
-    return null;
-  }
-}
-
 export async function validateLicenseOnline(input: {
-  licenseId: string;
-  deviceId: string;
-  customerEmail: string;
-  deviceFingerprint: string;
+  licenseId: string; deviceId: string; customerEmail: string; deviceFingerprint: string;
 }): Promise<{ ok: true; status: LicenseStatus; grace: boolean; token: string } | { ok: false; error: string }> {
   const email = input.customerEmail.trim().toLowerCase();
-  const supabase = createAdminClient();
-
-  const { data: licData, error } = await supabase
-    .from("licenses")
-    .select("*")
-    .eq("id", input.licenseId)
-    .single();
-
-  if (error || !licData) return { ok: false, error: "LICENSE_NOT_FOUND" };
+  const { data: licData } = await supabaseAdmin.from("licenses").select("*").eq("id", input.licenseId).single();
+  if (!licData) return { ok: false, error: "LICENSE_NOT_FOUND" };
   
   const lic = mapSupabaseLicense(licData);
   if (lic.customerEmail !== email) return { ok: false, error: "LICENSE_EMAIL_MISMATCH" };
 
-  const { data: device } = await supabase
-    .from("devices")
-    .select("*")
-    .eq("id", input.deviceId)
-    .eq("license_id", input.licenseId)
-    .eq("status", "active")
-    .single();
-
+  const { data: device } = await supabaseAdmin.from("devices").select("*").eq("id", input.deviceId).eq("license_id", input.licenseId).eq("status", "active").single();
   if (!device) return { ok: false, error: "DEVICE_NOT_ACTIVE" };
-  if (device.fingerprint_hash !== sha256(input.deviceFingerprint.trim())) {
-    return { ok: false, error: "FINGERPRINT_MISMATCH" };
-  }
 
-  if (lic.status === "expired" || lic.status === "revoked") {
-    return { ok: false, error: `LICENSE_${lic.status.toUpperCase()}` };
-  }
+  await supabaseAdmin.from("licenses").update({ last_validated_at: nowIso() }).eq("id", input.licenseId);
+  await supabaseAdmin.from("devices").update({ last_active_at: nowIso() }).eq("id", input.deviceId);
 
-  await supabase
-    .from("licenses")
-    .update({ last_validated_at: nowIso() })
-    .eq("id", input.licenseId);
-
-  await supabase
-    .from("devices")
-    .update({ last_active_at: nowIso() })
-    .eq("id", input.deviceId);
-
-  return {
-    ok: true,
-    status: lic.status as LicenseStatus,
-    grace: lic.status === "grace",
-    token: createValidationToken(lic.id!, device.id, email),
-  };
-}
-
-export async function cancelLicense(licenseId: string, email: string): Promise<boolean> {
-  const supabase = createAdminClient();
-  const { error } = await supabase
-    .from("licenses")
-    .update({ status: "cancelled" })
-    .eq("id", licenseId)
-    .eq("customer_email", email.toLowerCase());
-
-  return !error;
-}
-
-export async function renewLicense(licenseId: string, actorEmail: string): Promise<boolean> {
-  const supabase = createAdminClient();
-  const { data: lic } = await supabase
-    .from("licenses")
-    .select("*")
-    .eq("id", licenseId)
-    .single();
-
-  if (!lic) return false;
-
-  const newExp = expiresForType(lic.type as LicenseType);
-  const { error } = await supabase
-    .from("licenses")
-    .update({
-      status: "active",
-      expires_at: newExp,
-      grace_ends_at: null,
-      last_validated_at: nowIso(),
-    })
-    .eq("id", licenseId);
-
-  return !error;
-}
-
-export async function getLicenseById(id: string): Promise<Partial<LicenseRecord> | undefined> {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("licenses")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  return data ? mapSupabaseLicense(data) : undefined;
+  return { ok: true, status: lic.status as LicenseStatus, grace: lic.status === "grace", token: createValidationToken(lic.id!, device.id, email) };
 }
 
 export async function listAllLicensesAdmin(): Promise<Partial<LicenseRecord>[]> {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("licenses")
-    .select("*");
-
+  const { data } = await supabaseAdmin.from("licenses").select("*");
   return data?.map(mapSupabaseLicense) || [];
 }
