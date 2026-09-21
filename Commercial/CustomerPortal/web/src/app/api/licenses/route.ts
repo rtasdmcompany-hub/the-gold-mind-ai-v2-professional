@@ -7,7 +7,8 @@ export async function GET(req: Request) {
     req,
     { auth: "session", rateLimit: { limit: 120, windowSec: 60 }, auditAction: "api_request" },
     async (ctx) => {
-      const licenses = listLicensesForCustomer(ctx.email || "");
+      // ✅ FIX: Yahan 'await' add kar diya gaya hai
+      const licenses = await listLicensesForCustomer(ctx.email || "");
       return apiSuccess({ licenses }, ctx.requestId);
     }
   );
