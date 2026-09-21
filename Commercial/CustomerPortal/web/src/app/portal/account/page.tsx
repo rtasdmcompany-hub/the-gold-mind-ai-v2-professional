@@ -1,103 +1,83 @@
 import { auth } from "@/auth";
 import { StatusBadge } from "@/components/StatusBadge";
-import { LicenseActionsPanel } from "@/components/LicenseActionsPanel";
-import { LicenseStoreBanner } from "@/components/LicenseStoreBanner";
+import { AccountProfileForm } from "@/components/AccountSecurityForms";
 import { ensureSeedData } from "@/server/licensing/seed";
 import { listLicensesForCustomer } from "@/server/licensing/license-service";
-import { isSelfServePaidLicenseAllowed } from "@/server/billing/config";
+import { getAccountByEmail } from "@/server/accounts/store";
+import { isTradeAlertsEnabled } from "@/server/accounts/service";
+import { actionUpdateNotificationPrefs } from "@/server/accounts/actions";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { product } from "@/lib/product";
+import { brand } from "@/lib/brand";
 
-export default async function LicensesPage() {
+export default async function AccountPage() {
+  await ensureSeedData();
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
-
-  // ✅ FIX: Type ko Awaited mein update kiya gaya hai
-  let licenses: Awaited<ReturnType<typeof listLicensesForCustomer>> = [];
-  let loadError: string | null = null;
-  try {
-    await ensureSeedData();
-    // ✅ FIX: Yahan 'await' add kiya gaya hai
-    licenses = await listLicensesForCustomer(session.user.email);
-  } catch (e) {
-    loadError = e instanceof Error ? e.message : "LICENSE_PAGE_LOAD_FAILED";
-    console.error("[portal/licenses] load failed", loadError);
-  }
-  const allowPaidSelfServe = isSelfServePaidLicenseAllowed();
+  const email = session.user.email.toLowerCase();
+  
+  // ✅ FIX: Yahan 'await' add kiya gaya hai
+  const licenses = await listLicensesForCustomer(email);
+  
+  const account = await getAccountByEmail(email);
+  const tradeAlerts = isTradeAlertsEnabled(account);
 
   return (
     <>
       <header style={{ marginBottom: 20 }}>
-        <h1 className="page-title">My Licenses</h1>
+        <h1 className="page-title">Account Settings</h1>
         <p className="page-sub">
-          {allowPaidSelfServe
-            ? `Generate a key, then paste it into ${product.installer.name}. Installation finishes only after portal activation succeeds.`
-            : `One free trial per email (and per IP). Regenerating shows the same key and original dates. Paid keys come from Billing. Paste into ${product.installer.name} — install finishes only after portal activation succeeds.`}{" "}
-          <Link href="/portal/billing">Billing</Link>
+          Profile linked to commercial licensing identity. Email verification remains mandatory for credentials
+          sign-in. <Link href="/portal/security">Security</Link>
         </p>
       </header>
-
-      {loadError ? (
-        <div className="card" style={{ marginBottom: 16, borderColor: "#a44" }}>
-          <h3 style={{ marginBottom: 6 }}>Could not load licenses</h3>
-          <p className="meta">
-            The license list is temporarily unavailable. You can still try generating a trial key below, or
-            refresh in a moment.
-          </p>
+      <div className="grid grid-2">
+        <div className="card">
+          <h3>Profile</h3>
+          <div className="meta" style={{ marginBottom: 8 }}>{email}</div>
+          <AccountProfileForm defaultName={account?.name || session?.user?.name || ""} />
+          <div className="meta" style={{ marginTop: 8 }}>
+            {account?.emailVerifiedAt
+              ? `Verified ${account.emailVerifiedAt.slice(0, 10)}`
+              : account
+                ? "Verification pending"
+                : "Session account — save name after first signup/OAuth"}
+          </div>
         </div>
-      ) : null}
-
-      <LicenseStoreBanner />
-      <LicenseActionsPanel allowPaidSelfServe={allowPaidSelfServe} />
-
-      <div className="table-wrap">
-        <table className="data">
-          <thead>
-            <tr>
-              <th>License</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Activated</th>
-              <th>Expires</th>
-              <th>Renewal</th>
-              <th>Seats</th>
-            </tr>
-          </thead>
-          <tbody>
-            {licenses.length === 0 && (
-              <tr>
-                <td colSpan={8}>
-                  No licenses yet — {allowPaidSelfServe ? "generate one above" : "get your trial key above or checkout in Billing"}, then
-                  paste the key into {product.installer.name}.
-                </td>
-              </tr>
-            )}
-            {licenses.map((lic) => (
-              <tr key={lic.id}>
-                <td>
-                  <div className="mono">{lic.keyMasked}</div>
-                  <div className="meta">{lic.id}</div>
-                </td>
-                <td>
-                  {lic.edition}
-                  <div className="meta">{lic.type}</div>
-                </td>
-                <td>
-                  <StatusBadge status={lic.status} />
-                </td>
-                <td>{lic.createdAt?.slice(0, 10) || "—"}</td>
-                <td>{lic.activatedAt?.slice(0, 10) || "—"}</td>
-                <td>{lic.expiresAt?.slice(0, 10) || "Lifetime"}</td>
-                <td>{lic.renewalStatus}</td>
-                <td>
-                  {lic.seatsUsed}/{lic.seatsMax}
-                </td>
-              </tr>
+        <div className="card">
+          <h3>Edition</h3>
+          <div className="value" style={{ fontSize: 16 }}>
+            {brand.productName}
+          </div>
+          <div className="meta">Provider: {account?.provider || "session"}</div>
+        </div>
+        <div className="card" style={{ gridColumn: "1 / -1" }}>
+          <h3>License status (live)</h3>
+          {licenses.length === 0 && <p className="meta">No licenses</p>}
+          <ul className="list-plain">
+            {licenses.map((l) => (
+              <li key={l.id}>
+                <StatusBadge status={l.status} /> <span className="mono">{l.keyMasked}</span>
+              </li>
             ))}
-          </tbody>
-        </table>
+          </ul>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 20 }}>
+        <h3>Notification preferences</h3>
+        <p className="meta" style={{ marginBottom: 12 }}>
+          Trade-close email alerts use the commercial mailer when configured (Resend). Default is ON.
+        </p>
+        <form action={actionUpdateNotificationPrefs} className="stack">
+          <label style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <input type="checkbox" name="tradeAlertsEnabled" defaultChecked={tradeAlerts} />
+            Email me when trades close (profit or loss)
+          </label>
+          <button type="submit" className="btn btn-primary" style={{ alignSelf: "flex-start" }}>
+            Save preferences
+          </button>
+        </form>
       </div>
     </>
   );
