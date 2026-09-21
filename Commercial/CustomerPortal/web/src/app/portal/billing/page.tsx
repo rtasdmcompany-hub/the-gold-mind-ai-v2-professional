@@ -15,12 +15,13 @@ export default async function BillingPage() {
   await ensureBillingStoreLoaded();
   const email = session.user.email.toLowerCase();
   const billing = getBillingSummary(email);
-  const licenses = listLicensesForCustomer(email);
+  
+  // ✅ FIX: Yahan 'await' add kiya gaya hai
+  const licenses = await listLicensesForCustomer(email);
+  
   const sub = billing.subscriptions[0];
   const lic = licenses.find((l) => l.status === "active" || l.status === "grace") || licenses[0];
   const durability = billingStoreDurability();
-  // Customers are only ever offered Paddle (once configured) or a dev-only sandbox —
-  // no unwired PSP internals are surfaced here.
   const paddleConfigured = getProviderConfigStatus("paddle").configured;
   const sandboxAllowed = isSandboxCheckoutAllowed();
 
