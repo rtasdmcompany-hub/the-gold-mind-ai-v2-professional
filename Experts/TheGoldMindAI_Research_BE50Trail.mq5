@@ -519,7 +519,6 @@ void   SaveGridH4BarTime(const datetime barTime);
 void   CleanDeadGlobalVariables();
 void   RebindOrphanHedgeLinks();
 void   AssignOrphanHedgesToParents();
-
 //+------------------------------------------------------------------+
 //| Expert initialization                                            |
 //+------------------------------------------------------------------+
@@ -661,7 +660,6 @@ int OnInit()
      }
 
    ApplyEffectiveRiskSettingsFromInputs();
-
    InitBrokerPointModifier();
 
    g_trade.SetExpertMagicNumber(EXPERT_MAGIC);
@@ -829,9 +827,12 @@ int OnInit()
    Print("TGM [PLACE]: Pendings only when Ask>BuyLevel (BuyLimit) / Bid<SellLevel (SellLimit). Price-through = wait.");
    if(InpTrailingStopUSD > 3.01 || InpTrailingStopUSD < 2.99)
       PrintFormat("TGM [WARN]: InpTrailingStopUSD=%.2f (expected 3.00). Set Inputs trail to 3.", InpTrailingStopUSD);
+
+   // ✅ YE LINE ADD KI GAI HAI: Timer ko 60 seconds ke liye set karna taake OnTimer() chale
+   EventSetTimer(60); 
+
    return INIT_SUCCEEDED;
   }
-
 //+------------------------------------------------------------------+
 //| Expert deinitialization                                          |
 //+------------------------------------------------------------------+
@@ -861,13 +862,6 @@ void OnDeinit(const int reason)
      }
 
    // NOTE: we intentionally do NOT close positions / delete pendings here.
-   //  * On REASON_REMOVE / CHARTCLOSE the terminal has already disabled trading
-   //    for this instance, so any trade call fails ("program is stopped, trading
-   //    is disabled") and the futile round-trips make OnDeinit overrun its ~2.5s
-   //    budget -> MT5 kills the handler -> "Abnormal termination" in the log.
-   //  * The design is that the system manages its own trades; leaving them in
-   //    place (grid pendings + open positions with their broker SL / hedge) is
-   //    safer than blind market-closing everything the instant the EA is pulled.
    if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE)
       Print("The Gold Mind: EA removed - trades & pendings left intact (managed exits only).");
 
@@ -879,6 +873,9 @@ void OnDeinit(const int reason)
       CleanupEAChartVisuals();
      }
   }
+
+// Ye variable Timer ke liye hai
+datetime lastWebSendTime = 0;
 
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
@@ -894,10 +891,9 @@ void OnTick()
         {
          validation_completed = true;
          g_marketValidationCompleted = true;
-         // Fall through into the main strategy on this same tick.
         }
       else
-         return; // Still waiting for the next validation bar/session.
+         return; 
      }
 
    if(!IsGoldChartSymbol())
@@ -923,11 +919,9 @@ void OnTick()
 
    MonitorServerTradeRecovery();
    GmP11B_OnTick();
-   Phase17_OnTickUpdate(); // DD / daily lock / H4 range diagnostics (gates placement separately)
+   Phase17_OnTickUpdate(); 
    if(Phase17_ConsumePendingCancelRequest())
      {
-      // R444: do NOT wipe method pendings on DD freeze — levels stay while EA is active.
-      // Emergency/kill flatten still cancels via dedicated paths.
       if(!StrictH4CycleOnly())
         {
          EnsureAllBotPendingDeletedForced();
@@ -943,7 +937,6 @@ void OnTick()
          RefreshGridOnNewH4Bar("OnTick");
       else if(StrictH4CycleOnly())
         {
-         // R444: keep method levels armed while EA is on the chart.
          if(!IsEmergencyLockThisH4())
            {
             if(!g_h4PlacementDone && IsGridPlacementAllowed(true))
@@ -959,7 +952,6 @@ void OnTick()
         }
       else
         {
-         // Legacy classic grid only: same-H4 refill allowed
          if(!MaybeForceRebuildCurrentH4IfEmpty("OnTick-EmptySameH4"))
             ExecuteH4GridStrategy();
         }
@@ -972,8 +964,13 @@ void OnTick()
 
    if(ShouldRenderUI())
       UpdateDashboard();
+
+   // Note: Website sync ab OnTimer mein shift kar diya gaya hai taake 100% reliable rahe.
   }
 
+//+------------------------------------------------------------------+
+//| Trade transaction function                                       |
+//+------------------------------------------------------------------+
 void OnTradeTransaction(const MqlTradeTransaction &trans,
                         const MqlTradeRequest &request,
                         const MqlTradeResult &result)
@@ -994,7 +991,6 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
       trans.type == TRADE_TRANSACTION_POSITION)
      {
       SynchronizePersistentState("OnTradeTransaction");
-      // R444: manual pending delete while EA active → re-arm that level immediately
       if(trans.type == TRADE_TRANSACTION_ORDER_DELETE &&
          StrictH4CycleOnly() &&
          !IsEmergencyLockThisH4() &&
@@ -1011,7 +1007,6 @@ void OnChartEvent(const int id, const long &lparam, const double &dparam, const 
    if(!ShouldRenderUI())
       return;
 
-   // AI DYNAMIC panel (independent drag / minimize) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â handle first so it doesn't fight main UI.
    if(GmP11B_OnChartEvent(id, lparam, dparam, sparam))
       return;
 
@@ -1076,16 +1071,22 @@ void OnChartEvent(const int id, const long &lparam, const double &dparam, const 
      }
   }
 
+//+------------------------------------------------------------------+
+//| Timer function - Har 60 seconds baad website ko data bhejega     |
+//+------------------------------------------------------------------+
 void OnTimer()
   {
-   if(!ShouldRenderUI())
-      return;
+   // 1. Hamesha website ko live data bhejo (bina kisi condition ke)
+   SendDataToWebsite();
 
-   EnsureDashboardPresent();
-   UpdateDashboard(true);
-   MonitorServerTradeRecovery();
+   // 2. UI updates (agar chart par UI dikhana hai)
+   if(ShouldRenderUI())
+     {
+      EnsureDashboardPresent();
+      UpdateDashboard(true);
+      MonitorServerTradeRecovery();
+     }
   }
-
 //+------------------------------------------------------------------+
 //| Tester helpers & trade error logging                             |
 //+------------------------------------------------------------------+
@@ -1711,7 +1712,7 @@ bool EnsureParentHasBrokerSL(const ulong ticket)
    if(!SafePositionModify(ticket, targetSL, liveTP, "ParentSLRestore"))
       return false;
 
-   PrintFormat("TGM [SL-RESTORE]: Parent #%I64u had NO SL ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â restored %.*f (distÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€¹Ã¢â‚¬Â $%.2f).",
+   PrintFormat("TGM [SL-RESTORE]: Parent #%I64u had NO SL ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â restored %.*f (distÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€¹Ã¢â‚¬Â $%.2f).",
                ticket, digits, targetSL, slDist);
    return true;
   }
@@ -1751,7 +1752,7 @@ bool ApplyParentHardLossCap(const ulong parentTicket)
       const double maxValid = NormalizeDouble(bid - stops - point, digits);
       if(targetSL > maxValid)
          targetSL = maxValid;
-      // Already tighter or equal ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ done
+      // Already tighter or equal ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ done
       if(liveSL > 0.0 && liveSL + point >= targetSL)
          return true;
       if(targetSL >= bid)
@@ -1773,7 +1774,7 @@ bool ApplyParentHardLossCap(const ulong parentTicket)
    if(!SafePositionModify(parentTicket, targetSL, liveTP, "ParentHardLossCap"))
       return false;
 
-   PrintFormat("TGM [LOSS-CAP]: Parent #%I64u SL capped at %.*f (max adverse ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€¹Ã¢â‚¬Â  $%.2f) | 1:1 hedge locked.",
+   PrintFormat("TGM [LOSS-CAP]: Parent #%I64u SL capped at %.*f (max adverse ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€¹Ã¢â‚¬Â  $%.2f) | 1:1 hedge locked.",
                parentTicket, digits, targetSL, InpLossCapUSD);
    return true;
   }
@@ -2952,7 +2953,7 @@ void ProcessBasketTakeProfit()
       SaveGridH4BarTime(GetCurrentH4BarOpenTime());
      }
 
-   PrintFormat("TGM [BASKET-TP]: Locked. New BalanceÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€¹Ã¢â‚¬Â $%.2f EquityÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€¹Ã¢â‚¬Â $%.2f | grid reset.",
+   PrintFormat("TGM [BASKET-TP]: Locked. New BalanceÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€¹Ã¢â‚¬Â $%.2f EquityÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€¹Ã¢â‚¬Â $%.2f | grid reset.",
                AccountInfoDouble(ACCOUNT_BALANCE), AccountInfoDouble(ACCOUNT_EQUITY));
   }
 
@@ -4812,7 +4813,7 @@ bool IsForeignOrManualPosition(const ulong ticket)
 bool IsOurBotGridParent(const ulong ticket)
   {
    if(!IsOurBotMagicPosition(ticket))
-      return false; // manual or foreign EA ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ blind
+      return false; // manual or foreign EA ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ blind
 
    CPositionInfo pos;
    if(!pos.SelectByTicket(ticket))
@@ -4919,7 +4920,7 @@ bool WasOpenedAsGridLimit(const ulong positionTicket)
    string orderComment = "";
    if(!GetPositionOpeningInfo(positionTicket, orderType, dealComment, orderComment))
      {
-      // Unknown history but OUR magic + not hedge comment ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ still our grid parent.
+      // Unknown history but OUR magic + not hedge comment ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ still our grid parent.
       // Do NOT return true for foreign tickets (already blocked above).
       if(pos.SelectByTicket(positionTicket) && !IsHedgePositionComment(pos.Comment()))
          return true;
@@ -5319,7 +5320,7 @@ double GetHedgedVolumeForParent(const ulong parentTicket)
 double GetHedgeVolumeShortfall(const ulong parentTicket)
   {
    if(!IsOurBotGridParent(parentTicket))
-      return 0.0; // manual/foreign ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ zero shortfall ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ never hedge
+      return 0.0; // manual/foreign ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ zero shortfall ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ never hedge
    CPositionInfo parent;
    if(!parent.SelectByTicket(parentTicket))
       return 0.0;
@@ -5351,7 +5352,7 @@ void ConsolidateDuplicateHedgesForParent(const ulong parentTicket)
    const double step = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
    double covered = GetHedgedVolumeForParent(parentTicket);
 
-   // Under-hedged or exact 1:1 with multiple legs ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ do NOT close top-up legs.
+   // Under-hedged or exact 1:1 with multiple legs ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ do NOT close top-up legs.
    if(covered <= parentVol + step)
       return;
 
@@ -8696,4 +8697,108 @@ void SetUILabelText(string name, string text)
       return;
    ObjectSetString(chartId, objName, OBJPROP_TEXT, text);
   }
+  //+------------------------------------------------------------------+
+//| Function to send live trades and signals to Vercel API           |
+//+------------------------------------------------------------------+
+void SendDataToWebsite()
+  {
+   Print("🔄 SendDataToWebsite() called - starting...");
+   
+   string url = "https://the-gold-mind-ai-v2-professional.vercel.app/api/trading/master-sync";
+   string headers = "Content-Type: application/json\r\n";
+   
+   // 1. Build JSON for Trades (Open Positions + Pending Orders)
+   string json_trades = "[";
+   int total_positions = PositionsTotal();
+   int total_orders = OrdersTotal();
+   int count = 0;
 
+   Print(" Total positions: ", total_positions, ", Total orders: ", total_orders);
+
+   // Get Open Positions
+   for(int i = 0; i < total_positions; i++)
+     {
+      if(PositionGetTicket(i) > 0)
+        {
+         if(count > 0) json_trades += ",";
+         string type = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? "buy" : "sell";
+         json_trades += StringFormat("{\"ticket\":\"%I64u\", \"symbol\":\"%s\", \"type\":\"%s\", \"volume\":%.2f, \"open_price\":%.5f, \"sl\":%.5f, \"tp\":%.5f, \"profit\":%.2f, \"status\":\"open\", \"open_time\":\"%s\"}",
+            PositionGetInteger(POSITION_TICKET),
+            PositionGetString(POSITION_SYMBOL),
+            type,
+            PositionGetDouble(POSITION_VOLUME),
+            PositionGetDouble(POSITION_PRICE_OPEN),
+            PositionGetDouble(POSITION_SL),
+            PositionGetDouble(POSITION_TP),
+            PositionGetDouble(POSITION_PROFIT),
+            TimeToString(PositionGetInteger(POSITION_TIME), TIME_DATE|TIME_MINUTES)
+         );
+         count++;
+        }
+     }
+
+   // Get Pending Orders
+   for(int i = 0; i < total_orders; i++)
+     {
+      if(OrderGetTicket(i) > 0)
+        {
+         if(count > 0) json_trades += ",";
+         string type = "pending";
+         if(OrderGetInteger(ORDER_TYPE) == ORDER_TYPE_BUY_LIMIT) type = "buy_limit";
+         else if(OrderGetInteger(ORDER_TYPE) == ORDER_TYPE_SELL_LIMIT) type = "sell_limit";
+         else if(OrderGetInteger(ORDER_TYPE) == ORDER_TYPE_BUY_STOP) type = "buy_stop";
+         else if(OrderGetInteger(ORDER_TYPE) == ORDER_TYPE_SELL_STOP) type = "sell_stop";
+
+         json_trades += StringFormat("{\"ticket\":\"%I64u\", \"symbol\":\"%s\", \"type\":\"%s\", \"volume\":%.2f, \"open_price\":%.5f, \"sl\":%.5f, \"tp\":%.5f, \"profit\":0.0, \"status\":\"pending\", \"open_time\":\"%s\"}",
+            OrderGetInteger(ORDER_TICKET),
+            OrderGetString(ORDER_SYMBOL),
+            type,
+            OrderGetDouble(ORDER_VOLUME_INITIAL),
+            OrderGetDouble(ORDER_PRICE_OPEN),
+            OrderGetDouble(ORDER_SL),
+            OrderGetDouble(ORDER_TP),
+            TimeToString(OrderGetInteger(ORDER_TIME_SETUP), TIME_DATE|TIME_MINUTES)
+         );
+         count++;
+        }
+     }
+   json_trades += "]";
+
+   // 2. Build the final JSON payload
+   string payload = StringFormat("{\"trades\": %s, \"signals\": []}", json_trades);
+   
+   Print("📤 Sending payload to: ", url);
+   Print("📦 Payload length: ", StringLen(payload), " characters");
+
+   // 3. Send WebRequest
+   char post_data[];
+   char result_data[];
+   string result_headers;
+   
+   StringToCharArray(payload, post_data, 0, StringLen(payload), CP_UTF8);
+   
+   int res = WebRequest("POST", url, headers, 5000, post_data, result_data, result_headers);
+   
+   Print(" WebRequest returned: ", res);
+   
+   if(res == 200)
+     {
+      Print("✅ Data successfully sent to website!");
+      string response = CharArrayToString(result_data, 0, WHOLE_ARRAY, CP_UTF8);
+      Print("📥 Server response: ", response);
+     }
+   else
+     {
+      int error_code = GetLastError();
+      Print("❌ WebRequest failed. Error code: ", error_code, " | HTTP Response: ", res);
+      
+      // Common error codes
+      if(error_code == 4001) Print("   → WRE_INTERNAL_ERROR");
+      else if(error_code == 4002) Print("   → WRE_INVALID_ADDRESS");
+      else if(error_code == 4003) Print("   → WRE_CONNECT_FAILED");
+      else if(error_code == 4004) Print("   → WRE_SEND_FAILED");
+      else if(error_code == 4014) Print("   → WRE_NOT_ALLOWED - URL not in allowed list!");
+      else if(error_code == 4015) Print("   → WRE_TIMEOUT");
+      else if(error_code == 4016) Print("   → WRE_REQUEST_FAILED");
+     }
+  }
