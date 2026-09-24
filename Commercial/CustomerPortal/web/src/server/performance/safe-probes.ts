@@ -22,9 +22,9 @@ export function safeEnsureCommercialData(): void {
   }
 }
 
-export function safeListLicenses(): unknown[] {
+export async function safeListLicenses(): Promise<unknown[]> {
   try {
-    return listAllLicensesAdmin();
+    return await listAllLicensesAdmin();
   } catch {
     return [];
   }
@@ -54,9 +54,9 @@ export function safeReleases(): unknown {
   }
 }
 
-export function safeEnterpriseDashboard(): unknown {
+export async function safeEnterpriseDashboard(): Promise<unknown> {
   try {
-    return getEnterpriseDashboard();
+    return await getEnterpriseDashboard();
   } catch {
     return { activeCustomers: 0, activeLicenses: 0 };
   }

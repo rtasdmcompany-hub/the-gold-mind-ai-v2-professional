@@ -8,7 +8,7 @@ import { formatUsd, loadBiLedger, monthKey, subscriptionMrrCents } from "./helpe
 
 export async function buildExecutiveBusinessDashboard() {
   safeEnsureCommercialData();
-  const { payments, subscriptions, licenses } = loadBiLedger();
+  const { payments, subscriptions, licenses } = await loadBiLedger();
   const now = new Date();
   const thisMonth = now.toISOString().slice(0, 7);
   const thisYear = now.toISOString().slice(0, 4);

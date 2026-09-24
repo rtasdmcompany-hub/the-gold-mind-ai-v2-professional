@@ -24,7 +24,9 @@ export function biCapabilities(): WorkstreamItem[] {
 export async function buildBusinessIntelligence() {
   safeEnsureCommercialData();
   const billing = safeBillingDashboard();
-  const licenses = safeListLicenses();
+  
+  // FIX: Added await here because safeListLicenses is now async
+  const licenses = await safeListLicenses();
 
   const active = licenses.filter((l) => l.status === "active" || l.status === "grace").length;
   const fromBilling = Math.round((billing.revenueCents || 0) / 100);

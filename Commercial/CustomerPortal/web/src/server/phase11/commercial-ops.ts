@@ -32,7 +32,10 @@ function routeExists(...segments: string[]): boolean {
 export async function auditCommercialOperations() {
   safeEnsureCommercialData();
   const billing = safeBillingDashboard();
-  const licenses = safeListLicenses();
+  
+  // FIX: Added await here because safeListLicenses is now async
+  const licenses = await safeListLicenses();
+  
   const tickets = safeSupportTickets();
   const audits = safeAudit(20);
   const hasWebhook = fs.existsSync(

@@ -11,9 +11,9 @@ import { listTicketsForCustomer, listKnowledgeArticles, listFaqs } from "./suppo
 import { readMobileStore } from "./store";
 import { MOBILE_CORE_ISOLATION, MOBILE_TRADING_PROHIBITED } from "./types";
 
-function safeLicenses(email: string): LicensePublicDto[] {
+async function safeLicenses(email: string): Promise<LicensePublicDto[]> {
   try {
-    return listLicensesForCustomer(email);
+    return await listLicensesForCustomer(email);
   } catch {
     return [];
   }
@@ -27,9 +27,9 @@ function safeLicenseDevices(email: string): DevicePublicDto[] {
   }
 }
 
-export function buildMobileCustomerDashboard(email: string) {
+export async function buildMobileCustomerDashboard(email: string) {
   const e = email.toLowerCase();
-  const licenses = safeLicenses(e);
+  const licenses = await safeLicenses(e);
   const active = licenses.filter((l) => l.status === "active" || l.status === "grace");
   const licenseDevices = safeLicenseDevices(e);
   const mobileDevices = listDevicesForCustomer(e).filter((d) => !d.revokedAt);

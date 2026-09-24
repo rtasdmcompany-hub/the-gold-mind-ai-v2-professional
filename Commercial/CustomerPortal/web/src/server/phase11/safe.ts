@@ -21,24 +21,18 @@ import { ensureDemoUsage, getUsageAnalytics } from "@/server/observability/usage
 export function safeEnsureCommercialData(): void {
   try {
     ensureSeedData();
-  } catch {
-    /* CLI secret mismatch */
-  }
+  } catch { /* CLI secret mismatch */ }
   try {
     ensureDemoTickets();
-  } catch {
-    /* ignore */
-  }
+  } catch { /* ignore */ }
   try {
     ensureDemoUsage();
-  } catch {
-    /* ignore */
-  }
+  } catch { /* ignore */ }
 }
 
-export function safeListLicenses() {
+export async function safeListLicenses() {
   try {
-    return listAllLicensesAdmin();
+    return await listAllLicensesAdmin();
   } catch {
     return [];
   }
@@ -63,9 +57,9 @@ export function safeBillingDashboard() {
   }
 }
 
-export function safeEnterpriseDashboard() {
+export async function safeEnterpriseDashboard() {
   try {
-    return getEnterpriseDashboard();
+    return await getEnterpriseDashboard();
   } catch {
     return {
       activeCustomers: 0,
@@ -91,7 +85,7 @@ export async function safeEnterpriseDashboardWithHealth() {
   try {
     return await getEnterpriseDashboardWithHealth();
   } catch {
-    const base = safeEnterpriseDashboard();
+    const base = await safeEnterpriseDashboard();
     return {
       ...base,
       systemHealth: "degraded" as const,
@@ -101,9 +95,9 @@ export async function safeEnterpriseDashboardWithHealth() {
   }
 }
 
-export function safeBusinessIntelligence() {
+export async function safeBusinessIntelligence() {
   try {
-    return getBusinessIntelligence();
+    return await getBusinessIntelligence();
   } catch {
     return {
       revenueTrends: [] as { month: string; cents: number; formatted: string }[],
@@ -138,9 +132,10 @@ export function safeAudit(limit = 20) {
   }
 }
 
-export function safeCustomerSuccessSummary() {
+// FIX: Made async and added await
+export async function safeCustomerSuccessSummary() {
   try {
-    return getCustomerSuccessSummary();
+    return await getCustomerSuccessSummary();
   } catch {
     return {
       customersTracked: 0,
@@ -152,9 +147,10 @@ export function safeCustomerSuccessSummary() {
   }
 }
 
-export function safeCustomerHealthDirectory(q?: string) {
+// FIX: Made async and added await
+export async function safeCustomerHealthDirectory(q?: string) {
   try {
-    return listCustomerHealthDirectory(q);
+    return await listCustomerHealthDirectory(q);
   } catch {
     return [];
   }

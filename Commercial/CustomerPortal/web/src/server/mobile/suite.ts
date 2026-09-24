@@ -265,8 +265,11 @@ export async function runFullPhase11Sprint6Suite() {
   });
 
   const refreshed = refreshMobileSession(auth.refreshToken);
-  seedMobileLicenseDemo(DEMO_EMAIL);
-  const licenses = mobileListLicenses(DEMO_EMAIL);
+  
+  // FIX: Added await for async functions
+  await seedMobileLicenseDemo(DEMO_EMAIL);
+  const licenses = await mobileListLicenses(DEMO_EMAIL);
+  
   const pushSeed = seedDemoNotifications(DEMO_EMAIL);
   updatePushPreferences(DEMO_EMAIL, { marketing: false });
   createSupportTicket({ email: DEMO_EMAIL, subject: "How do I renew my subscription?" });
@@ -284,7 +287,8 @@ export async function runFullPhase11Sprint6Suite() {
   });
   upsertOfflineCache(DEMO_EMAIL, ["dashboard", "licenses", "tickets", "kb"], 3600);
 
-  const dashboard = buildMobileCustomerDashboard(DEMO_EMAIL);
+  // FIX: Added await for async function
+  const dashboard = await buildMobileCustomerDashboard(DEMO_EMAIL);
   const architecture = getMobileArchitecture();
   const security = securityPosture(DEMO_EMAIL);
   const push = pushSystemOverview();
@@ -378,7 +382,7 @@ function writeMobileDocs(data: {
   security: ReturnType<typeof securityPosture>;
   push: ReturnType<typeof pushSystemOverview>;
   support: ReturnType<typeof supportCenterOverview>;
-  dashboard: ReturnType<typeof buildMobileCustomerDashboard>;
+  dashboard: Awaited<ReturnType<typeof buildMobileCustomerDashboard>>;
 }) {
   const dir = docsRoot();
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -410,7 +414,7 @@ function writeMobileDocs(data: {
 
 ## Scaffold
 
-\`${data.architecture.companionRoot.replace(/\\\\/g, "/")}\`
+\`${data.architecture.companionRoot.replace(/\\/g, "/")}\`
 
 ## Hard rule
 
@@ -608,7 +612,7 @@ export async function getPhase11Sprint6Dashboard(options?: { refresh?: boolean }
     security: securityPosture(email),
     push: pushSystemOverview(),
     support: supportCenterOverview(),
-    dashboard: buildMobileCustomerDashboard(email),
+    dashboard: await buildMobileCustomerDashboard(email),
     devices: listDevicesForCustomer(email),
     scorecardRows: scorecard?.rows ?? [],
     pushDelivered: suite?.pushDelivered ?? 0,

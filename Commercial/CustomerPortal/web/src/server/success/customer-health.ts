@@ -23,10 +23,10 @@ export interface CustomerHealthProfile {
   openTickets: number;
 }
 
-export function getCustomerHealth(email: string): CustomerHealthProfile {
+export async function getCustomerHealth(email: string): Promise<CustomerHealthProfile> {
   ensureDemoBetaParticipants();
   const e = email.toLowerCase();
-  const licenses = listAllLicensesAdmin().filter((l) => l.customerEmail === e);
+  const licenses = (await listAllLicensesAdmin()).filter((l) => l.customerEmail === e);
   const subs = listAllSubscriptionsAdmin().filter((s) => s.customerEmail === e);
   const tickets = listSupportTickets().filter((t) => t.customerEmail === e);
   const feedback = listFeedback().filter((f) => f.customerEmail === e);
@@ -66,7 +66,6 @@ export function getCustomerHealth(email: string): CustomerHealthProfile {
         category: a.category,
       }));
 
-  // Health score heuristic from commercial signals only
   let health = 50;
   health += Math.min(30, onboardingPct * 0.3);
   if (activationStatus === "activated") health += 15;
@@ -98,10 +97,10 @@ export function getCustomerHealth(email: string): CustomerHealthProfile {
   };
 }
 
-export function listCustomerHealthDirectory(q?: string) {
+export async function listCustomerHealthDirectory(q?: string) {
   ensureDemoBetaParticipants();
   const emails = new Set<string>();
-  for (const l of listAllLicensesAdmin()) emails.add(l.customerEmail.toLowerCase());
+  for (const l of await listAllLicensesAdmin()) emails.add(l.customerEmail.toLowerCase());
   for (const t of listSupportTickets()) emails.add(t.customerEmail.toLowerCase());
   for (const f of listFeedback()) emails.add(f.customerEmail.toLowerCase());
   let list = [...emails].sort();
@@ -109,9 +108,11 @@ export function listCustomerHealthDirectory(q?: string) {
     const qq = q.toLowerCase();
     list = list.filter((e) => e.includes(qq));
   }
-  return list.slice(0, 100).map((email) => {
-    const h = getCustomerHealth(email);
-    return {
+  
+  const results = [];
+  for (const email of list.slice(0, 100)) {
+    const h = await getCustomerHealth(email);
+    results.push({
       email: h.email,
       name: h.name,
       healthScore: h.healthScore,
@@ -119,12 +120,13 @@ export function listCustomerHealthDirectory(q?: string) {
       activationStatus: h.activationStatus,
       licenseStatus: h.licenseStatus,
       openTickets: h.openTickets,
-    };
-  });
+    });
+  }
+  return results;
 }
 
-export function getCustomerSuccessSummary() {
-  const dir = listCustomerHealthDirectory();
+export async function getCustomerSuccessSummary() {
+  const dir = await listCustomerHealthDirectory();
   const avg =
     dir.length === 0 ? 0 : Math.round((dir.reduce((a, c) => a + c.healthScore, 0) / dir.length) * 10) / 10;
   const fb = getFeedbackSummary();

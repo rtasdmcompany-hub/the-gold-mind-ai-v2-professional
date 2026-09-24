@@ -1,0 +1,10 @@
+npm error Lifecycle script `buildnpm` failed with error:
+npm error workspace tgm-customer-portal@1.2.0
+npm error location H:\PERSONAL\RTAS Digital Marketing Company\RTAS Softwear\THE GOLD MIND AI v2.0 Professional\Commercial\CustomerPortal\web
+npm error Missing script: "buildnpm"
+npm error
+npm error Did you mean this?
+npm error   npm run build # run the "build" package script
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run --workspace=tgm-customer-portal@1.2.0

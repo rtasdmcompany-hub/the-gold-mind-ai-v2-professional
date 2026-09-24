@@ -9,6 +9,7 @@ import { SoftwareShowcase } from "@/components/enterprise/SoftwareShowcase";
 import { TrustSection } from "@/components/enterprise/TrustSection";
 import { AiAssistantWidget } from "@/components/AiAssistantWidget";
 import { InvestorAlertModal } from "@/components/enterprise/InvestorAlertModal";
+import PublicTradingPanel from "@/components/PublicTradingPanel";
 import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
@@ -34,7 +35,7 @@ const FEATURES = [
     desc: "Unified licensing, downloads, device management, and subscription billing in one secure hub.",
   },
   {
-    icon: "◈",
+    icon: "",
     title: "Global Infrastructure",
     desc: "Cloud-isolated commercial services with encrypted stores, audit trails, and health monitoring.",
   },
@@ -44,7 +45,7 @@ const FEATURES = [
     desc: "Checksum-verified installers and controlled release channels for every deployment.",
   },
   {
-    icon: "◉",
+    icon: "",
     title: "Dedicated Support",
     desc: "Knowledge base, ticket intake, and AI-assisted guidance for licensed customers worldwide.",
   },
@@ -95,6 +96,11 @@ export default function HomePage() {
 
       <hr className="e-divider" />
       <SoftwareShowcase />
+      <hr className="e-divider" />
+      
+      {/* Live Trading Panel - Public */}
+      <PublicTradingPanel />
+      
       <hr className="e-divider" />
       <TrustSection />
 

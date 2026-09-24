@@ -37,13 +37,16 @@ export async function actionCreateLicense(type: LicenseType) {
     await ensureStoreLoaded();
     const h = await headers();
     const clientIp = clientIpFromHeaders(h);
-    const result = createLicense({
+    
+    // FIX: Added await here because createLicense is now async
+    const result = await createLicense({
       customerEmail: s.email,
       customerName: s.name,
       type,
       actorEmail: s.email,
       clientIp,
     });
+    
     if (!result.ok) {
       await flushStoreVerified().catch(() => undefined);
       revalidatePath("/portal/licenses");
@@ -163,7 +166,8 @@ export async function actionCancelSubscription(
   const licenseId = String(formData.get("licenseId") || "");
   if (!licenseId) return { ok: false, detail: "LICENSE_ID_REQUIRED" };
 
-  const cancelled = cancelLicense(licenseId, s.email);
+  // FIX: Added await here because cancelLicense is now async
+  const cancelled = await cancelLicense(licenseId, s.email);
   if (!cancelled) return { ok: false, detail: "LICENSE_NOT_FOUND" };
 
   const billing = await cancelBillingSubscriptionForLicense({
@@ -201,8 +205,11 @@ export async function actionRenewLicense(
 
   assertDurableStoreForLicensing();
   await ensureStoreLoaded();
-  const ok = renewLicense(licenseId, s.email);
+  
+  // FIX: Added await here because renewLicense is now async
+  const ok = await renewLicense(licenseId, s.email);
   if (!ok) return { ok: false, detail: "LICENSE_NOT_FOUND" };
+  
   await flushStoreVerified();
   revalidatePath("/portal/subscriptions");
   revalidatePath("/portal/licenses");
@@ -216,13 +223,16 @@ export async function actionAdminCreateLicenseForCustomer(formData: FormData) {
   const email = String(formData.get("email") || "").toLowerCase();
   const name = String(formData.get("name") || "Customer");
   const type = String(formData.get("type") || "monthly") as LicenseType;
-  const result = createLicense({
+  
+  // FIX: Added await here because createLicense is now async
+  const result = await createLicense({
     customerEmail: email,
     customerName: name,
     type,
     actorEmail: "admin",
     bypassIpCheck: true,
   });
+  
   await flushStoreVerified();
   revalidatePath("/portal/admin");
   return result;

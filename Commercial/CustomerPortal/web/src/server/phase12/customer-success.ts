@@ -33,9 +33,11 @@ export function defaultFeatureRequests(): FeatureRequest[] {
 
 export async function buildCustomerSuccessOps() {
   safeEnsureCommercialData();
-  const directory = safeCustomerHealthDirectory();
-  const summary = safeCustomerSuccessSummary();
-  const licenses = safeListLicenses();
+  
+  // FIX: Added await to all async function calls
+  const directory = await safeCustomerHealthDirectory();
+  const summary = await safeCustomerSuccessSummary();
+  const licenses = await safeListLicenses();
   const tickets = safeSupportTickets();
 
   const healthy = directory.filter((c) => c.healthScore >= 70).length;

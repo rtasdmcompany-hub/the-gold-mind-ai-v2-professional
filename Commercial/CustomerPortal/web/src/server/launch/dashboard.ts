@@ -14,11 +14,11 @@ export async function getExecutiveLaunchDashboard() {
   ensureDemoBetaParticipants();
   ensureDemoIncidents();
 
-  const [enterprise, monitoring] = await Promise.all([
-    Promise.resolve(getEnterpriseDashboard()),
-    runProductionMonitoring(true),
-  ]);
-  const bi = getBusinessIntelligence();
+  // Await the async functions properly
+  const enterprise = await getEnterpriseDashboard();
+  const bi = await getBusinessIntelligence();
+  const monitoring = await runProductionMonitoring(true);
+  
   const releases = getAdminReleaseDashboard();
   const beta = getBetaSummary();
   const incidents = getIncidentSummary();

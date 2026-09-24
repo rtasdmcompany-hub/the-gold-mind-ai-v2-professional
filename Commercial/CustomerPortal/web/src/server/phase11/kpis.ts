@@ -15,11 +15,14 @@ import { savePhase11Run } from "./store";
 export async function buildBusinessKpiDashboard() {
   safeEnsureCommercialData();
   const usage = safeUsageAnalytics();
-  const enterprise = safeEnterpriseDashboard();
-  const bi = safeBusinessIntelligence();
+  const enterprise = await safeEnterpriseDashboard();
+  const bi = await safeBusinessIntelligence();
   const billing = safeBillingDashboard();
-  const cs = safeCustomerSuccessSummary();
-  const licenses = safeListLicenses();
+  
+  // FIX: Added await here because safeCustomerSuccessSummary is now async
+  const cs = await safeCustomerSuccessSummary();
+  
+  const licenses = await safeListLicenses();
 
   const trialLicenses = licenses.filter((l) => l.type === "trial");
   const paidLicenses = licenses.filter(

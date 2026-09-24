@@ -6,6 +6,7 @@
 import {
   listLicensesForCustomer,
   activateLicense,
+  type ActivateResult,
 } from "@/server/licensing/license-service";
 import {
   deactivateDevice,
@@ -39,9 +40,9 @@ function record(entry: Omit<ActivationHistoryEntry, "id" | "at">) {
   return row;
 }
 
-function safeLicenses(email: string): LicensePublicDto[] {
+async function safeLicenses(email: string): Promise<LicensePublicDto[]> {
   try {
-    return listLicensesForCustomer(email);
+    return await listLicensesForCustomer(email);
   } catch {
     return [];
   }
@@ -55,8 +56,8 @@ function safeDevices(email: string): DevicePublicDto[] {
   }
 }
 
-export function mobileListLicenses(email: string) {
-  const items = safeLicenses(email);
+export async function mobileListLicenses(email: string) {
+  const items = await safeLicenses(email);
   return {
     active: items.filter((l) => l.status === "active" || l.status === "grace"),
     history: items,
@@ -104,14 +105,14 @@ export function mobileTransferEligibleLicense(deviceId: string, email: string) {
   }
 }
 
-export function mobileActivateOnNewDevice(input: {
+export async function mobileActivateOnNewDevice(input: {
   email: string;
   licenseKey: string;
   deviceName: string;
   fingerprint: string;
-}) {
+}): Promise<ActivateResult | { ok: false; error: string }> {
   try {
-    const result = activateLicense({
+    const result = await activateLicense({
       plaintextKey: input.licenseKey,
       customerEmail: input.email,
       deviceName: input.deviceName,
@@ -128,7 +129,7 @@ export function mobileActivateOnNewDevice(input: {
     }
     return result;
   } catch {
-    return { ok: false as const, error: "LICENSE_STORE_UNAVAILABLE" };
+    return { ok: false, error: "LICENSE_STORE_UNAVAILABLE" };
   }
 }
 
@@ -144,7 +145,7 @@ export function mobileActivationHistory(email: string) {
   return historyMem.filter((h) => h.customerEmail === email.toLowerCase()).slice(0, 50);
 }
 
-export function seedMobileLicenseDemo(email: string) {
+export async function seedMobileLicenseDemo(email: string) {
   record({
     customerEmail: email.toLowerCase(),
     licenseId: "demo",
@@ -153,5 +154,5 @@ export function seedMobileLicenseDemo(email: string) {
   });
   const store = readMobileStore();
   writeMobileStore(store);
-  return mobileListLicenses(email);
+  return await mobileListLicenses(email);
 }

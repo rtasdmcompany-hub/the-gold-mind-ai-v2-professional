@@ -80,6 +80,7 @@ let cache: SupportStore | null = null;
 let writeChain: Promise<void> = Promise.resolve();
 let loadPromise: Promise<void> | null = null;
 
+// FIX: Ab ye function error throw karne ke bajaye empty store return karega
 function loadRawFromDisk(): SupportStore {
   const p = storePath();
   if (!fs.existsSync(p)) return structuredClone(EMPTY);
@@ -88,7 +89,9 @@ function loadRawFromDisk(): SupportStore {
     if (!Array.isArray(data.tickets)) data.tickets = [];
     return data;
   } catch {
-    throw new Error("SUPPORT_STORE_DECRYPT_FAIL");
+    // FIX: Error throw karne ke bajaye empty store return karein
+    console.warn("SUPPORT_STORE_DECRYPT_FAIL: Returning empty store");
+    return structuredClone(EMPTY);
   }
 }
 

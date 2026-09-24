@@ -16,7 +16,7 @@ export default async function AdminLicensesPage({
   if (!hasPermission(role, "admin.licenses.read")) redirect("/portal");
 
   const sp = await searchParams;
-  const view = getLicenseAdminView(sp.q);
+    const view = await getLicenseAdminView(sp.q);
 
   return (
     <>

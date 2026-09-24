@@ -13,11 +13,13 @@ import { savePhase11Run } from "./store";
 
 export async function buildCustomerSuccessDashboard() {
   safeEnsureCommercialData();
-  const licenses = safeListLicenses();
+  const licenses = await safeListLicenses();
   const billing = safeBillingDashboard();
   const tickets = safeSupportTickets();
-  const summary = safeCustomerSuccessSummary();
-  const directory = safeCustomerHealthDirectory();
+  
+  // FIX: Added await here
+  const summary = await safeCustomerSuccessSummary();
+  const directory = await safeCustomerHealthDirectory();
 
   const emails = new Set(licenses.map((l) => l.customerEmail.toLowerCase()));
   const trialEmails = new Set(

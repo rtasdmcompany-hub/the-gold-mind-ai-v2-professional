@@ -29,9 +29,13 @@ function ensureReportsDir(): string {
 
 export async function generateExecutiveReports() {
   safeEnsureCommercialData();
-  const enterprise = safeEnterpriseDashboard();
-  const bi = safeBusinessIntelligence();
-  const cs = safeCustomerSuccessSummary();
+  
+  const enterprise = await safeEnterpriseDashboard();
+  const bi = await safeBusinessIntelligence();
+  
+  // FIX: Added await here because safeCustomerSuccessSummary is now async
+  const cs = await safeCustomerSuccessSummary();
+  
   const usage = safeUsageAnalytics();
   const stamp = new Date().toISOString().slice(0, 10);
   const dir = ensureReportsDir();

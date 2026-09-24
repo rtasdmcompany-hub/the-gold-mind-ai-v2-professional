@@ -20,6 +20,7 @@ import {
   sha256File,
   workspaceRoot,
 } from "./store";
+import type { Phase11Sprint1Dashboard } from "./types";
 
 export async function ensureSprint1Evidence(force = false) {
   if (!force && latestPhase11Run("suite") && latestPhase11Run("scorecard")) return;
@@ -280,7 +281,7 @@ Phase 11 overall: **${o.overallPhase11Progress}%**
   );
 }
 
-export async function getPhase11Sprint1Dashboard(options?: { refresh?: boolean }) {
+export async function getPhase11Sprint1Dashboard(options?: { refresh?: boolean }): Promise<Phase11Sprint1Dashboard> {
   await ensureSprint1Evidence(!!options?.refresh);
 
   const scorecard = latestPhase11Run("scorecard")?.payload as

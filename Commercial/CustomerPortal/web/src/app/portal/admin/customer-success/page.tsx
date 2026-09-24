@@ -24,9 +24,11 @@ export default async function CustomerSuccessCenterPage({
   }
 
   const sp = await searchParams;
-  const summary = getCustomerSuccessSummary();
-  const directory = listCustomerHealthDirectory(sp.q);
-  const selected = sp.email ? getCustomerHealth(sp.email) : null;
+  
+  // FIX: Added await to all async function calls
+  const summary = await getCustomerSuccessSummary();
+  const directory = await listCustomerHealthDirectory(sp.q);
+  const selected = sp.email ? await getCustomerHealth(sp.email) : null;
 
   return (
     <>

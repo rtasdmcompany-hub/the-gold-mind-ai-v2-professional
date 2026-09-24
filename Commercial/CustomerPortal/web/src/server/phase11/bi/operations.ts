@@ -36,7 +36,10 @@ export async function buildOperationalAnalytics() {
     overall: "degraded" as const,
     uptimeSec: getUptimeSec(),
   }));
-  const enterprise = safeEnterpriseDashboard();
+  
+  // FIX: Added await here because safeEnterpriseDashboard is now async
+  const enterprise = await safeEnterpriseDashboard();
+  
   const tickets = safeSupportTickets();
   const alerts = (() => {
     try {
@@ -82,7 +85,7 @@ export async function buildOperationalAnalytics() {
     supportSla: {
       resolvedRatePct: slaMetPct,
       open: tickets.filter((t) => t.status === "open" || t.status === "pending").length,
-      note: "Resolved/closed ÷ total tickets (ACTUAL) — proxy SLA until formal SLA clocks exist",
+      note: "Resolved/closed  total tickets (ACTUAL) — proxy SLA until formal SLA clocks exist",
     },
     incidentTrends: {
       recent: incidents.length,

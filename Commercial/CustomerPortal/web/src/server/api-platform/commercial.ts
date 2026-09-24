@@ -29,7 +29,7 @@ export function commercialProfile(email: string) {
 
 export function commercialLicenses(email: string) {
   return {
-    licenses: safe(() => listLicensesForCustomer(email), []),
+    licenses: safe(() => listLicensesForCustomer(email), Promise.resolve([])),
     devices: safe(() => listDevicesForCustomer(email), []),
   };
 }

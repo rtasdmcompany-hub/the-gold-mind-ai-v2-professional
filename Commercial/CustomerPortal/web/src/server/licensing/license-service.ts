@@ -86,6 +86,7 @@ async function findOldestTrialForEmailNorm(emailNorm: string): Promise<Partial<L
   return mapSupabaseLicense(data);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapSupabaseLicense(row: any): Partial<LicenseRecord> {
   return {
     id: row.id,
@@ -438,4 +439,86 @@ export async function validateLicenseOnline(input: {
 export async function listAllLicensesAdmin(): Promise<LicenseRecord[]> {
   const { data } = await supabaseAdmin.from("licenses").select("*");
   return (data?.map(mapSupabaseLicense) as LicenseRecord[]) || [];
+}
+// ============================================================================
+// RESTORED MISSING EXPORTS (Required by billing and trading modules)
+// ============================================================================
+
+export function parseValidationToken(
+  token: string
+): { licenseId: string; deviceId: string; email: string; exp: string } | null {
+  try {
+    const raw = Buffer.from(token.trim(), "base64url").toString("utf8");
+    const lastDot = raw.lastIndexOf(".");
+    if (lastDot <= 0) return null;
+    const sig = raw.slice(lastDot + 1);
+    const withoutSig = raw.slice(0, lastDot);
+
+    const expMatch = withoutSig.match(/\.(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)$/);
+    if (!expMatch) return null;
+    const exp = expMatch[1];
+    const beforeExp = withoutSig.slice(0, -expMatch[0].length);
+
+    const firstDot = beforeExp.indexOf(".");
+    const secondDot = beforeExp.indexOf(".", firstDot + 1);
+    if (firstDot < 0 || secondDot < 0) return null;
+
+    const licenseId = beforeExp.slice(0, firstDot);
+    const deviceId = beforeExp.slice(firstDot + 1, secondDot);
+    const emailRaw = beforeExp.slice(secondDot + 1);
+    if (!licenseId || !deviceId || !emailRaw || !sig) return null;
+    if (Date.parse(exp) < Date.now()) return null;
+
+    const payload = `${licenseId}.${deviceId}.${emailRaw}.${exp}`;
+    const expected = sha256(
+      `${payload}|${process.env.LICENSE_STORE_SECRET || process.env.NEXTAUTH_SECRET || "dev"}`
+    );
+    if (!safeEqualHex(sig, expected) && sig !== expected) return null;
+    return { licenseId, deviceId, email: emailRaw.toLowerCase(), exp };
+  } catch {
+    return null;
+  }
+}
+
+export async function cancelLicense(licenseId: string, email: string): Promise<boolean> {
+  const { error } = await supabaseAdmin
+    .from("licenses")
+    .update({ status: "cancelled" })
+    .eq("id", licenseId)
+    .eq("customer_email", email.toLowerCase());
+  
+  if (error) {
+    console.error("[Supabase] Failed to cancel license:", error);
+    return false;
+  }
+  return true;
+}
+
+export async function renewLicense(licenseId: string, actorEmail: string): Promise<boolean> {
+  const { data: lic, error: fetchError } = await supabaseAdmin
+    .from("licenses")
+    .select("*")
+    .eq("id", licenseId)
+    .single();
+    
+  if (fetchError || !lic) return false;
+  
+  const mapped = mapSupabaseLicense(lic);
+  const newExp = expiresForType(mapped.type as LicenseType);
+  
+  const { error } = await supabaseAdmin
+    .from("licenses")
+    .update({ 
+      status: "active",
+      expires_at: newExp,
+      grace_ends_at: null,
+      last_validated_at: nowIso()
+    })
+    .eq("id", licenseId);
+    
+  if (error) {
+    console.error("[Supabase] Failed to renew license:", error);
+    return false;
+  }
+  return true;
 }

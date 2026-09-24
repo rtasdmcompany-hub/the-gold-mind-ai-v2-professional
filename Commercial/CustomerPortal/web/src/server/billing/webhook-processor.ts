@@ -16,13 +16,13 @@ function planToLicenseType(plan: PlanCode): LicenseType {
  * Never touches Core Trading Engine.
  * Retry-safe: duplicate providerEventId returns success without re-applying.
  */
-export function processNormalizedEvent(event: NormalizedPaymentEvent): {
+export async function processNormalizedEvent(event: NormalizedPaymentEvent): Promise<{
   ok: boolean;
   duplicate?: boolean;
   detail: string;
   licenseId?: string;
   plaintextKey?: string;
-} {
+}> {
   const store = readBillingStore();
   if (store.processedWebhooks.some((w) => w.providerEventId === event.providerEventId)) {
     return { ok: true, duplicate: true, detail: "Already processed (idempotent)" };
@@ -37,7 +37,7 @@ export function processNormalizedEvent(event: NormalizedPaymentEvent): {
     case "subscription.created": {
       const plan = event.planCode || "monthly";
       const amount = event.amountCents ?? PLAN_CATALOG[plan].amountCents;
-      const created = createLicense({
+      const created = await createLicense({
         customerEmail: event.customerEmail,
         customerName: event.customerName || event.customerEmail,
         type: planToLicenseType(plan),
@@ -160,7 +160,8 @@ export function processNormalizedEvent(event: NormalizedPaymentEvent): {
         });
       });
       if (renewedLicense) {
-        renewLicense(renewedLicense, `billing:${event.provider}`);
+        // FIX: Added await here because renewLicense is now an async function
+        await renewLicense(renewedLicense, `billing:${event.provider}`);
         licenseId = renewedLicense;
       }
       deliverBillingEmail({

@@ -12,7 +12,7 @@ export default async function AdminBiPage() {
   const role = (session?.user as { role?: string } | undefined)?.role;
   if (!hasPermission(role, "admin.bi.read")) redirect("/portal");
 
-  const bi = getBusinessIntelligence();
+  const bi = await getBusinessIntelligence();
 
   return (
     <>

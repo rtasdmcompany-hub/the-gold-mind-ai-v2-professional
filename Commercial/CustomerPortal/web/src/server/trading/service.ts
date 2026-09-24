@@ -4,6 +4,7 @@ import {
   flushTradingStore,
   listAccountsForCustomer,
   listTradesForCustomer,
+  readTradingStore, // <-- FIX: Ye import add kiya gaya hai
   upsertAccountSnapshot,
   upsertTradeRecord,
 } from "./store";
@@ -232,5 +233,22 @@ export async function getTradingDashboard(emailRaw: string): Promise<TradingDash
     openTrades,
     history,
     synced: !!account,
+  };
+}
+
+export function getPublicTradingDashboard(): TradingDashboard | null {
+  const data = readTradingStore();
+  if (data.accounts.length === 0) return null;
+  
+  // Get the most recently updated account
+  const latestAccount = data.accounts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  const trades = data.trades.filter((t) => t.customerEmail === latestAccount.customerEmail);
+  
+  return {
+    account: latestAccount,
+    today: summarizeToday(trades),
+    openTrades: trades.filter((t) => t.status === "open"),
+    history: trades.filter((t) => t.status === "closed"),
+    synced: true,
   };
 }

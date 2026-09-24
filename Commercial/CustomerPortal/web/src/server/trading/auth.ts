@@ -34,7 +34,10 @@ export async function authenticateTradingCaller(auth: TradingCallerAuth): Promis
 
   if (auth.mode === "license") {
     const email = auth.email.trim().toLowerCase();
-    const lic = findLicenseByKey(auth.licenseKey);
+    
+    // FIX: Added await here because findLicenseByKey is now async
+    const lic = await findLicenseByKey(auth.licenseKey);
+    
     if (!lic || lic.customerEmail !== email) {
       return { ok: false, error: "LICENSE_AUTH_FAILED", status: 401 };
     }

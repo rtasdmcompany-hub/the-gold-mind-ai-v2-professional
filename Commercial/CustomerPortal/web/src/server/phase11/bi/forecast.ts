@@ -13,7 +13,7 @@ import {
 
 export async function buildForecastingModel() {
   safeEnsureCommercialData();
-  const { payments, subscriptions, licenses } = loadBiLedger();
+  const { payments, subscriptions, licenses } = await loadBiLedger();
   const usage = safeUsageAnalytics();
   const tickets = safeSupportTickets();
 

@@ -14,7 +14,7 @@ import {
 
 export async function buildRevenueAnalytics() {
   safeEnsureCommercialData();
-  const { payments } = loadBiLedger();
+  const { payments } = await loadBiLedger();
   const succeeded = payments.filter((p) => p.status === "succeeded");
   const refunded = payments.filter((p) => p.status === "refunded");
   const disputed = payments.filter((p) => p.status === "disputed");

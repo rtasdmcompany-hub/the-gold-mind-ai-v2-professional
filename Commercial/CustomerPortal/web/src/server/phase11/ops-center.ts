@@ -31,10 +31,15 @@ export async function buildGlobalOperationsCenter() {
     sha256File(path.join(workspaceRoot(), "Experts", "TheGoldMindAI_Professional.mq5")) ===
     CORE_CERT_SHA;
 
-  const svcStatus = (id: string) =>
-    healthDash.cards.find((c) => c.id === id)?.status ||
-    ("systemHealth" in enterprise ? enterprise.systemHealth : "unknown") ||
-    "unknown";
+  // FIX: Explicitly type return as string and check typeof to prevent {} inference
+  const svcStatus = (id: string): string => {
+    const card = healthDash.cards.find((c) => c.id === id);
+    if (card?.status) return card.status;
+    if ("systemHealth" in enterprise && typeof enterprise.systemHealth === "string") {
+      return enterprise.systemHealth;
+    }
+    return "unknown";
+  };
 
   const payload = {
     activeCustomers: enterprise.activeCustomers,
@@ -50,7 +55,9 @@ export async function buildGlobalOperationsCenter() {
     websiteHealth: svcStatus("portal"),
     apiHealth: svcStatus("api"),
     customerPortalStatus: svcStatus("portal"),
-    systemHealth: "systemHealth" in enterprise ? enterprise.systemHealth : "degraded",
+    systemHealth: ("systemHealth" in enterprise && typeof enterprise.systemHealth === "string") 
+      ? enterprise.systemHealth 
+      : "degraded",
     supportQueue: {
       open: enterprise.supportTicketsOpen,
       total: enterprise.supportTicketsTotal,

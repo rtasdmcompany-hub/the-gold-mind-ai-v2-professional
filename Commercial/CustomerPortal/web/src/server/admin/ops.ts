@@ -10,9 +10,10 @@ import { runHealthChecks } from "@/server/cloud/monitoring";
 import { listAudit, auditCount } from "@/server/cloud/audit";
 import { listSupportTickets } from "./support-store";
 import { readBillingStore } from "@/server/billing/store";
+import type { BusinessIntelligence, CustomerProfile, LicenseAdminView, SearchCustomerResult } from "./types";
 
-export function getEnterpriseDashboard() {
-  const licenses = listAllLicensesAdmin();
+export async function getEnterpriseDashboard() {
+  const licenses = await listAllLicensesAdmin();
   const devices = listAllDevicesAdmin();
   const subs = listAllSubscriptionsAdmin();
   const billing = getAdminBillingDashboard();
@@ -25,7 +26,6 @@ export function getEnterpriseDashboard() {
   const activeSubs = billing.subscriptions.filter((s) => s.status === "active" || s.status === "trialing");
   const today = new Date().toISOString().slice(0, 10);
   const dailyActivations = licenses.filter((l) => l.activatedAt?.slice(0, 10) === today).length;
-  // registrations ≈ first license created today
   const newRegistrations = licenses.filter((l) => l.createdAt?.slice(0, 10) === today).length;
   const openTickets = tickets.filter((t) => t.status === "open" || t.status === "pending").length;
 
@@ -55,7 +55,7 @@ export function getEnterpriseDashboard() {
 }
 
 export async function getEnterpriseDashboardWithHealth() {
-  const base = getEnterpriseDashboard();
+  const base = await getEnterpriseDashboard();
   const health = await runHealthChecks(false);
   return {
     ...base,
@@ -65,22 +65,12 @@ export async function getEnterpriseDashboardWithHealth() {
   };
 }
 
-export function searchCustomers(q: string) {
+export async function searchCustomers(q: string): Promise<SearchCustomerResult[]> {
   const query = q.toLowerCase().trim();
-  const licenses = listAllLicensesAdmin();
+  const licenses = await listAllLicensesAdmin();
   const devices = listAllDevicesAdmin();
   const billing = readBillingStore();
-  const map = new Map<
-    string,
-    {
-      email: string;
-      name: string;
-      licenseCount: number;
-      deviceCount: number;
-      accountStatus: "active" | "suspended" | "unknown";
-      lastOrderAt?: string;
-    }
-  >();
+  const map = new Map<string, SearchCustomerResult>();
 
   for (const l of licenses) {
     const e = l.customerEmail.toLowerCase();
@@ -124,9 +114,9 @@ export function searchCustomers(q: string) {
   return rows.sort((a, b) => a.email.localeCompare(b.email));
 }
 
-export function getCustomerProfile(email: string) {
+export async function getCustomerProfile(email: string): Promise<CustomerProfile> {
   const e = email.toLowerCase();
-  const licenses = listAllLicensesAdmin().filter((l) => l.customerEmail === e);
+  const licenses = (await listAllLicensesAdmin()).filter((l) => l.customerEmail === e);
   const devices = listAllDevicesAdmin().filter((d) => d.customerEmail === e);
   const entitlements = listAllSubscriptionsAdmin().filter((s) => s.customerEmail === e);
   const billing = getBillingSummary(e);
@@ -148,8 +138,8 @@ export function getCustomerProfile(email: string) {
   };
 }
 
-export function getLicenseAdminView(q?: string) {
-  let licenses = listAllLicensesAdmin();
+export async function getLicenseAdminView(q?: string): Promise<LicenseAdminView> {
+  let licenses = await listAllLicensesAdmin();
   if (q) {
     const qq = q.toLowerCase();
     licenses = licenses.filter(
@@ -194,16 +184,15 @@ export function getLicenseAdminView(q?: string) {
   };
 }
 
-export function getBusinessIntelligence() {
+export async function getBusinessIntelligence(): Promise<BusinessIntelligence> {
   const billing = getAdminBillingDashboard();
-  const licenses = listAllLicensesAdmin();
+  const licenses = await listAllLicensesAdmin();
   const releases = getAdminReleaseDashboard();
   const tickets = listSupportTickets();
   const payments = billing.recentTransactions;
   const succeeded = payments.filter((p) => p.status === "succeeded");
   const refunds = payments.filter((p) => p.status === "refunded");
 
-  // Simple monthly buckets from payment dates
   const byMonth = new Map<string, number>();
   for (const p of succeeded) {
     const m = p.createdAt.slice(0, 7);
@@ -226,7 +215,6 @@ export function getBusinessIntelligence() {
   const supportPerf =
     tickets.length === 0 ? 100 : Math.round((resolved / tickets.length) * 1000) / 10;
 
-  // Retention proxy: active licenses / customers with any license
   const customers = new Set(licenses.map((l) => l.customerEmail));
   const activeCustomers = new Set(
     licenses.filter((l) => l.status === "active" || l.status === "grace").map((l) => l.customerEmail)

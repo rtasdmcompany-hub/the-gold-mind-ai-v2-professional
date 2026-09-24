@@ -13,9 +13,12 @@ import { loadBiLedger } from "./helpers";
 export async function buildCustomerAnalytics() {
   safeEnsureCommercialData();
   const usage = safeUsageAnalytics();
-  const cs = safeCustomerSuccessSummary();
+  
+  // FIX: Added await here because safeCustomerSuccessSummary is now async
+  const cs = await safeCustomerSuccessSummary();
+  
   const tickets = safeSupportTickets();
-  const { licenses, subscriptions } = loadBiLedger();
+  const { licenses, subscriptions } = await loadBiLedger();
 
   const customers = new Set(licenses.map((l) => l.customerEmail.toLowerCase()));
   const active = new Set(

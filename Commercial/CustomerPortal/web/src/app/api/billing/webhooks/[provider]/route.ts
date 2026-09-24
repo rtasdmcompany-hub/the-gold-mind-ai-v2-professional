@@ -41,7 +41,7 @@ export async function POST(
   }
 
   try {
-    const result = processNormalizedEvent(event);
+    const result = await processNormalizedEvent(event);
     auditWebhook({
       provider,
       authenticated: true,

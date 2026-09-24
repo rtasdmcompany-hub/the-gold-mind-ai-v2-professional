@@ -7,7 +7,7 @@ import { loadBiLedger } from "./helpers";
 
 export async function buildSubscriptionAnalytics() {
   safeEnsureCommercialData();
-  const { payments, subscriptions, licenses } = loadBiLedger();
+  const { payments, subscriptions, licenses } = await loadBiLedger();
   const month = new Date().toISOString().slice(0, 7);
 
   const renewals = payments.filter((p) => p.note === "renewal" && p.status === "succeeded").length;

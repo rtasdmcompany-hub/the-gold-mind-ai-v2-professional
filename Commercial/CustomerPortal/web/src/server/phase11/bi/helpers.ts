@@ -39,9 +39,9 @@ export function safeReadBillingStore(): BillingStoreData {
   }
 }
 
-export function loadBiLedger() {
+export async function loadBiLedger() {
   const store = safeReadBillingStore();
-  const licenses = safeListLicenses();
+  const licenses = await safeListLicenses();
   return {
     payments: store.payments || [],
     subscriptions: store.subscriptions || [],

@@ -17,8 +17,8 @@ export default async function AdminCustomersPage({
   if (!hasPermission(role, "admin.customers.read")) redirect("/portal");
 
   const sp = await searchParams;
-  if (sp.email) {
-    const profile = getCustomerProfile(sp.email);
+    if (sp.email) {
+    const profile = await getCustomerProfile(sp.email);
     return (
       <>
         <header style={{ marginBottom: 20 }}>
@@ -58,7 +58,7 @@ export default async function AdminCustomersPage({
                 <th>Expires</th>
               </tr>
             </thead>
-            <tbody>
+                        <tbody>
               {profile.licenses.map((l) => (
                 <tr key={l.id}>
                   <td className="mono">{l.id}</td>
@@ -164,7 +164,7 @@ export default async function AdminCustomersPage({
     );
   }
 
-  const customers = searchCustomers(sp.q || "");
+  const customers = await searchCustomers(sp.q || "");
   const suspended = customers.filter((c) => c.accountStatus === "suspended");
 
   return (

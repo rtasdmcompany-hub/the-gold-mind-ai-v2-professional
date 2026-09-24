@@ -41,8 +41,8 @@ export async function runResilienceDrills(): Promise<{
   {
     const t0 = Date.now();
     try {
-      safeListLicenses();
-      safeListLicenses();
+      await safeListLicenses();
+      await safeListLicenses();
       drills.push({
         id: "database_reconnection",
         label: "Database Reconnection",
@@ -130,7 +130,8 @@ export async function runResilienceDrills(): Promise<{
   {
     const t0 = Date.now();
     try {
-      const n = safeListLicenses().length;
+      const licenses = await safeListLicenses();
+      const n = licenses.length;
       drills.push({
         id: "license_service_recovery",
         label: "License Service Recovery",
