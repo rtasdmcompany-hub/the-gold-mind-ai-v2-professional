@@ -1,52 +1,53 @@
 {
-    "name":  "tgm-customer-portal",
-    "version":  "1.2.0",
-    "private":  true,
-    "description":  "THE GOLD MIND PROFESSIONAL Customer Portal (no Core Trading Engine dependency)",
-    "scripts":  {
-                    "dev":  "next dev",
-                    "build":  "next build",
-                    "start":  "next start",
-                    "lint":  "next lint",
-                    "validate:rc2":  "tsx scripts/rc2-validate.ts",
-                    "validate:releases":  "tsx scripts/validate-releases.ts",
-                    "perf:sprint5":  "tsx scripts/perf-sprint5.ts",
-                    "security:sprint6":  "tsx scripts/security-sprint6.ts",
-                    "mql5:sprint7":  "tsx scripts/mql5-sprint7.ts",
-                    "website:sprint8":  "tsx scripts/website-sprint8.ts",
-                    "executive:sprint9":  "tsx scripts/executive-sprint9.ts",
-                    "closure:sprint10":  "tsx scripts/closure-sprint10.ts",
-                    "phase11:sprint1":  "tsx scripts/phase11-sprint1.ts",
-                    "phase11:sprint2":  "tsx scripts/phase11-sprint2.ts",
-                    "phase11:sprint3":  "tsx scripts/phase11-sprint3.ts",
-                    "phase11:sprint4":  "tsx scripts/phase11-sprint4.ts",
-                    "phase11:sprint5":  "tsx scripts/phase11-sprint5.ts",
-                    "phase11:sprint6":  "tsx scripts/phase11-sprint6.ts",
-                    "phase11:sprint7":  "tsx scripts/phase11-sprint7.ts",
-                    "phase11:sprint8":  "tsx scripts/phase11-sprint8.ts",
-                    "phase11:sprint9":  "tsx scripts/phase11-sprint9.ts",
-                    "phase11:sprint10":  "tsx scripts/phase11-sprint10.ts",
-                    "phase12:sprint1":  "tsx scripts/phase12-sprint1.ts",
-                    "test:portal-flows":  "tsx scripts/portal-customer-flows.ts"
-                },
-    "dependencies":  {
-                         "@vercel/blob":  "^1.1.1",
-                         "next":  "^15.5.9",
-                         "next-auth":  "^5.0.0-beta.25",
-                         "react":  "^19.0.0",
-                         "react-dom":  "^19.0.0"
-                     },
-    "devDependencies":  {
-                            "@eslint/eslintrc":  "^3",
-                            "@types/node":  "^20",
-                            "@types/react":  "^19",
-                            "@types/react-dom":  "^19",
-                            "eslint":  "^9",
-                            "eslint-config-next":  "^15.5.9",
-                            "tsx":  "^4.23.1",
-                            "typescript":  "^5"
-                        },
-    "engines":  {
-                    "node":  "24.x"
-                }
+  "name": "tgm-customer-portal",
+  "version": "1.2.0",
+  "private": true,
+  "description": "THE GOLD MIND PROFESSIONAL Customer Portal (no Core Trading Engine dependency)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "validate:rc2": "tsx scripts/rc2-validate.ts",
+    "validate:releases": "tsx scripts/validate-releases.ts",
+    "perf:sprint5": "tsx scripts/perf-sprint5.ts",
+    "security:sprint6": "tsx scripts/security-sprint6.ts",
+    "mql5:sprint7": "tsx scripts/mql5-sprint7.ts",
+    "website:sprint8": "tsx scripts/website-sprint8.ts",
+    "executive:sprint9": "tsx scripts/executive-sprint9.ts",
+    "closure:sprint10": "tsx scripts/closure-sprint10.ts",
+    "phase11:sprint1": "tsx scripts/phase11-sprint1.ts",
+    "phase11:sprint2": "tsx scripts/phase11-sprint2.ts",
+    "phase11:sprint3": "tsx scripts/phase11-sprint3.ts",
+    "phase11:sprint4": "tsx scripts/phase11-sprint4.ts",
+    "phase11:sprint5": "tsx scripts/phase11-sprint5.ts",
+    "phase11:sprint6": "tsx scripts/phase11-sprint6.ts",
+    "phase11:sprint7": "tsx scripts/phase11-sprint7.ts",
+    "phase11:sprint8": "tsx scripts/phase11-sprint8.ts",
+    "phase11:sprint9": "tsx scripts/phase11-sprint9.ts",
+    "phase11:sprint10": "tsx scripts/phase11-sprint10.ts",
+    "phase12:sprint1": "tsx scripts/phase12-sprint1.ts",
+    "test:portal-flows": "tsx scripts/portal-customer-flows.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "@vercel/blob": "^1.1.1",
+    "next": "^15.5.9",
+    "next-auth": "^5.0.0-beta.25",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^15.5.9",
+    "tsx": "^4.23.1",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": "24.x"
+  }
 }
