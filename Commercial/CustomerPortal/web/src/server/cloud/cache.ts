@@ -118,7 +118,87 @@ export async function durableSet(key: string, value: string): Promise<void> {
   }
 }
 
-// ... (باقی میموری کیچ فنکشنز جیسے کے تھے ویسے ہی رہیں گے) ...
+// ✅ YE FUNCTIONS PEHLE MISSING THE, AB POORE ADD KAR DIYE GAYE HAIN ✅
+
+export async function cacheGet(key: string): Promise<string | null> {
+  if (!upstashConfigured() && !supabaseConfigured()) return memoryGet(key);
+  
+  if (upstashConfigured()) {
+    try {
+      const result = await upstashCommand(["GET", key]);
+      return result == null ? null : String(result);
+    } catch {
+      return memoryGet(key);
+    }
+  }
+
+  if (supabaseConfigured()) {
+    try {
+      const { data, error } = await getSupabaseClient()
+        .from("durable_cache")
+        .select("value")
+        .eq("key", key)
+        .single();
+      if (error || !data) return memoryGet(key);
+      return data.value;
+    } catch {
+      return memoryGet(key);
+    }
+  }
+  
+  return memoryGet(key);
+}
+
+export async function cacheSet(key: string, value: string, ttlSec = 300): Promise<void> {
+  if (!upstashConfigured() && !supabaseConfigured()) {
+    memorySet(key, value, ttlSec);
+    return;
+  }
+  
+  if (upstashConfigured()) {
+    try {
+      await upstashCommand(["SET", key, value, "EX", ttlSec]);
+    } catch {
+      memorySet(key, value, ttlSec);
+    }
+    return;
+  }
+
+  if (supabaseConfigured()) {
+    try {
+      await getSupabaseClient()
+        .from("durable_cache")
+        .upsert({ key, value }, { onConflict: "key" });
+    } catch {
+      memorySet(key, value, ttlSec);
+    }
+  }
+}
+
+export async function cacheDel(key: string): Promise<void> {
+  if (!upstashConfigured() && !supabaseConfigured()) {
+    memoryDel(key);
+    return;
+  }
+  
+  if (upstashConfigured()) {
+    try {
+      await upstashCommand(["DEL", key]);
+    } catch {
+      memoryDel(key);
+    }
+    return;
+  }
+
+  if (supabaseConfigured()) {
+    try {
+      await getSupabaseClient().from("durable_cache").delete().eq("key", key);
+    } catch {
+      memoryDel(key);
+    }
+  }
+}
+
 export function memoryGet(key: string): string | null {
   const item = memoryCache.get(key);
   if (!item) return null;
