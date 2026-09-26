@@ -20,7 +20,6 @@ const supabase = supabaseUrl && supabaseKey
 // In-memory cache (fast access)
 let accountsCache: TradingAccountSnapshot[] = [];
 let tradesCache: TradeRecord[] = [];
-let lastSyncTime: string | null = null;
 
 export type SyncTradeInput = {
   ticket: string | number;
@@ -114,8 +113,6 @@ async function syncFromSupabase(email: string): Promise<void> {
         updatedAt: t.updatedAt,
       }));
     }
-
-    lastSyncTime = nowIso();
   } catch (error) {
     console.error("Sync error:", error);
   }
@@ -154,7 +151,7 @@ function toTradeRecord(
 /** Persist a single closed trade (also used by trade-closed notification path). */
 export async function persistClosedTrade(input: {
   customerEmail: string;
-  accountNumber?: string;
+  accountNumber?: string | number;
   ticket?: string | number;
   symbol?: string;
   side?: string;
@@ -178,8 +175,9 @@ export async function persistClosedTrade(input: {
     return null;
   }
 
-  // Get account number if not provided
-  let accountNumber = input.accountNumber?.trim();
+  // ✅ FIX: Explicitly type as string to avoid 'undefined' error
+  let accountNumber: string = input.accountNumber != null ? String(input.accountNumber).trim() : "";
+  
   if (!accountNumber) {
     const { data: accounts } = await supabase
       .from("user_mt5_accounts")
@@ -188,7 +186,7 @@ export async function persistClosedTrade(input: {
       .limit(1)
       .single();
     
-    accountNumber = accounts?.accountNumber || "unknown";
+    accountNumber = accounts?.accountNumber ? String(accounts.accountNumber).trim() : "unknown";
   }
 
   const record = toTradeRecord(
@@ -215,14 +213,12 @@ export async function persistClosedTrade(input: {
   }
 
   // Save to Supabase
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("master_trades")
-    .upsert(record, { onConflict: "ticket,accountNumber" })
-    .select()
-    .single();
+    .upsert(record, { onConflict: "ticket,accountNumber" });
 
   if (error) {
-    console.error(" persistClosedTrade error:", error);
+    console.error("❌ persistClosedTrade error:", error);
     return null;
   }
 
@@ -276,7 +272,6 @@ export async function applyTradingSync(input: TradingSyncInput): Promise<{
 
   const openPositions = input.openPositions || [];
   const closedDeals = input.closedDeals || [];
-  const openTickets = new Set<string>();
   let openCount = 0;
   let closedCount = 0;
   const newlyClosed: TradeRecord[] = [];
@@ -285,7 +280,6 @@ export async function applyTradingSync(input: TradingSyncInput): Promise<{
   for (const row of openPositions) {
     const rec = toTradeRecord(email, accountNumber, { ...row, status: "open", closeTime: null }, "open");
     if (!rec) continue;
-    openTickets.add(rec.ticket);
 
     const { error } = await supabase
       .from("master_trades")
