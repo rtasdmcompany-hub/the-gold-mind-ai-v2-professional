@@ -14,7 +14,6 @@ export type CloudRole =
   | "qa_manager"
   | "auditor";
 
-
 export type ApiVersion = "v1";
 
 export type AuditAction =
@@ -99,7 +98,8 @@ export interface SystemHealthReport {
   metrics: {
     uptimeSec: number;
     auditEntries: number;
-    cacheBackend: "upstash" | "memory";
-    rateLimitBackend: "upstash" | "memory";
+    // ✅ FIX: 'supabase' ko shamil kar liya gaya hai
+    cacheBackend: "upstash" | "supabase" | "memory";
+    rateLimitBackend: "upstash" | "supabase" | "memory";
   };
 }

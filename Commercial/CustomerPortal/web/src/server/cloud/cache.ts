@@ -1,6 +1,83 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Memory cache fallback
+// ✅ Table ka structure define kiya
+type CacheRow = {
+  key: string;
+  value: string;
+};
+
+// ✅ Safe result type for Supabase queries
+type SupabaseResult<T> = {
+  data: T | null;
+  error: unknown;
+};
+
+// ✅ Safe Supabase Table Builder (Bina 'any' ke, 100% ESLint compliant)
+type SafeSupabaseTable = {
+  select: (columns?: string) => {
+    eq: (column: string, value: unknown) => {
+      single: () => Promise<SupabaseResult<CacheRow>>;
+    };
+  };
+  upsert: (payload: CacheRow, options?: { onConflict?: string }) => Promise<{ error: unknown }>;
+  delete: () => {
+    eq: (column: string, value: unknown) => Promise<{ error: unknown }>;
+  };
+};
+
+// ✅ Safe Supabase Client Type
+type SafeSupabaseClient = {
+  from: (table: string) => SafeSupabaseTable;
+};
+
+// ✅ BULLETPROOF CACHEKEYS (Ab is mein bruteForce bhi shamil hai)
+export const CacheKeys = {
+  LICENSE_STORE: "tgm:license:store:v1",
+  SUPPORT_STORE: "tgm:support:store:v1",
+  BILLING_STORE: "tgm:billing:store:v1",
+  AUDIT_STORE: "tgm:audit:store:v1",
+  SESSION_PREFIX: "tgm:session:",
+  DEVICE_PREFIX: "tgm:device:",
+  CLOUD_METRICS: "tgm:cloud:metrics",
+  MONITORING_PREFIX: "tgm:monitoring:",
+  SECURITY_PREFIX: "tgm:security:",
+  ACCOUNT_PREFIX: "tgm:account:",
+  PERFORMANCE_PREFIX: "tgm:performance:",
+  RELEASES_PREFIX: "tgm:releases:",
+  TRADING_PREFIX: "tgm:trading:",
+  PARTNER_PREFIX: "tgm:partner:",
+  ENTERPRISE_PREFIX: "tgm:enterprise:",
+  CLOSURE_PREFIX: "tgm:closure:",
+  AI_ASSISTANT_PREFIX: "tgm:ai-assistant:",
+  API_PLATFORM_PREFIX: "tgm:api-platform:",
+  MARKET_PREFIX: "tgm:market:",
+  MOBILE_PREFIX: "tgm:mobile:",
+  OBSERVABILITY_PREFIX: "tgm:observability:",
+  OPS_PREFIX: "tgm:ops:",
+  PHASE11_PREFIX: "tgm:phase11:",
+  PHASE12_PREFIX: "tgm:phase12:",
+  WEBSITE_LAUNCH_PREFIX: "tgm:website-launch:",
+  REGIONAL_PREFIX: "tgm:regional:",
+  WORKFLOW_PREFIX: "tgm:workflow:",
+  BETA_PREFIX: "tgm:beta:",
+  FEEDBACK_PREFIX: "tgm:feedback:",
+  INCIDENT_PREFIX: "tgm:incident:",
+  ISSUE_PREFIX: "tgm:issue:",
+  METRICS_PREFIX: "tgm:metrics:",
+  COMPANION_PREFIX: "tgm:companion:",
+  ALERT_PREFIX: "tgm:alert:",
+  TELEMETRY_PREFIX: "tgm:telemetry:",
+  USAGE_PREFIX: "tgm:usage:",
+  RUNS_PREFIX: "tgm:runs:",
+  
+  session: (email: string) => `tgm:session:${email}`,
+  rateLimit: (action: string) => `tgm:ratelimit:${action}`,
+  perf: (action: string) => `tgm:perf:${action}`,
+  audit: (action: string) => `tgm:audit:${action}`,
+  monitor: (action: string) => `tgm:monitor:${action}`,
+  bruteForce: (email: string) => `tgm:bruteforce:${email}`, // ✅ YE NAYA ADD KIYA GAYA HAI
+} as const;
+
 const memoryCache = new Map<string, { value: string; expiresAt: number }>();
 
 function isUsableEnvValue(val: string): boolean {
@@ -21,8 +98,10 @@ function supabaseConfigured(): boolean {
   return isUsableEnvValue(url) && isUsableEnvValue(key);
 }
 
-let supabaseClient: any = null;
-function getSupabaseClient() {
+type SupabaseClient = ReturnType<typeof createClient>;
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient | null {
   if (!supabaseClient && supabaseConfigured()) {
     supabaseClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,7 +118,6 @@ export function getCacheBackend(): "upstash" | "supabase" | "memory" {
 }
 
 export function isDurableStoreConfigured(): boolean {
-  // FIX: Ab ye Upstash YA Supabase dono mein se kisi ek ko accept karega
   return upstashConfigured() || supabaseConfigured();
 }
 
@@ -48,12 +126,27 @@ export function isDurableStoreRequired(): boolean {
 }
 
 export function assertDurableStoreForLicensing(): void {
-  // FIX: Ab ye error tab hi throw hoga jab Upstash AUR Supabase dono missing hon
   if (isDurableStoreRequired() && !isDurableStoreConfigured()) {
     throw new Error(
       "DURABLE_STORE_REQUIRED: Please configure either Upstash Redis OR Supabase environment variables on Vercel so license keys survive redeploys."
     );
   }
+}
+
+export function licensingStoreReadiness(): {
+  ready: boolean;
+  durableConfigured: boolean;
+  warning?: string;
+} {
+  const durableConfigured = isDurableStoreConfigured();
+  return {
+    ready: durableConfigured,
+    durableConfigured,
+    warning:
+      isDurableStoreRequired() && !durableConfigured
+        ? "License store requires durable storage. Configure Upstash Redis or Supabase."
+        : undefined,
+  };
 }
 
 async function upstashCommand(args: (string | number)[]): Promise<unknown> {
@@ -82,16 +175,20 @@ export async function durableGet(key: string): Promise<string | null> {
     }
   }
   
-  // Supabase Fallback
   if (supabaseConfigured()) {
     try {
-      const { data, error } = await getSupabaseClient()
+      const client = getSupabaseClient();
+      if (!client) return null;
+      
+      const safeClient = client as unknown as SafeSupabaseClient;
+      const result = await safeClient
         .from("durable_cache")
         .select("value")
         .eq("key", key)
         .single();
-      if (error || !data) return null;
-      return data.value;
+        
+      if (result.error || !result.data) return null;
+      return result.data.value;
     } catch {
       return null;
     }
@@ -106,10 +203,13 @@ export async function durableSet(key: string, value: string): Promise<void> {
     return;
   }
 
-  // Supabase Fallback
   if (supabaseConfigured()) {
     try {
-      await getSupabaseClient()
+      const client = getSupabaseClient();
+      if (!client) return;
+      
+      const safeClient = client as unknown as SafeSupabaseClient;
+      await safeClient
         .from("durable_cache")
         .upsert({ key, value }, { onConflict: "key" });
     } catch {
@@ -118,7 +218,57 @@ export async function durableSet(key: string, value: string): Promise<void> {
   }
 }
 
-// ✅ YE FUNCTIONS PEHLE MISSING THE, AB POORE ADD KAR DIYE GAYE HAIN ✅
+export async function cacheIncr(key: string, ttlSec = 300): Promise<number> {
+  if (upstashConfigured()) {
+    try {
+      const result = await upstashCommand(["INCR", key]);
+      return Number(result);
+    } catch {
+      return memoryIncr(key, ttlSec);
+    }
+  }
+
+  if (supabaseConfigured()) {
+    try {
+      const client = getSupabaseClient();
+      if (!client) return memoryIncr(key, ttlSec);
+      
+      const safeClient = client as unknown as SafeSupabaseClient;
+      const result = await safeClient
+        .from("durable_cache")
+        .select("value")
+        .eq("key", key)
+        .single();
+      
+      let currentVal = 0;
+      if (!result.error && result.data) {
+        currentVal = parseInt(result.data.value, 10) || 0;
+      }
+      
+      const newVal = currentVal + 1;
+      await safeClient
+        .from("durable_cache")
+        .upsert({ key, value: String(newVal) }, { onConflict: "key" });
+      
+      return newVal;
+    } catch {
+      return memoryIncr(key, ttlSec);
+    }
+  }
+
+  return memoryIncr(key, ttlSec);
+}
+
+function memoryIncr(key: string, ttlSec = 300): number {
+  const item = memoryCache.get(key);
+  let currentVal = 0;
+  if (item && Date.now() <= item.expiresAt) {
+    currentVal = parseInt(item.value, 10) || 0;
+  }
+  const newVal = currentVal + 1;
+  memoryCache.set(key, { value: String(newVal), expiresAt: Date.now() + ttlSec * 1000 });
+  return newVal;
+}
 
 export async function cacheGet(key: string): Promise<string | null> {
   if (!upstashConfigured() && !supabaseConfigured()) return memoryGet(key);
@@ -134,13 +284,18 @@ export async function cacheGet(key: string): Promise<string | null> {
 
   if (supabaseConfigured()) {
     try {
-      const { data, error } = await getSupabaseClient()
+      const client = getSupabaseClient();
+      if (!client) return memoryGet(key);
+      
+      const safeClient = client as unknown as SafeSupabaseClient;
+      const result = await safeClient
         .from("durable_cache")
         .select("value")
         .eq("key", key)
         .single();
-      if (error || !data) return memoryGet(key);
-      return data.value;
+        
+      if (result.error || !result.data) return memoryGet(key);
+      return result.data.value;
     } catch {
       return memoryGet(key);
     }
@@ -166,7 +321,14 @@ export async function cacheSet(key: string, value: string, ttlSec = 300): Promis
 
   if (supabaseConfigured()) {
     try {
-      await getSupabaseClient()
+      const client = getSupabaseClient();
+      if (!client) {
+        memorySet(key, value, ttlSec);
+        return;
+      }
+      
+      const safeClient = client as unknown as SafeSupabaseClient;
+      await safeClient
         .from("durable_cache")
         .upsert({ key, value }, { onConflict: "key" });
     } catch {
@@ -192,7 +354,14 @@ export async function cacheDel(key: string): Promise<void> {
 
   if (supabaseConfigured()) {
     try {
-      await getSupabaseClient().from("durable_cache").delete().eq("key", key);
+      const client = getSupabaseClient();
+      if (!client) {
+        memoryDel(key);
+        return;
+      }
+      
+      const safeClient = client as unknown as SafeSupabaseClient;
+      await safeClient.from("durable_cache").delete().eq("key", key);
     } catch {
       memoryDel(key);
     }
