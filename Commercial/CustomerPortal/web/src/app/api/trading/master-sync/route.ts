@@ -6,7 +6,6 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 // Supabase Client Initialize (Service Role Key for server-side admin access)
-// Hum check karte hain ke variables mojood hain taake build time par crash na ho
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -31,14 +30,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { trades, signals } = body;
 
-    let tradesResult = null;
-    let signalsResult = null;
-
     // 1. Master Trades ko Supabase mein save/update karein
     if (trades && Array.isArray(trades) && trades.length > 0) {
-      const { data, error: tradesError } = await supabase
+      const { error: tradesError } = await supabase
         .from('master_trades')
-        .upsert(trades, { onConflict: 'ticket' }); // 'ticket' unique hona chahiye table mein
+        .upsert(trades, { onConflict: 'ticket' });
 
       if (tradesError) {
         console.error('❌ Trades insert error:', tradesError);
@@ -47,16 +43,13 @@ export async function POST(request: Request) {
           details: tradesError.message 
         }, { status: 500 });
       }
-      tradesResult = data;
     }
 
     // 2. Master Signals ko Supabase mein save/update karein
     if (signals && Array.isArray(signals) && signals.length > 0) {
-      // Note: Agar master_signals table mein 'id' ya 'ticket' primary key hai, 
-      // to onConflict: 'id' ya 'ticket' zaroor lagayen
-      const { data, error: signalsError } = await supabase
+      const { error: signalsError } = await supabase
         .from('master_signals')
-        .upsert(signals, { onConflict: 'ticket' }); 
+        .upsert(signals, { onConflict: 'ticket' });
 
       if (signalsError) {
         console.error('❌ Signals insert error:', signalsError);
@@ -65,7 +58,6 @@ export async function POST(request: Request) {
           details: signalsError.message 
         }, { status: 500 });
       }
-      signalsResult = data;
     }
 
     console.log('✅ Data synced successfully:', {
@@ -82,11 +74,16 @@ export async function POST(request: Request) {
       }
     }, { status: 200 });
 
-  } catch (error: any) {
-    console.error('❌ Sync API error:', error);
+  } catch (error) {
+    // ✅ FIX: 'any' ki jagah 'unknown' use kiya - ESLint compliant
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Unknown error';
+    
+    console.error('❌ Sync API error:', errorMessage);
     return NextResponse.json({ 
       error: 'Invalid request', 
-      details: error.message || 'Unknown error'
+      details: errorMessage
     }, { status: 400 });
   }
 }
