@@ -6,6 +6,7 @@ export const customerNav = [
   { href: "/portal/billing", label: "Billing" },
   { href: "/portal/subscriptions", label: "Subscriptions" },
   { href: "/portal/devices", label: "Devices" },
+  { href: "/portal/trading", label: "Trading" }, // ✅ YE NAYA ADD KIYA GAYA HAI
   { href: "/portal/invoices", label: "Invoices" },
   { href: "/portal/orders", label: "Orders" },
   { href: "/portal/support", label: "Support" },
