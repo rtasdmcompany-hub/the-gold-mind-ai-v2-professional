@@ -1,13 +1,5 @@
 import { nowIso } from "@/server/licensing/crypto";
-import {
-  ensureTradingStoreLoaded,
-  flushTradingStore,
-  listAccountsForCustomer,
-  listTradesForCustomer,
-  readTradingStore, // <-- FIX: Ye import add kiya gaya hai
-  upsertAccountSnapshot,
-  upsertTradeRecord,
-} from "./store";
+import { createClient } from "@supabase/supabase-js";
 import type {
   TradingAccountSnapshot,
   TradingDashboard,
@@ -16,6 +8,19 @@ import type {
   TradeSide,
   TradeStatus,
 } from "./types";
+
+// ✅ Supabase Client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+const supabase = supabaseUrl && supabaseKey 
+  ? createClient(supabaseUrl, supabaseKey) 
+  : null;
+
+// In-memory cache (fast access)
+let accountsCache: TradingAccountSnapshot[] = [];
+let tradesCache: TradeRecord[] = [];
+let lastSyncTime: string | null = null;
 
 export type SyncTradeInput = {
   ticket: string | number;
@@ -56,6 +61,66 @@ function normalizeStatus(raw?: string, closeTime?: string | null): TradeStatus {
   return closeTime ? "closed" : "open";
 }
 
+async function syncFromSupabase(email: string): Promise<void> {
+  if (!supabase) {
+    console.warn("⚠️ Supabase not configured");
+    return;
+  }
+
+  try {
+    // Fetch accounts
+    const { data: accountsData, error: accountsError } = await supabase
+      .from("user_mt5_accounts")
+      .select("*")
+      .eq("customerEmail", email)
+      .order("updatedAt", { ascending: false });
+
+    if (accountsError) {
+      console.error("Error fetching accounts:", accountsError);
+    } else if (accountsData) {
+      accountsCache = accountsData.map((acc) => ({
+        accountNumber: acc.accountNumber,
+        customerEmail: acc.customerEmail,
+        balance: acc.balance,
+        equity: acc.equity,
+        currency: acc.currency,
+        serverName: acc.serverName,
+        updatedAt: acc.updatedAt,
+      }));
+    }
+
+    // Fetch trades
+    const { data: tradesData, error: tradesError } = await supabase
+      .from("master_trades")
+      .select("*")
+      .eq("customerEmail", email)
+      .order("openTime", { ascending: false });
+
+    if (tradesError) {
+      console.error("Error fetching trades:", tradesError);
+    } else if (tradesData) {
+      tradesCache = tradesData.map((t) => ({
+        ticket: t.ticket,
+        accountNumber: t.accountNumber,
+        customerEmail: t.customerEmail,
+        symbol: t.symbol,
+        type: t.type,
+        volume: t.volume,
+        openTime: t.openTime,
+        closeTime: t.closeTime,
+        profit: t.profit,
+        status: t.status,
+        comment: t.comment,
+        updatedAt: t.updatedAt,
+      }));
+    }
+
+    lastSyncTime = nowIso();
+  } catch (error) {
+    console.error("Sync error:", error);
+  }
+}
+
 function toTradeRecord(
   email: string,
   accountNumber: string,
@@ -86,54 +151,6 @@ function toTradeRecord(
   };
 }
 
-/** Persist a single closed trade (also used by trade-closed notification path). */
-export async function persistClosedTrade(input: {
-  customerEmail: string;
-  accountNumber?: string;
-  ticket?: string | number;
-  symbol?: string;
-  side?: string;
-  type?: string;
-  volume?: number;
-  openTime?: string;
-  closeTime?: string;
-  profit?: number;
-  comment?: string;
-}): Promise<TradeRecord | null> {
-  await ensureTradingStoreLoaded();
-  const email = input.customerEmail.trim().toLowerCase();
-  const ticket = input.ticket != null ? String(input.ticket).trim() : "";
-  if (!email || !ticket) return null;
-
-  const accounts = listAccountsForCustomer(email);
-  const accountNumber =
-    (input.accountNumber && String(input.accountNumber).trim()) ||
-    accounts[0]?.accountNumber ||
-    "unknown";
-
-  const record = toTradeRecord(
-    email,
-    accountNumber,
-    {
-      ticket,
-      symbol: input.symbol,
-      side: input.side,
-      type: input.type,
-      volume: input.volume,
-      openTime: input.openTime,
-      closeTime: input.closeTime || nowIso(),
-      profit: input.profit,
-      status: "closed",
-      comment: input.comment,
-    },
-    "closed"
-  );
-  if (!record) return null;
-  const saved = upsertTradeRecord(record);
-  await flushTradingStore();
-  return saved;
-}
-
 export async function applyTradingSync(input: TradingSyncInput): Promise<{
   ok: true;
   account: TradingAccountSnapshot;
@@ -141,14 +158,18 @@ export async function applyTradingSync(input: TradingSyncInput): Promise<{
   closedCount: number;
   newlyClosed: TradeRecord[];
 }> {
-  await ensureTradingStoreLoaded();
+  if (!supabase) {
+    throw new Error("SUPABASE_NOT_CONFIGURED");
+  }
+
   const email = input.customerEmail.trim().toLowerCase();
   const accountNumber = String(input.account.accountNumber).trim();
   if (!email || !accountNumber) {
     throw new Error("MISSING_ACCOUNT");
   }
 
-  const account = upsertAccountSnapshot({
+  // Save account to Supabase
+  const accountSnapshot: TradingAccountSnapshot = {
     accountNumber,
     customerEmail: email,
     balance: Number(input.account.balance) || 0,
@@ -156,7 +177,16 @@ export async function applyTradingSync(input: TradingSyncInput): Promise<{
     currency: input.account.currency,
     serverName: input.account.serverName,
     updatedAt: nowIso(),
-  });
+  };
+
+  const { error: accountError } = await supabase
+    .from("user_mt5_accounts")
+    .upsert(accountSnapshot, { onConflict: "accountNumber,customerEmail" });
+
+  if (accountError) {
+    console.error("Account save error:", accountError);
+    throw new Error("FAILED_TO_SAVE_ACCOUNT");
+  }
 
   const openPositions = input.openPositions || [];
   const closedDeals = input.closedDeals || [];
@@ -165,31 +195,48 @@ export async function applyTradingSync(input: TradingSyncInput): Promise<{
   let closedCount = 0;
   const newlyClosed: TradeRecord[] = [];
 
+  // Save open positions
   for (const row of openPositions) {
     const rec = toTradeRecord(email, accountNumber, { ...row, status: "open", closeTime: null }, "open");
     if (!rec) continue;
     openTickets.add(rec.ticket);
-    upsertTradeRecord(rec);
-    openCount += 1;
+
+    const { error } = await supabase
+      .from("master_trades")
+      .upsert(rec, { onConflict: "ticket,accountNumber" });
+
+    if (error) {
+      console.error("Open position save error:", error);
+    } else {
+      openCount += 1;
+    }
   }
 
-  const existing = listTradesForCustomer(email).filter((t) => t.accountNumber === accountNumber);
-
+  // Save closed deals
   for (const row of closedDeals) {
     const rec = toTradeRecord(email, accountNumber, { ...row, status: "closed" }, "closed");
     if (!rec) continue;
-    const prev = existing.find((t) => t.ticket === rec.ticket);
-    const wasOpenOrMissing = !prev || prev.status === "open";
-    upsertTradeRecord(rec);
-    closedCount += 1;
-    if (wasOpenOrMissing) newlyClosed.push(rec);
+
+    // Check if it was previously open
+    const prevTrade = tradesCache.find((t) => t.ticket === rec.ticket && t.accountNumber === accountNumber);
+    const wasOpenOrMissing = !prevTrade || prevTrade.status === "open";
+
+    const { error } = await supabase
+      .from("master_trades")
+      .upsert(rec, { onConflict: "ticket,accountNumber" });
+
+    if (error) {
+      console.error("Closed deal save error:", error);
+    } else {
+      closedCount += 1;
+      if (wasOpenOrMissing) newlyClosed.push(rec);
+    }
   }
 
-  // Positions that disappeared from open list without a closed deal → leave as open
-  // (partial sync). Full close events should arrive via closedDeals / trade-closed.
+  // Update cache
+  await syncFromSupabase(email);
 
-  await flushTradingStore();
-  return { ok: true, account, openCount, closedCount, newlyClosed };
+  return { ok: true, account: accountSnapshot, openCount, closedCount, newlyClosed };
 }
 
 function startOfUtcDay(d = new Date()): Date {
@@ -220,13 +267,16 @@ export function summarizeToday(trades: TradeRecord[]): TradingTodaySummary {
 }
 
 export async function getTradingDashboard(emailRaw: string): Promise<TradingDashboard> {
-  await ensureTradingStoreLoaded();
   const email = emailRaw.trim().toLowerCase();
-  const accounts = listAccountsForCustomer(email);
-  const account = accounts[0] || null;
-  const trades = listTradesForCustomer(email);
+  
+  // Sync from Supabase
+  await syncFromSupabase(email);
+
+  const account = accountsCache[0] || null;
+  const trades = tradesCache.filter((t) => t.customerEmail === email);
   const openTrades = trades.filter((t) => t.status === "open");
   const history = trades.filter((t) => t.status === "closed");
+
   return {
     account,
     today: summarizeToday(trades),
@@ -237,12 +287,10 @@ export async function getTradingDashboard(emailRaw: string): Promise<TradingDash
 }
 
 export function getPublicTradingDashboard(): TradingDashboard | null {
-  const data = readTradingStore();
-  if (data.accounts.length === 0) return null;
+  if (accountsCache.length === 0) return null;
   
-  // Get the most recently updated account
-  const latestAccount = data.accounts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
-  const trades = data.trades.filter((t) => t.customerEmail === latestAccount.customerEmail);
+  const latestAccount = accountsCache.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  const trades = tradesCache.filter((t) => t.customerEmail === latestAccount.customerEmail);
   
   return {
     account: latestAccount,
