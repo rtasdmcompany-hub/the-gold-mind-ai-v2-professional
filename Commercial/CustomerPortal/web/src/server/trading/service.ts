@@ -151,6 +151,92 @@ function toTradeRecord(
   };
 }
 
+/** Persist a single closed trade (also used by trade-closed notification path). */
+export async function persistClosedTrade(input: {
+  customerEmail: string;
+  accountNumber?: string;
+  ticket?: string | number;
+  symbol?: string;
+  side?: string;
+  type?: string;
+  volume?: number;
+  openTime?: string;
+  closeTime?: string;
+  profit?: number;
+  comment?: string;
+}): Promise<TradeRecord | null> {
+  if (!supabase) {
+    console.error("❌ Supabase not configured for persistClosedTrade");
+    return null;
+  }
+
+  const email = input.customerEmail.trim().toLowerCase();
+  const ticket = input.ticket != null ? String(input.ticket).trim() : "";
+  
+  if (!email || !ticket) {
+    console.error("❌ Missing email or ticket in persistClosedTrade");
+    return null;
+  }
+
+  // Get account number if not provided
+  let accountNumber = input.accountNumber?.trim();
+  if (!accountNumber) {
+    const { data: accounts } = await supabase
+      .from("user_mt5_accounts")
+      .select("accountNumber")
+      .eq("customerEmail", email)
+      .limit(1)
+      .single();
+    
+    accountNumber = accounts?.accountNumber || "unknown";
+  }
+
+  const record = toTradeRecord(
+    email,
+    accountNumber,
+    {
+      ticket,
+      symbol: input.symbol,
+      side: input.side,
+      type: input.type,
+      volume: input.volume,
+      openTime: input.openTime,
+      closeTime: input.closeTime || nowIso(),
+      profit: input.profit,
+      status: "closed",
+      comment: input.comment,
+    },
+    "closed"
+  );
+
+  if (!record) {
+    console.error("❌ Failed to create trade record in persistClosedTrade");
+    return null;
+  }
+
+  // Save to Supabase
+  const { data, error } = await supabase
+    .from("master_trades")
+    .upsert(record, { onConflict: "ticket,accountNumber" })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(" persistClosedTrade error:", error);
+    return null;
+  }
+
+  // Update cache
+  const existingIndex = tradesCache.findIndex(t => t.ticket === record.ticket && t.accountNumber === record.accountNumber);
+  if (existingIndex >= 0) {
+    tradesCache[existingIndex] = record;
+  } else {
+    tradesCache.push(record);
+  }
+
+  return record;
+}
+
 export async function applyTradingSync(input: TradingSyncInput): Promise<{
   ok: true;
   account: TradingAccountSnapshot;
