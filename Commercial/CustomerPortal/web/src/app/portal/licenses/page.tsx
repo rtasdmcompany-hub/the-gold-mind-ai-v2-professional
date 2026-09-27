@@ -13,18 +13,22 @@ export default async function LicensesPage() {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
 
-  // ✅ FIX: Type ko Awaited mein update kiya gaya hai
   let licenses: Awaited<ReturnType<typeof listLicensesForCustomer>> = [];
   let loadError: string | null = null;
   try {
     await ensureSeedData();
-    // ✅ FIX: Yahan 'await' add kiya gaya hai
     licenses = await listLicensesForCustomer(session.user.email);
   } catch (e) {
     loadError = e instanceof Error ? e.message : "LICENSE_PAGE_LOAD_FAILED";
     console.error("[portal/licenses] load failed", loadError);
   }
+  
   const allowPaidSelfServe = isSelfServePaidLicenseAllowed();
+
+  // ✅ NEW: Check karein ke kya user ke paas pehle se koi valid license hai (Abuse Prevention)
+  const hasValidLicense = licenses.some(
+    (lic) => lic.status === "active" || lic.status === "pending" || lic.status === "grace"
+  );
 
   return (
     <>
@@ -49,13 +53,27 @@ export default async function LicensesPage() {
       ) : null}
 
       <LicenseStoreBanner />
-      <LicenseActionsPanel allowPaidSelfServe={allowPaidSelfServe} />
+      
+      {/* ✅ NEW: Agar valid license hai, to Actions Panel chupa dein */}
+      {!hasValidLicense ? (
+        <LicenseActionsPanel allowPaidSelfServe={allowPaidSelfServe} />
+      ) : (
+        <div className="card" style={{ marginBottom: 16, borderColor: "var(--gm-success, #28a745)" }}>
+          <h3 style={{ marginBottom: 6, color: "var(--gm-success, #28a745)" }}>License Already Active</h3>
+          <p className="meta" style={{ marginTop: 8, lineHeight: 1.5 }}>
+            You already have an active or pending license. For security and anti-abuse purposes, new trial keys cannot be generated. 
+            Please use your existing key in the installer. If you need to upgrade or change your MT5 account, please visit{" "}
+            <Link href="/portal/billing" style={{ textDecoration: "underline" }}>Billing</Link> or contact support.
+          </p>
+        </div>
+      )}
 
       <div className="table-wrap">
         <table className="data">
           <thead>
             <tr>
               <th>License</th>
+              <th>MT5 Account</th> {/* ✅ NEW COLUMN */}
               <th>Type</th>
               <th>Status</th>
               <th>Created</th>
@@ -68,7 +86,7 @@ export default async function LicensesPage() {
           <tbody>
             {licenses.length === 0 && (
               <tr>
-                <td colSpan={8}>
+                <td colSpan={9}> {/* ✅ UPDATED colSpan (8 se 9) */}
                   No licenses yet — {allowPaidSelfServe ? "generate one above" : "get your trial key above or checkout in Billing"}, then
                   paste the key into {product.installer.name}.
                 </td>
@@ -79,6 +97,15 @@ export default async function LicensesPage() {
                 <td>
                   <div className="mono">{lic.keyMasked}</div>
                   <div className="meta">{lic.id}</div>
+                </td>
+                <td>
+                  {lic.mt5AccountNumber ? (
+                    <div className="mono" style={{ color: "var(--gm-primary, #d4af37)" }}>
+                      {lic.mt5AccountNumber}
+                    </div>
+                  ) : (
+                    <span className="meta">Not bound</span>
+                  )}
                 </td>
                 <td>
                   {lic.edition}

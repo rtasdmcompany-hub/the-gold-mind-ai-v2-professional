@@ -71,6 +71,7 @@ export function toPublicLicense(lic: Partial<LicenseRecord>, seatsUsed: number):
     graceEndsAt: lic.graceEndsAt || null,
     renewalStatus: renewalLabel(lic),
     lastValidatedAt: lic.lastValidatedAt || null,
+    mt5AccountNumber: lic.mt5AccountNumber || null, // ✅ YE LINE ADD KI GAI HAI
   };
 }
 
@@ -351,6 +352,7 @@ export async function createLicense(input: {
     edition: product.edition, seatsUsed: 0, seatsMax: seatsForType(input.type),
     createdAt, activatedAt: null, expiresAt, graceEndsAt: null,
     renewalStatus: "Auto-renew eligible", lastValidatedAt: null,
+    mt5AccountNumber: mt5Acc || null, // ✅ YE LINE ADD KI GAI HAI
   };
 
   if (!input.skipEmail) {

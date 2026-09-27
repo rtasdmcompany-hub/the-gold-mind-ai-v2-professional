@@ -68,7 +68,7 @@ export interface LicenseRecord {
   emailNorm?: string | null;
   /** Hash of client IP at first trial issue (abuse guard) */
   issuedIpHash?: string | null;
-  /** ✅ NAYA: MT5 Account Number binding */
+  /** MT5 Account Number binding */
   mt5AccountNumber?: string | null;
 }
 
@@ -79,7 +79,7 @@ export interface TrialClaimRecord {
   emailNorm: string;
   ipHash: string;
   licenseId: string;
-  /** ✅ NAYA: MT5 Account Number tracking for trials */
+  /** MT5 Account Number tracking for trials */
   mt5AccountNumber?: string | null;
   createdAt: string;
 }
@@ -147,6 +147,8 @@ export interface LicensePublicDto {
   graceEndsAt: string | null;
   renewalStatus: string;
   lastValidatedAt: string | null;
+  /** MT5 Account Number binding (added for frontend display) */
+  mt5AccountNumber?: string | null; // ✅ YE LINE ADD KI GAI HAI
 }
 
 export interface DevicePublicDto {
