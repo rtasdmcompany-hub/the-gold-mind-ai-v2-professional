@@ -3,7 +3,6 @@ import {
   addDays,
   deriveTrialKey,
   generateLicenseKey,
-  graceDays,
   hashClientIp,
   normalizeTrialEmail,
   nowIso,
@@ -42,9 +41,9 @@ export type ActivateResult =
   | { ok: true; license: LicensePublicDto; deviceId: string; token: string; mt5AccountChanged?: boolean }
   | { ok: false; error: string };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function withoutMac(lic: Partial<LicenseRecord>): Omit<Partial<LicenseRecord>, "integrityMac"> {
   const { integrityMac, ...rest } = lic;
-  void integrityMac;
   return rest;
 }
 
@@ -75,7 +74,6 @@ export function toPublicLicense(lic: Partial<LicenseRecord>, seatsUsed: number):
   };
 }
 
-// ✅ NAYA: MT5 Account Number ke sath existing valid license dhundhna
 async function findValidLicenseForEmailAndMT5(emailNorm: string, mt5AccountNumber?: string): Promise<Partial<LicenseRecord> | null> {
   let query = supabaseAdmin
     .from("licenses")
@@ -88,7 +86,6 @@ async function findValidLicenseForEmailAndMT5(emailNorm: string, mt5AccountNumbe
     .order("created_at", { ascending: false })
     .limit(1);
 
-  // Agar MT5 account number diya gaya hai, to us se bhi match karein
   if (mt5AccountNumber && mt5AccountNumber.trim()) {
     query = query.eq("mt5_account_number", mt5AccountNumber.trim());
   }
@@ -134,7 +131,7 @@ function mapSupabaseLicense(row: any): Partial<LicenseRecord> {
     keyEnvelope: row.key_envelope,
     emailNorm: row.email_norm,
     issuedIpHash: row.issued_ip_hash,
-    mt5AccountNumber: row.mt5_account_number, // ✅ NAYA
+    mt5AccountNumber: row.mt5_account_number,
     integrityMac: row.integrity_mac || "",
   };
 }
@@ -159,7 +156,7 @@ async function ensureTrialClaim(input: {
   ipHash: string;
   licenseId: string;
   createdAt: string;
-  mt5AccountNumber?: string; // ✅ NAYA
+  mt5AccountNumber?: string;
 }): Promise<void> {
   const { data: existing } = await supabaseAdmin
     .from("trial_claims")
@@ -176,7 +173,7 @@ async function ensureTrialClaim(input: {
     email_norm: input.emailNorm,
     ip_hash: input.ipHash,
     license_id: input.licenseId,
-    mt5_account_number: input.mt5AccountNumber || null, // ✅ NAYA
+    mt5_account_number: input.mt5AccountNumber || null,
     created_at: input.createdAt,
   });
 }
@@ -213,7 +210,6 @@ function subStatusFromLicense(status: LicenseStatus): SubscriptionStatus {
   }
 }
 
-// ✅ UPDATED: mt5AccountNumber aur ipAddress parameters add kiye
 export async function createLicense(input: {
   customerEmail: string;
   customerName: string;
@@ -222,14 +218,13 @@ export async function createLicense(input: {
   skipEmail?: boolean;
   clientIp?: string | null;
   bypassIpCheck?: boolean;
-  mt5AccountNumber?: string; // ✅ NAYA
+  mt5AccountNumber?: string;
 }): Promise<CreateLicenseResult> {
   const email = input.customerEmail.trim().toLowerCase();
   const emailNorm = normalizeTrialEmail(email);
   const ipHash = hashClientIp(input.clientIp || "");
   const mt5Acc = input.mt5AccountNumber?.trim() || null;
 
-  // ✅ FREE TRIAL CHECK: Email + IP se trial abuse rokna
   if (input.type === "trial") {
     const existing = await findOldestTrialForEmailNorm(emailNorm);
     if (existing) {
@@ -242,8 +237,8 @@ export async function createLicense(input: {
         };
       }
 
-      // Agar valid key hai, to usay update karein (MT5 account bhi update ho sakta hai)
-      const updateData: any = {
+      // ✅ FIX: 'any' ki jagah 'Record<string, unknown>' use kiya
+      const updateData: Record<string, unknown> = {
         key_envelope: sealSecret(plaintextKey),
         email_norm: emailNorm,
         issued_ip_hash: ipHash || existing.issuedIpHash,
@@ -266,7 +261,6 @@ export async function createLicense(input: {
       return { ok: true, license: toPublicLicense(existing, 0), plaintextKey, reused: true };
     }
 
-    // IP-based trial check
     if (!input.bypassIpCheck && ipHash) {
       const { data: ipClaim } = await supabaseAdmin
         .from("trial_claims")
@@ -282,7 +276,6 @@ export async function createLicense(input: {
     }
   }
 
-  // ✅ REGENERATION BLOCK: Agar valid license pehle se mojood hai (email + MT5 combo ke liye)
   const existingValid = await findValidLicenseForEmailAndMT5(emailNorm, mt5Acc);
   if (existingValid && input.type !== "trial") {
     const plaintextKey = resolveTrialPlaintext(existingValid, email);
@@ -300,7 +293,8 @@ export async function createLicense(input: {
   const createdAt = nowIso();
   const expiresAt = expiresForType(input.type);
 
-  const licenseData: any = {
+  // ✅ FIX: 'any' ki jagah 'Record<string, unknown>' use kiya
+  const licenseData: Record<string, unknown> = {
     id,
     customer_email: email,
     customer_name: input.customerName,
@@ -319,7 +313,7 @@ export async function createLicense(input: {
     key_envelope: input.type === "trial" ? sealSecret(plaintextKey) : null,
     email_norm: input.type === "trial" ? emailNorm : null,
     issued_ip_hash: input.type === "trial" ? ipHash || null : null,
-    mt5_account_number: mt5Acc, // ✅ NAYA
+    mt5_account_number: mt5Acc,
     integrity_mac: "",
   };
 
@@ -343,7 +337,7 @@ export async function createLicense(input: {
     await supabaseAdmin.from("trial_claims").insert({
       id: `tcl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
       email, email_norm: emailNorm, ip_hash: ipHash || "", license_id: id, 
-      mt5_account_number: mt5Acc, // ✅ NAYA
+      mt5_account_number: mt5Acc,
       created_at: createdAt,
     });
   }
@@ -401,7 +395,6 @@ export async function findLicenseByKey(plaintextKey: string): Promise<Partial<Li
   return mapSupabaseLicense(data);
 }
 
-// ✅ UPDATED: mt5AccountNumber parameter add kiya aur account change detection
 export async function activateLicense(input: {
   plaintextKey: string;
   customerEmail: string;
@@ -409,8 +402,8 @@ export async function activateLicense(input: {
   deviceFingerprint: string;
   skipEmail?: boolean;
   replaceSingleSeat?: boolean;
-  mt5AccountNumber?: string; // ✅ NAYA
-  ipAddress?: string;        // ✅ NAYA
+  mt5AccountNumber?: string;
+  ipAddress?: string;
 }): Promise<ActivateResult> {
   const email = input.customerEmail.trim().toLowerCase();
   const key = input.plaintextKey.trim().toUpperCase();
@@ -429,15 +422,12 @@ export async function activateLicense(input: {
     rememberTrialKeyPlaintext(lic.id!, key);
   }
 
-  // ✅ MT5 ACCOUNT CHANGE DETECTION
   let mt5AccountChanged = false;
   const newMt5Acc = input.mt5AccountNumber?.trim();
   if (newMt5Acc && lic.mt5AccountNumber && lic.mt5AccountNumber !== newMt5Acc) {
-    // Account change ho gaya hai! Warning flag set karein
     mt5AccountChanged = true;
     console.warn(`[License] MT5 Account changed for license ${lic.id}: ${lic.mt5AccountNumber} -> ${newMt5Acc}`);
     
-    // License ka MT5 account update karein
     await supabaseAdmin
       .from("licenses")
       .update({ mt5_account_number: newMt5Acc })
@@ -445,7 +435,6 @@ export async function activateLicense(input: {
     
     lic.mt5AccountNumber = newMt5Acc;
   } else if (newMt5Acc && !lic.mt5AccountNumber) {
-    // Pehli baar MT5 account bind ho raha hai
     await supabaseAdmin
       .from("licenses")
       .update({ mt5_account_number: newMt5Acc })
@@ -482,13 +471,12 @@ export async function activateLicense(input: {
       .catch((e) => console.warn("[licensing] activate email failed:", e));
   }
 
-  // ✅ MT5 Account change warning ke sath response return karein
   return { 
     ok: true, 
     license: publicLic, 
     deviceId, 
     token,
-    mt5AccountChanged // ✅ NAYA: Agar true hai, to installer ko warning dikhani chahiye
+    mt5AccountChanged
   };
 }
 
@@ -522,10 +510,6 @@ export async function listAllLicensesAdmin(): Promise<LicenseRecord[]> {
   const { data } = await supabaseAdmin.from("licenses").select("*");
   return (data?.map(mapSupabaseLicense) as LicenseRecord[]) || [];
 }
-
-// ============================================================================
-// RESTORED MISSING EXPORTS
-// ============================================================================
 
 export function parseValidationToken(
   token: string
