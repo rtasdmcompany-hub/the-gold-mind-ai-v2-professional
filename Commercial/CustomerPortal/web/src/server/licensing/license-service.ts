@@ -131,7 +131,7 @@ function mapSupabaseLicense(row: any): Partial<LicenseRecord> {
     keyEnvelope: row.key_envelope,
     emailNorm: row.email_norm,
     issuedIpHash: row.issued_ip_hash,
-    mt5AccountNumber: row.mt5_account_number,
+    mt5AccountNumber: row.mt5_account_number || null,
     integrityMac: row.integrity_mac || "",
   };
 }
@@ -173,7 +173,7 @@ async function ensureTrialClaim(input: {
     email_norm: input.emailNorm,
     ip_hash: input.ipHash,
     license_id: input.licenseId,
-    mt5_account_number: input.mt5AccountNumber || null,
+    mt5_account_number: input.mt5AccountNumber || undefined,
     created_at: input.createdAt,
   });
 }
@@ -223,7 +223,9 @@ export async function createLicense(input: {
   const email = input.customerEmail.trim().toLowerCase();
   const emailNorm = normalizeTrialEmail(email);
   const ipHash = hashClientIp(input.clientIp || "");
-  const mt5Acc = input.mt5AccountNumber?.trim() || null;
+  
+  // ✅ FIX: 'undefined' use kiya 'null' ki bajaye taake TypeScript error na de
+  const mt5Acc = input.mt5AccountNumber?.trim() ? input.mt5AccountNumber.trim() : undefined;
 
   if (input.type === "trial") {
     const existing = await findOldestTrialForEmailNorm(emailNorm);
@@ -237,7 +239,6 @@ export async function createLicense(input: {
         };
       }
 
-      // ✅ FIX: 'any' ki jagah 'Record<string, unknown>' use kiya
       const updateData: Record<string, unknown> = {
         key_envelope: sealSecret(plaintextKey),
         email_norm: emailNorm,
@@ -251,11 +252,12 @@ export async function createLicense(input: {
         .eq("id", existing.id);
 
       await ensureTrialClaim({
-        email, emailNorm,
+        email, 
+        emailNorm,
         ipHash: ipHash || existing.issuedIpHash || "",
         licenseId: existing.id!,
         createdAt: existing.createdAt!,
-        mt5AccountNumber: mt5Acc,
+        mt5AccountNumber: mt5Acc, // ✅ Ab ye 'string | undefined' hai, jo ke valid hai
       });
 
       return { ok: true, license: toPublicLicense(existing, 0), plaintextKey, reused: true };
@@ -293,7 +295,6 @@ export async function createLicense(input: {
   const createdAt = nowIso();
   const expiresAt = expiresForType(input.type);
 
-  // ✅ FIX: 'any' ki jagah 'Record<string, unknown>' use kiya
   const licenseData: Record<string, unknown> = {
     id,
     customer_email: email,
@@ -336,7 +337,10 @@ export async function createLicense(input: {
   if (input.type === "trial") {
     await supabaseAdmin.from("trial_claims").insert({
       id: `tcl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
-      email, email_norm: emailNorm, ip_hash: ipHash || "", license_id: id, 
+      email, 
+      email_norm: emailNorm, 
+      ip_hash: ipHash || "", 
+      license_id: id, 
       mt5_account_number: mt5Acc,
       created_at: createdAt,
     });
