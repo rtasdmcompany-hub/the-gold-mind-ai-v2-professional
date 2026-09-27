@@ -26,7 +26,8 @@ export async function actionStartCheckout(formData: FormData) {
       plan,
       customerEmail: s.email,
       customerName: s.name,
-      successUrl: `${base}/portal/licenses?ok=1`, // ✅ CHANGED: Redirect to licenses page
+      // ✅ UPDATED: Point to the capture API route which will handle payment completion and license generation
+      successUrl: `${base}/api/billing/capture-paypal?plan=${plan}`,
       cancelUrl: `${base}/portal/billing?cancelled=1`,
       provider,
     });
