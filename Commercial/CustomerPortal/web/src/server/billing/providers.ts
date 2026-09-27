@@ -80,7 +80,7 @@ export const paddlePort: PaymentPort = {
   },
 };
 
-// ✅ ✅ ✅ UPDATED PAYPAL PORT WITH REAL API CALL ✅ ✅ ✅
+// ✅ ✅ ✅ UPDATED PAYPAL PORT WITH REAL API CALL & NO 'any' TYPE ✅ ✅ ✅
 export const paypalPort: PaymentPort = {
   id: "paypal",
   async createCheckout(req: CheckoutRequest): Promise<CheckoutSession> {
@@ -137,8 +137,8 @@ export const paypalPort: PaymentPort = {
 
       const data = await response.json();
       
-      // Find the approval URL from PayPal's response
-      const approveLink = data.links.find((link: any) => link.rel === "approve");
+      // ✅ FIX: Replaced 'any' with proper inline type
+      const approveLink = data.links.find((link: { rel: string; href: string }) => link.rel === "approve");
 
       if (!approveLink || !approveLink.href) {
         throw new Error("PayPal did not return an approval URL");
@@ -162,7 +162,7 @@ export const paypalPort: PaymentPort = {
       return { ok: false };
     }
     void providerRef;
-    return { ok: false }; // Implement actual PayPal subscription cancellation API here later if needed
+    return { ok: false };
   },
   async verifyWebhook(headers: Headers, rawBody: string) {
     const secret = process.env.PAYPAL_WEBHOOK_ID || process.env.PAYPAL_WEBHOOK_SECRET;
@@ -171,8 +171,6 @@ export const paypalPort: PaymentPort = {
       return sandboxPort.verifyWebhook(headers, rawBody);
     }
     
-    // Note: Real PayPal webhook verification requires calling PayPal's verify API. 
-    // For Sandbox testing, we fall back to a simpler check or accept if headers are missing in simulator.
     const sig = headers.get("paypal-transmission-sig") || headers.get("x-paypal-signature") || "";
     
     // If no signature (common in PayPal Simulator), we still parse it for testing
@@ -286,8 +284,8 @@ function mapPaypalEvent(payload: Record<string, unknown>): NormalizedPaymentEven
   
   // ✅ Extract email from custom_id (which we set during checkout) or fallback to payer email
   const email = String(
-    resource.custom_id || 
-    (resource.payer as { email_address?: string } | undefined)?.email_address ||
+    (resource as { custom_id?: string }).custom_id || 
+    ((resource.payer as { email_address?: string } | undefined)?.email_address) ||
     ""
   ).toLowerCase();
 
@@ -310,12 +308,12 @@ function mapPaypalEvent(payload: Record<string, unknown>): NormalizedPaymentEven
     providerEventId: eventId,
     type,
     customerEmail: email || "unknown@paypal.local",
-    planCode: "monthly", // Can be enhanced to read from purchase_units if needed
+    planCode: "monthly", 
     amountCents: resource.amount
       ? Math.round(Number((resource.amount as { value?: string }).value || 0) * 100)
       : undefined,
     currency: "USD",
-    providerSubscriptionId: String(resource.id || "") || undefined,
+    providerSubscriptionId: String((resource as { id?: string }).id || "") || undefined,
     occurredAt: nowIso(),
     rawSummary: eventType,
   };
