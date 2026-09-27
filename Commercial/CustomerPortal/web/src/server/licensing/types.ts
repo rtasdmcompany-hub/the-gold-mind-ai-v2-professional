@@ -68,6 +68,8 @@ export interface LicenseRecord {
   emailNorm?: string | null;
   /** Hash of client IP at first trial issue (abuse guard) */
   issuedIpHash?: string | null;
+  /** ✅ NAYA: MT5 Account Number binding */
+  mt5AccountNumber?: string | null;
 }
 
 /** Tracks free-trial issuance for email + IP abuse prevention */
@@ -77,6 +79,8 @@ export interface TrialClaimRecord {
   emailNorm: string;
   ipHash: string;
   licenseId: string;
+  /** ✅ NAYA: MT5 Account Number tracking for trials */
+  mt5AccountNumber?: string | null;
   createdAt: string;
 }
 
