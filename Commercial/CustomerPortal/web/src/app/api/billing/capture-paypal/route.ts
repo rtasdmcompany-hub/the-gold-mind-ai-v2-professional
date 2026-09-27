@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { createLicense } from '@/server/licensing/license-service';
-import type { PlanCode } from '@/server/billing/types';
+import type { LicenseType } from '@/server/licensing/types';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,9 +15,9 @@ export async function GET(req: NextRequest) {
 
     const searchParams = req.nextUrl.searchParams;
     const token = searchParams.get('token'); // PayPal Order ID
-    const plan = searchParams.get('plan') || 'yearly'; // Default to yearly if not provided
+    const planParam = searchParams.get('plan') || 'yearly'; 
     
-    console.log(`[PayPal Capture] Token: ${token}, Plan: ${plan}, Email: ${session.user.email}`);
+    console.log(`[PayPal Capture] Token: ${token}, Plan: ${planParam}, Email: ${session.user.email}`);
 
     if (!token) {
       console.error("[PayPal Capture] No token provided");
@@ -51,15 +51,15 @@ export async function GET(req: NextRequest) {
 
     // 2. Agar payment successful (COMPLETED) hai, to License generate karein
     if (captureData.status === 'COMPLETED') {
-      const purchaseUnit = captureData.purchase_units?.[0];
+      const purchaseUnit = captureData.purchase_units?.[0] as { custom_id?: string } | undefined;
       const customId = purchaseUnit?.custom_id || session.user.email;
       
-      console.log(`[PayPal Capture] Creating license for ${customId} with plan ${plan}`);
+      console.log(`[PayPal Capture] Creating license for ${customId} with plan ${planParam}`);
       
       const licenseResult = await createLicense({
         customerEmail: customId.toLowerCase(),
         customerName: session.user.name || customId.split('@')[0],
-        type: plan as any, // yearly, monthly, etc.
+        type: planParam as LicenseType, // ✅ FIX: 'any' ki jagah 'LicenseType' use kiya
         clientIp: req.headers.get('x-forwarded-for') || 'paypal-capture',
         bypassIpCheck: true,
       });
