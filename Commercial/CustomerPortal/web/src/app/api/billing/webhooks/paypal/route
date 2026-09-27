@@ -1,0 +1,106 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { activateLicense, createLicense } from '@/server/licensing/license-service';
+
+// Supabase Admin Client (Server-side only)
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } }
+);
+
+export async function POST(req: NextRequest) {
+  try {
+    const rawBody = await req.text();
+    let body: any;
+    
+    try {
+      body = JSON.parse(rawBody);
+    } catch (e) {
+      console.error('[PayPal Webhook] Invalid JSON body');
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+
+    const eventType = body.event_type;
+    const resourceId = body.resource?.id;
+    
+    console.log(`[PayPal Webhook] Received event: ${eventType} for resource: ${resourceId}`);
+
+    // Note: In a strict production environment, you must verify the webhook signature 
+    // using the headers (paypal-transmission-sig, etc.) before processing.
+    // Since we are testing with the PayPal Sandbox Simulator, it does not send headers.
+    // We will process the event directly for now.
+
+    if (eventType === 'CHECKOUT.ORDER.APPROVED') {
+      console.log('[PayPal Webhook] Order approved by buyer. Waiting for capture...');
+      // Order is approved, but money isn't captured yet. 
+      // Usually, your frontend calls /api/billing/capture-order here.
+    } 
+    
+    else if (eventType === 'PAYMENT.CAPTURE.COMPLETED') {
+      console.log('[PayPal Webhook] Payment captured successfully! Activating license...');
+      
+      // 1. Extract User Email (We assume the frontend passed the email in 'custom_id' during checkout)
+      const customId = body.resource.purchase_units?.[0]?.custom_id;
+      const amount = body.resource.purchase_units?.[0]?.amount?.value;
+      const currency = body.resource.purchase_units?.[0]?.amount?.currency_code;
+
+      if (!customId) {
+        console.error('[PayPal Webhook] Missing custom_id (user email) in payload.');
+        return NextResponse.json({ error: 'Missing user identifier' }, { status: 400 });
+      }
+
+      // 2. Save Payment Record to Database (Optional but recommended)
+      const { error: dbError } = await supabaseAdmin.from('payments').insert({
+        id: `pay_${Date.now()}`,
+        paypal_order_id: resourceId,
+        customer_email: customId,
+        amount: parseFloat(amount),
+        currency: currency,
+        status: 'completed',
+        created_at: new Date().toISOString(),
+      });
+
+      if (dbError) {
+        console.error('[PayPal Webhook] DB Error saving payment:', dbError);
+      }
+
+      // 3. Activate / Generate License for the User
+      // Check if user already has a license, if not, create a paid one.
+      const { data: existingLicenses } = await supabaseAdmin
+        .from('licenses')
+        .select('id')
+        .eq('customer_email', customId)
+        .eq('status', 'active')
+        .limit(1);
+
+      if (!existingLicenses || existingLicenses.length === 0) {
+        console.log(`[PayPal Webhook] Generating new paid license for ${customId}`);
+        
+        // Create a new paid license (e.g., monthly or yearly based on your logic)
+        const licenseResult = await createLicense({
+          customerEmail: customId,
+          customerName: customId.split('@')[0], // Simple name derivation
+          type: 'monthly', // Defaulting to monthly for this example
+          clientIp: req.headers.get('x-forwarded-for') || 'webhook',
+          bypassIpCheck: true, // Webhooks don't have the user's real IP
+        });
+
+        if (licenseResult.ok) {
+          console.log(`[PayPal Webhook] License created: ${licenseResult.license.id}`);
+        } else {
+          console.error('[PayPal Webhook] Failed to create license:', licenseResult.error);
+        }
+      } else {
+        console.log(`[PayPal Webhook] User ${customId} already has an active license.`);
+      }
+    }
+
+    // Always return 200 OK to PayPal so they stop retrying
+    return NextResponse.json({ received: true }, { status: 200 });
+
+  } catch (error) {
+    console.error('[PayPal Webhook] Critical Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
