@@ -13,21 +13,20 @@ const PLANS: { code: PlanCode; label: string; price: string }[] = [
 
 type Props = {
   sandboxAllowed: boolean;
-  paddleConfigured: boolean;
+  paypalConfigured: boolean; // ✅ CHANGE: paddleConfigured ki jagah paypalConfigured
 };
 
 /**
  * Website Edition checkout entry.
  * Business logic goes through PaymentPort (actionStartCheckout) — never PSP SDKs.
- * Only Paddle is offered to customers — Stripe / PayPal are not wired to a live checkout
- * flow yet and are never surfaced here. MQL5 Market Edition is not connected to this panel.
+ * Only PayPal is offered to customers. MQL5 Market Edition is not connected to this panel.
  */
-export function CheckoutPanel({ sandboxAllowed, paddleConfigured }: Props) {
+export function CheckoutPanel({ sandboxAllowed, paypalConfigured }: Props) { // ✅ CHANGE
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [key, setKey] = useState<string | null>(null);
 
-  const checkoutAvailable = paddleConfigured || sandboxAllowed;
+  const checkoutAvailable = paypalConfigured || sandboxAllowed; // ✅ CHANGE
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
@@ -39,10 +38,10 @@ export function CheckoutPanel({ sandboxAllowed, paddleConfigured }: Props) {
       ) : (
         <>
           <p className="meta" style={{ marginBottom: 12 }}>
-            Secure checkout via Paddle. Licenses are issued only after a verified payment webhook. MQL5 Market is
+            Secure checkout via PayPal. Licenses are issued only after a verified payment webhook. MQL5 Market is
             not connected.
           </p>
-          {sandboxAllowed && !paddleConfigured && (
+          {sandboxAllowed && !paypalConfigured && ( // ✅ CHANGE
             <p className="meta" style={{ marginBottom: 12 }}>
               Live payments are not yet configured — sandbox checkout is available for local/dev testing only.
             </p>
@@ -59,7 +58,7 @@ export function CheckoutPanel({ sandboxAllowed, paddleConfigured }: Props) {
                     setKey(null);
                     const fd = new FormData();
                     fd.set("plan", p.code);
-                    fd.set("provider", "paddle");
+                    fd.set("provider", "paypal"); // ✅ CHANGE: 'paddle' ki jagah 'paypal'
                     const session = await actionStartCheckout(fd);
                     if ("error" in session && session.error) {
                       setMsg("Checkout is currently unavailable. Please try again shortly or contact Support.");

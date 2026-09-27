@@ -16,13 +16,14 @@ export default async function BillingPage() {
   const email = session.user.email.toLowerCase();
   const billing = getBillingSummary(email);
   
-  // ✅ FIX: Yahan 'await' add kiya gaya hai
   const licenses = await listLicensesForCustomer(email);
   
   const sub = billing.subscriptions[0];
   const lic = licenses.find((l) => l.status === "active" || l.status === "grace") || licenses[0];
   const durability = billingStoreDurability();
-  const paddleConfigured = getProviderConfigStatus("paddle").configured;
+  
+  // ✅ CHANGE: Paddle ki jagah PayPal check karein
+  const paypalConfigured = getProviderConfigStatus("paypal").configured;
   const sandboxAllowed = isSandboxCheckoutAllowed();
 
   return (
@@ -40,7 +41,8 @@ export default async function BillingPage() {
         </p>
       )}
 
-      <CheckoutPanel sandboxAllowed={sandboxAllowed} paddleConfigured={paddleConfigured} />
+      {/* ✅ CHANGE: paypalConfigured pass kiya */}
+      <CheckoutPanel sandboxAllowed={sandboxAllowed} paypalConfigured={paypalConfigured} />
 
       <div className="grid grid-3" style={{ marginBottom: 16 }}>
         <div className="card">
