@@ -26,7 +26,7 @@ export async function actionStartCheckout(formData: FormData) {
       plan,
       customerEmail: s.email,
       customerName: s.name,
-      successUrl: `${base}/portal/billing?ok=1`,
+      successUrl: `${base}/portal/licenses?ok=1`, // ✅ CHANGED: Redirect to licenses page
       cancelUrl: `${base}/portal/billing?cancelled=1`,
       provider,
     });
