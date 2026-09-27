@@ -26,8 +26,8 @@ export async function actionStartCheckout(formData: FormData) {
       plan,
       customerEmail: s.email,
       customerName: s.name,
-      // ✅ UPDATED: Point to the capture API route which will handle payment completion and license generation
-      successUrl: `${base}/api/billing/capture-paypal?plan=${plan}`,
+      // ✅ UPDATED: encodeURIComponent use kiya hai taake plan name URL mein safely pass ho
+      successUrl: `${base}/api/billing/capture-paypal?plan=${encodeURIComponent(plan)}`,
       cancelUrl: `${base}/portal/billing?cancelled=1`,
       provider,
     });
