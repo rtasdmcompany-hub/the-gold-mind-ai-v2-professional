@@ -71,7 +71,7 @@ export function toPublicLicense(lic: Partial<LicenseRecord>, seatsUsed: number):
     graceEndsAt: lic.graceEndsAt || null,
     renewalStatus: renewalLabel(lic),
     lastValidatedAt: lic.lastValidatedAt || null,
-    mt5AccountNumber: lic.mt5AccountNumber || null, // ✅ YE LINE ADD KI GAI HAI
+    mt5AccountNumber: lic.mt5AccountNumber || null,
   };
 }
 
@@ -225,8 +225,58 @@ export async function createLicense(input: {
   const emailNorm = normalizeTrialEmail(email);
   const ipHash = hashClientIp(input.clientIp || "");
   
-  // ✅ FIX: 'undefined' use kiya 'null' ki bajaye taake TypeScript error na de
   const mt5Acc = input.mt5AccountNumber?.trim() ? input.mt5AccountNumber.trim() : undefined;
+
+  // ✅ NEW RULE 1: ONE-TIME FREE TRIAL CHECK (Email + IP)
+  if (input.type === "trial") {
+    const { data: emailTrial } = await supabaseAdmin
+      .from("trial_claims")
+      .select("id")
+      .eq("email_norm", emailNorm)
+      .limit(1)
+      .maybeSingle();
+
+    const { data: ipTrial } = await supabaseAdmin
+      .from("trial_claims")
+      .select("id")
+      .eq("ip_hash", ipHash)
+      .limit(1)
+      .maybeSingle();
+
+    if (emailTrial || ipTrial) {
+      return { 
+        ok: false, 
+        error: "TRIAL_ALREADY_USED", 
+        license: null 
+      };
+    }
+  }
+
+  // ✅ NEW RULE 2: PAID PLAN RESTRICTION (No double paid plans)
+  if (input.type !== "trial") {
+    const { data: activePaidLicenses } = await supabaseAdmin
+      .from("licenses")
+      .select("id, type, status, expires_at")
+      .eq("email_norm", emailNorm)
+      .in("status", ["active", "pending", "grace"])
+      .neq("type", "trial");
+
+    if (activePaidLicenses && activePaidLicenses.length > 0) {
+      const now = new Date();
+      const activePlan = activePaidLicenses.find(lic => {
+        if (!lic.expires_at) return true; // Lifetime plan
+        return new Date(lic.expires_at) > now; // Not expired yet
+      });
+
+      if (activePlan) {
+        return { 
+          ok: false, 
+          error: "PAID_PLAN_ALREADY_ACTIVE", 
+          license: null 
+        };
+      }
+    }
+  }
 
   if (input.type === "trial") {
     const existing = await findOldestTrialForEmailNorm(emailNorm);
@@ -258,7 +308,7 @@ export async function createLicense(input: {
         ipHash: ipHash || existing.issuedIpHash || "",
         licenseId: existing.id!,
         createdAt: existing.createdAt!,
-        mt5AccountNumber: mt5Acc, // ✅ Ab ye 'string | undefined' hai, jo ke valid hai
+        mt5AccountNumber: mt5Acc,
       });
 
       return { ok: true, license: toPublicLicense(existing, 0), plaintextKey, reused: true };
@@ -352,7 +402,7 @@ export async function createLicense(input: {
     edition: product.edition, seatsUsed: 0, seatsMax: seatsForType(input.type),
     createdAt, activatedAt: null, expiresAt, graceEndsAt: null,
     renewalStatus: "Auto-renew eligible", lastValidatedAt: null,
-    mt5AccountNumber: mt5Acc || null, // ✅ YE LINE ADD KI GAI HAI
+    mt5AccountNumber: mt5Acc || null,
   };
 
   if (!input.skipEmail) {

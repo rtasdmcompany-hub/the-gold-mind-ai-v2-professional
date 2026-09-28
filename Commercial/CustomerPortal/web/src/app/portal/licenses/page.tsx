@@ -25,10 +25,24 @@ export default async function LicensesPage() {
   
   const allowPaidSelfServe = isSelfServePaidLicenseAllowed();
 
-  // ✅ NEW: Check karein ke kya user ke paas pehle se koi valid license hai (Abuse Prevention)
+  // ✅ 1. Check if user has an active/pending/grace license
   const hasValidLicense = licenses.some(
     (lic) => lic.status === "active" || lic.status === "pending" || lic.status === "grace"
   );
+
+  // ✅ 2. Check if user has EVER used a trial (to hide trial button permanently)
+  const hasUsedTrial = licenses.some((lic) => lic.type === "trial");
+
+  // ✅ 3. Check for 3-Day Renewal Reminder
+  const now = new Date();
+  const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+  
+  const expiringSoonLicense = licenses.find((lic) => {
+    if (lic.status !== "active" && lic.status !== "grace") return false;
+    if (!lic.expiresAt) return false; // Lifetime doesn't expire
+    const expDate = new Date(lic.expiresAt);
+    return expDate > now && expDate <= threeDaysFromNow;
+  });
 
   return (
     <>
@@ -53,10 +67,40 @@ export default async function LicensesPage() {
       ) : null}
 
       <LicenseStoreBanner />
+
+      {/* ✅ NEW: 3-Day Renewal Reminder Banner */}
+      {expiringSoonLicense && (
+        <div 
+          className="card" 
+          style={{ 
+            marginBottom: 16, 
+            borderColor: "var(--gm-warning, #ffc107)", 
+            backgroundColor: "rgba(255, 193, 7, 0.1)" 
+          }}
+        >
+          <h3 style={{ marginBottom: 6, color: "var(--gm-warning, #d39e00)" }}>
+            ⚠️ Your {expiringSoonLicense.type} plan is expiring soon!
+          </h3>
+          <p className="meta" style={{ marginTop: 8, lineHeight: 1.5, marginBottom: 12 }}>
+            Your current plan will expire on <strong>{new Date(expiringSoonLicense.expiresAt!).toLocaleDateString()}</strong>. 
+            To avoid any interruption in your service, please renew your plan now.
+          </p>
+          <Link 
+            href="/portal/billing" 
+            className="btn btn-primary"
+            style={{ textDecoration: "none", display: "inline-block" }}
+          >
+            Renew Now
+          </Link>
+        </div>
+      )}
       
-      {/* ✅ NEW: Agar valid license hai, to Actions Panel chupa dein */}
+      {/* ✅ UPDATED: Pass hasUsedTrial to LicenseActionsPanel */}
       {!hasValidLicense ? (
-        <LicenseActionsPanel allowPaidSelfServe={allowPaidSelfServe} />
+        <LicenseActionsPanel 
+          allowPaidSelfServe={allowPaidSelfServe} 
+          hasUsedTrial={hasUsedTrial} 
+        />
       ) : (
         <div className="card" style={{ marginBottom: 16, borderColor: "var(--gm-success, #28a745)" }}>
           <h3 style={{ marginBottom: 6, color: "var(--gm-success, #28a745)" }}>License Already Active</h3>
@@ -73,7 +117,7 @@ export default async function LicensesPage() {
           <thead>
             <tr>
               <th>License</th>
-              <th>MT5 Account</th> {/* ✅ NEW COLUMN */}
+              <th>MT5 Account</th>
               <th>Type</th>
               <th>Status</th>
               <th>Created</th>
@@ -86,7 +130,7 @@ export default async function LicensesPage() {
           <tbody>
             {licenses.length === 0 && (
               <tr>
-                <td colSpan={9}> {/* ✅ UPDATED colSpan (8 se 9) */}
+                <td colSpan={9}>
                   No licenses yet — {allowPaidSelfServe ? "generate one above" : "get your trial key above or checkout in Billing"}, then
                   paste the key into {product.installer.name}.
                 </td>
