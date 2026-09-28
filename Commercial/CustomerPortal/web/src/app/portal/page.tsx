@@ -24,19 +24,26 @@ export default async function DashboardPage() {
   const email = session?.user?.email?.toLowerCase() || "";
   const name = session?.user?.name || "Customer";
   
-  // ✅ Sirf listLicensesForCustomer async hai, isliye sirf usay await karenge
   const licenses = email ? await listLicensesForCustomer(email) : [];
-  
-  // ✅ Ye synchronous hain, isliye await nahi chahiye
   const devices = email ? listDevicesForCustomer(email) : [];
   const subs = email ? listSubscriptionsForCustomer(email) : [];
   
   const billing = email ? getBillingSummary(email) : { invoices: [], payments: [], subscriptions: [], emails: [] };
   const tickets = email ? listSupportTickets({ customerEmail: email }) : [];
   
-  const active = licenses.find((l) => l.status === "active" || l.status === "grace");
+  // ✅ UPDATED: Prioritize active, then grace, then pending, then any license
+  const primaryLicense = licenses.find((l) => l.status === "active") || 
+                         licenses.find((l) => l.status === "grace") || 
+                         licenses.find((l) => l.status === "pending") || 
+                         licenses[0];
+
   const activeDevices = devices.filter((d) => d.status === "active").length;
-  const sub = subs[0] || billing.subscriptions[0];
+  
+  // ✅ UPDATED: Better subscription fallback to catch trialing/pending
+  const primarySub = subs.find((s: any) => s.status === "active" || s.status === "trialing" || s.status === "pending") || 
+                     subs[0] || 
+                     billing.subscriptions[0];
+
   const openTickets = tickets.filter((t) => t.status === "open" || t.status === "pending").length;
 
   return (
@@ -60,24 +67,24 @@ export default async function DashboardPage() {
         <div className="card">
           <h3>Subscription</h3>
           <div className="value" style={{ fontSize: 18 }}>
-            <StatusBadge status={(sub as { status?: string })?.status || "None"} />
+            <StatusBadge status={(primarySub as { status?: string })?.status || "None"} />
           </div>
           <div className="meta">
-            {subs[0]
-              ? `${subs[0].plan} · exp ${subs[0].expirationDate?.slice(0, 10) || "—"}`
-              : billing.subscriptions[0]
-                ? `${billing.subscriptions[0].plan} (billing)`
-                : "No subscription — "}
-            {!subs[0] && !billing.subscriptions[0] && <Link href="/portal/billing">Billing</Link>}
+            {primarySub
+              ? `${(primarySub as any).plan} · exp ${(primarySub as any).expirationDate?.slice(0, 10) || "—"}`
+              : "No subscription — "}
+            {!primarySub && <Link href="/portal/billing">Billing</Link>}
           </div>
         </div>
         <div className="card">
           <h3>License</h3>
           <div className="value" style={{ fontSize: 18 }}>
-            <StatusBadge status={active?.status || "None"} />
+            <StatusBadge status={primaryLicense?.status || "None"} />
           </div>
           <div className="meta">
-            {active?.keyMasked || (
+            {primaryLicense?.keyMasked ? (
+              <Link href="/portal/licenses" style={{ textDecoration: "underline" }}>{primaryLicense.keyMasked}</Link>
+            ) : (
               <>
                 — <Link href="/portal/licenses">My Licenses</Link>
               </>
@@ -93,7 +100,7 @@ export default async function DashboardPage() {
         <div className="card">
           <h3>Devices</h3>
           <div className="value">
-            {activeDevices} / {active?.seatsMax ?? "—"}
+            {activeDevices} / {primaryLicense?.seatsMax ?? "—"}
           </div>
           <div className="meta">
             <Link href="/portal/devices">Manage devices</Link>
@@ -102,7 +109,7 @@ export default async function DashboardPage() {
         <div className="card">
           <h3>Last validated</h3>
           <div className="value" style={{ fontSize: 14 }}>
-            {active?.lastValidatedAt?.replace("T", " ").slice(0, 19) || "—"}
+            {primaryLicense?.lastValidatedAt?.replace("T", " ").slice(0, 19) || "Not yet validated"}
           </div>
         </div>
         <div className="card">
