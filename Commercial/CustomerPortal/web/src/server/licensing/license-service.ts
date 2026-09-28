@@ -104,7 +104,6 @@ async function findOldestTrialForEmailNorm(emailNorm: string): Promise<Partial<L
   return mapSupabaseLicense(data);
 }
 
-// ✅ FIXED: Proper TypeScript type instead of 'any' to satisfy ESLint
 type SupabaseLicenseRow = {
   id: string;
   customer_email: string;
@@ -128,11 +127,12 @@ type SupabaseLicenseRow = {
   integrity_mac: string | null;
 };
 
+// ✅ FIXED: Convert 'null' to 'undefined' to satisfy TypeScript strict checks
 function mapSupabaseLicense(row: SupabaseLicenseRow): Partial<LicenseRecord> {
   return {
     id: row.id,
     customerEmail: row.customer_email,
-    customerName: row.customer_name,
+    customerName: row.customer_name ?? undefined,
     keyHash: row.key_hash,
     keyPrefix: row.key_prefix,
     keyLast4: row.key_last4,
@@ -141,15 +141,15 @@ function mapSupabaseLicense(row: SupabaseLicenseRow): Partial<LicenseRecord> {
     edition: row.edition,
     seatsMax: row.seats_max,
     createdAt: row.created_at,
-    activatedAt: row.activated_at,
-    expiresAt: row.expires_at,
-    graceEndsAt: row.grace_ends_at,
-    lastValidatedAt: row.last_validated_at,
-    keyEnvelope: row.key_envelope,
-    emailNorm: row.email_norm,
-    issuedIpHash: row.issued_ip_hash,
-    mt5AccountNumber: row.mt5_account_number || null,
-    integrityMac: row.integrity_mac || "",
+    activatedAt: row.activated_at ?? undefined,
+    expiresAt: row.expires_at ?? undefined,
+    graceEndsAt: row.grace_ends_at ?? undefined,
+    lastValidatedAt: row.last_validated_at ?? undefined,
+    keyEnvelope: row.key_envelope ?? undefined,
+    emailNorm: row.email_norm ?? undefined,
+    issuedIpHash: row.issued_ip_hash ?? undefined,
+    mt5AccountNumber: row.mt5_account_number ?? undefined,
+    integrityMac: row.integrity_mac ?? "",
   };
 }
 
