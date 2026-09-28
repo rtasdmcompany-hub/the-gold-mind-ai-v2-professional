@@ -42,7 +42,7 @@ export function LicenseActionsPanel({ allowPaidSelfServe, hasUsedTrial = false }
             <p className="meta" style={{ lineHeight: 1.6, marginBottom: 20 }}>
               You already have an active paid plan. To prevent billing conflicts, you cannot purchase or generate a new plan until your current one expires. 
               <br /><br />
-              Please check your <Link href="/portal/licenses" style={{ textDecoration: "underline", color: "var(--gm-primary, #d4af37)" }}>My Licenses</Link> page for your current plan's expiry date, or contact support if you believe this is an error.
+              Please check your <Link href="/portal/licenses" style={{ textDecoration: "underline", color: "var(--gm-primary, #d4af37)" }}>My Licenses</Link> page for your current plan&apos;s expiry date, or contact support if you believe this is an error.
             </p>
             <button 
               className="btn btn-primary" 
