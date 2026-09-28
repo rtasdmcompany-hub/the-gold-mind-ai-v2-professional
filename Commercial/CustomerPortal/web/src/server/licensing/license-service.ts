@@ -40,11 +40,6 @@ export type ActivateResult =
   | { ok: true; license: LicensePublicDto; deviceId: string; token: string; mt5AccountChanged?: boolean }
   | { ok: false; error: string };
 
-function withoutMac(lic: Partial<LicenseRecord>): Omit<Partial<LicenseRecord>, "integrityMac"> {
-  const { integrityMac, ...rest } = lic;
-  return rest;
-}
-
 function renewalLabel(lic: Partial<LicenseRecord>): string {
   if (lic.type === "lifetime") return "Lifetime — no renewal";
   if (lic.status === "cancelled") return "Cancelled";
@@ -109,7 +104,31 @@ async function findOldestTrialForEmailNorm(emailNorm: string): Promise<Partial<L
   return mapSupabaseLicense(data);
 }
 
-function mapSupabaseLicense(row: any): Partial<LicenseRecord> {
+// ✅ FIXED: Proper TypeScript type instead of 'any' to satisfy ESLint
+type SupabaseLicenseRow = {
+  id: string;
+  customer_email: string;
+  customer_name: string | null;
+  key_hash: string;
+  key_prefix: string;
+  key_last4: string;
+  type: string;
+  status: string;
+  edition: string;
+  seats_max: number;
+  created_at: string;
+  activated_at: string | null;
+  expires_at: string | null;
+  grace_ends_at: string | null;
+  last_validated_at: string | null;
+  key_envelope: string | null;
+  email_norm: string | null;
+  issued_ip_hash: string | null;
+  mt5_account_number: string | null;
+  integrity_mac: string | null;
+};
+
+function mapSupabaseLicense(row: SupabaseLicenseRow): Partial<LicenseRecord> {
   return {
     id: row.id,
     customerEmail: row.customer_email,
@@ -117,8 +136,8 @@ function mapSupabaseLicense(row: any): Partial<LicenseRecord> {
     keyHash: row.key_hash,
     keyPrefix: row.key_prefix,
     keyLast4: row.key_last4,
-    type: row.type,
-    status: row.status,
+    type: row.type as LicenseType,
+    status: row.status as LicenseStatus,
     edition: row.edition,
     seatsMax: row.seats_max,
     createdAt: row.created_at,
@@ -349,7 +368,6 @@ export async function createLicense(input: {
     expires_at: expiresAt,
     grace_ends_at: null,
     last_validated_at: null,
-    // ✅ UPDATED: Save encrypted key for ALL license types
     key_envelope: sealSecret(plaintextKey), 
     email_norm: input.type === "trial" ? emailNorm : null,
     issued_ip_hash: input.type === "trial" ? ipHash || null : null,

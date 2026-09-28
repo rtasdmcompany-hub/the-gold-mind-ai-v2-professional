@@ -1,42 +1,53 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/server/licensing/session";
+import { auth } from "@/auth";
 import { createClient } from "@supabase/supabase-js";
 import { openSecret } from "./crypto";
-import { createLicense, activateLicense } from "./license-service";
+import { createLicense, activateLicense, renewLicense, cancelLicense } from "./license-service";
 import type { LicenseType } from "./types";
 
 export async function actionCreateLicense(type: LicenseType) {
-  const s = await requireSession();
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Unauthorized");
+  
   const result = await createLicense({
-    customerEmail: s.email,
-    customerName: s.name || s.email.split("@")[0],
+    customerEmail: session.user.email,
+    customerName: session.user.name || session.user.email.split("@")[0],
     type,
-    clientIp: "127.0.0.1", // Adjust if you have real IP logic
+    clientIp: "127.0.0.1", 
     bypassIpCheck: true,
   });
   return result;
 }
 
 export async function actionActivateLicense(formData: FormData) {
-  const s = await requireSession();
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Unauthorized");
+
   const key = String(formData.get("licenseKey") || "");
   const deviceName = String(formData.get("deviceName") || "Portal Workstation");
   const fingerprint = String(formData.get("deviceFingerprint") || "portal-browser-fingerprint");
+  const mt5AccountNumber = String(formData.get("mt5AccountNumber") || "");
 
   const result = await activateLicense({
     plaintextKey: key,
-    customerEmail: s.email,
+    customerEmail: session.user.email,
     deviceName,
     deviceFingerprint: fingerprint,
+    mt5AccountNumber: mt5AccountNumber || undefined,
   });
+  
+  if (result.ok) {
+    revalidatePath("/portal/licenses");
+    revalidatePath("/portal/billing");
+  }
   return result;
 }
 
-// ✅ NEW: Action to reveal the license key securely
 export async function actionRevealLicenseKey(licenseId: string) {
-  const s = await requireSession();
+  const session = await auth();
+  if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
   
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,7 +65,7 @@ export async function actionRevealLicenseKey(licenseId: string) {
     return { ok: false, error: "LICENSE_NOT_FOUND" };
   }
 
-  if (data.customer_email.toLowerCase() !== s.email.toLowerCase()) {
+  if (data.customer_email.toLowerCase() !== session.user.email.toLowerCase()) {
     return { ok: false, error: "UNAUTHORIZED" };
   }
 
@@ -68,4 +79,161 @@ export async function actionRevealLicenseKey(licenseId: string) {
   }
 
   return { ok: true, key: plaintextKey };
+}
+
+// --- Device Actions ---
+
+export async function actionRenameDevice(deviceId: string, newName: string) {
+  const session = await auth();
+  if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+
+  const { data: device } = await supabaseAdmin.from("devices").select("license_id").eq("id", deviceId).single();
+  if (!device) return { ok: false, error: "DEVICE_NOT_FOUND" };
+
+  const { data: license } = await supabaseAdmin.from("licenses").select("customer_email").eq("id", device.license_id).single();
+  if (license?.customer_email.toLowerCase() !== session.user.email.toLowerCase()) {
+    return { ok: false, error: "UNAUTHORIZED" };
+  }
+
+  const { error } = await supabaseAdmin.from("devices").update({ name: newName }).eq("id", deviceId);
+  if (error) return { ok: false, error: error.message };
+  
+  revalidatePath("/portal/licenses");
+  return { ok: true };
+}
+
+export async function actionDeactivateDevice(deviceId: string) {
+  const session = await auth();
+  if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+
+  const { data: device } = await supabaseAdmin.from("devices").select("license_id").eq("id", deviceId).single();
+  if (!device) return { ok: false, error: "DEVICE_NOT_FOUND" };
+
+  const { data: license } = await supabaseAdmin.from("licenses").select("customer_email").eq("id", device.license_id).single();
+  if (license?.customer_email.toLowerCase() !== session.user.email.toLowerCase()) {
+    return { ok: false, error: "UNAUTHORIZED" };
+  }
+
+  const { error } = await supabaseAdmin.from("devices").update({ status: "inactive" }).eq("id", deviceId);
+  if (error) return { ok: false, error: error.message };
+  
+  revalidatePath("/portal/licenses");
+  return { ok: true };
+}
+
+export async function actionTransferDevice(deviceId: string, targetLicenseId: string) {
+  const session = await auth();
+  if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+
+  const { data: device } = await supabaseAdmin.from("devices").select("license_id").eq("id", deviceId).single();
+  if (!device) return { ok: false, error: "DEVICE_NOT_FOUND" };
+
+  const { data: sourceLicense } = await supabaseAdmin.from("licenses").select("customer_email").eq("id", device.license_id).single();
+  if (sourceLicense?.customer_email.toLowerCase() !== session.user.email.toLowerCase()) {
+    return { ok: false, error: "UNAUTHORIZED" };
+  }
+
+  const { data: targetLicense } = await supabaseAdmin.from("licenses").select("customer_email").eq("id", targetLicenseId).single();
+  if (targetLicense?.customer_email.toLowerCase() !== session.user.email.toLowerCase()) {
+    return { ok: false, error: "TARGET_LICENSE_UNAUTHORIZED" };
+  }
+
+  const { error } = await supabaseAdmin.from("devices").update({ license_id: targetLicenseId, status: "pending_transfer" }).eq("id", deviceId);
+  if (error) return { ok: false, error: error.message };
+  
+  revalidatePath("/portal/licenses");
+  return { ok: true };
+}
+
+export async function actionCompleteDeviceTransfer(deviceId: string) {
+  const session = await auth();
+  if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+
+  const { data: device } = await supabaseAdmin.from("devices").select("license_id, status").eq("id", deviceId).single();
+  if (!device || device.status !== "pending_transfer") {
+    return { ok: false, error: "INVALID_TRANSFER_STATE" };
+  }
+
+  const { data: license } = await supabaseAdmin.from("licenses").select("customer_email").eq("id", device.license_id).single();
+  if (license?.customer_email.toLowerCase() !== session.user.email.toLowerCase()) {
+    return { ok: false, error: "UNAUTHORIZED" };
+  }
+
+  const { error } = await supabaseAdmin.from("devices").update({ status: "active" }).eq("id", deviceId);
+  if (error) return { ok: false, error: error.message };
+  
+  revalidatePath("/portal/licenses");
+  return { ok: true };
+}
+
+// --- Subscription Actions ---
+
+export async function actionRenewLicense(licenseId: string) {
+  const session = await auth();
+  if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+
+  const { data: license } = await supabaseAdmin.from("licenses").select("customer_email").eq("id", licenseId).single();
+  if (license?.customer_email.toLowerCase() !== session.user.email.toLowerCase()) {
+    return { ok: false, error: "UNAUTHORIZED" };
+  }
+
+  const success = await renewLicense(licenseId, session.user.email);
+  if (!success) return { ok: false, error: "RENEWAL_FAILED" };
+  
+  revalidatePath("/portal/licenses");
+  revalidatePath("/portal/billing");
+  return { ok: true };
+}
+
+export async function actionCancelSubscription(licenseId: string) {
+  const session = await auth();
+  if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+
+  const { data: license } = await supabaseAdmin.from("licenses").select("customer_email").eq("id", licenseId).single();
+  if (license?.customer_email.toLowerCase() !== session.user.email.toLowerCase()) {
+    return { ok: false, error: "UNAUTHORIZED" };
+  }
+
+  const success = await cancelLicense(licenseId, session.user.email);
+  if (!success) return { ok: false, error: "CANCELLATION_FAILED" };
+  
+  revalidatePath("/portal/licenses");
+  revalidatePath("/portal/billing");
+  return { ok: true };
 }
