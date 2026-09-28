@@ -81,11 +81,16 @@ export async function actionRevealLicenseKey(licenseId: string) {
   return { ok: true, key: plaintextKey };
 }
 
-// --- Device Actions ---
+// --- Device Actions (Updated to accept FormData) ---
 
-export async function actionRenameDevice(deviceId: string, newName: string) {
+export async function actionRenameDevice(formData: FormData) {
   const session = await auth();
   if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const deviceId = String(formData.get("deviceId") || "");
+  const newName = String(formData.get("newName") || "");
+
+  if (!deviceId || !newName) return { ok: false, error: "MISSING_FIELDS" };
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -108,9 +113,12 @@ export async function actionRenameDevice(deviceId: string, newName: string) {
   return { ok: true };
 }
 
-export async function actionDeactivateDevice(deviceId: string) {
+export async function actionDeactivateDevice(formData: FormData) {
   const session = await auth();
   if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const deviceId = String(formData.get("deviceId") || "");
+  if (!deviceId) return { ok: false, error: "MISSING_FIELDS" };
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -133,9 +141,14 @@ export async function actionDeactivateDevice(deviceId: string) {
   return { ok: true };
 }
 
-export async function actionTransferDevice(deviceId: string, targetLicenseId: string) {
+export async function actionTransferDevice(formData: FormData) {
   const session = await auth();
   if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const deviceId = String(formData.get("deviceId") || "");
+  const targetLicenseId = String(formData.get("targetLicenseId") || "");
+
+  if (!deviceId || !targetLicenseId) return { ok: false, error: "MISSING_FIELDS" };
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -163,9 +176,12 @@ export async function actionTransferDevice(deviceId: string, targetLicenseId: st
   return { ok: true };
 }
 
-export async function actionCompleteDeviceTransfer(deviceId: string) {
+export async function actionCompleteDeviceTransfer(formData: FormData) {
   const session = await auth();
   if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const deviceId = String(formData.get("deviceId") || "");
+  if (!deviceId) return { ok: false, error: "MISSING_FIELDS" };
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -190,11 +206,14 @@ export async function actionCompleteDeviceTransfer(deviceId: string) {
   return { ok: true };
 }
 
-// --- Subscription Actions ---
+// --- Subscription Actions (Updated to accept FormData) ---
 
-export async function actionRenewLicense(licenseId: string) {
+export async function actionRenewLicense(formData: FormData) {
   const session = await auth();
   if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const licenseId = String(formData.get("licenseId") || "");
+  if (!licenseId) return { ok: false, error: "MISSING_FIELDS" };
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -215,9 +234,12 @@ export async function actionRenewLicense(licenseId: string) {
   return { ok: true };
 }
 
-export async function actionCancelSubscription(licenseId: string) {
+export async function actionCancelSubscription(formData: FormData) {
   const session = await auth();
   if (!session?.user?.email) return { ok: false, error: "UNAUTHORIZED" };
+
+  const licenseId = String(formData.get("licenseId") || "");
+  if (!licenseId) return { ok: false, error: "MISSING_FIELDS" };
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
