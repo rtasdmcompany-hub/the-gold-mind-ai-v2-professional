@@ -22,9 +22,26 @@ export default async function BillingPage() {
   const lic = licenses.find((l) => l.status === "active" || l.status === "grace") || licenses[0];
   const durability = billingStoreDurability();
   
-  // ✅ CHANGE: Paddle ki jagah PayPal check karein
   const paypalConfigured = getProviderConfigStatus("paypal").configured;
   const sandboxAllowed = isSandboxCheckoutAllowed();
+
+  // ✅ NEW: Check trial and active plan status
+  const hasUsedTrial = licenses.some((l) => l.type === "trial");
+  
+  const now = new Date();
+  const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+  
+  const activePaidLicense = licenses.find((l) => 
+    (l.status === "active" || l.status === "pending" || l.status === "grace") && 
+    l.type !== "trial"
+  );
+
+  const expiringSoonLicense = licenses.find((l) => {
+    if (l.status !== "active" && l.status !== "grace") return false;
+    if (!l.expiresAt) return false;
+    const expDate = new Date(l.expiresAt);
+    return expDate > now && expDate <= threeDaysFromNow;
+  });
 
   return (
     <>
@@ -35,14 +52,47 @@ export default async function BillingPage() {
         </p>
       </header>
 
+      {/* ✅ NEW: 3-Day Renewal Reminder Banner */}
+      {expiringSoonLicense && (
+        <div 
+          className="card" 
+          style={{ 
+            marginBottom: 16, 
+            borderColor: "var(--gm-warning, #ffc107)", 
+            backgroundColor: "rgba(255, 193, 7, 0.1)" 
+          }}
+        >
+          <h3 style={{ marginBottom: 6, color: "var(--gm-warning, #d39e00)" }}>
+            ⚠️ Your {expiringSoonLicense.type} plan is expiring soon!
+          </h3>
+          <p className="meta" style={{ marginTop: 8, lineHeight: 1.5, marginBottom: 12 }}>
+            Your current plan will expire on <strong>{new Date(expiringSoonLicense.expiresAt!).toLocaleDateString()}</strong>. 
+            To avoid any interruption in your service, please renew your plan now.
+          </p>
+          <Link 
+            href="#checkout" 
+            className="btn btn-primary"
+            style={{ textDecoration: "none", display: "inline-block" }}
+          >
+            Renew Now
+          </Link>
+        </div>
+      )}
+
       {durability.warning && (
         <p className="meta" style={{ marginBottom: 12, color: "var(--gm-danger, #b91c1c)" }}>
           {durability.warning}
         </p>
       )}
 
-      {/* ✅ CHANGE: paypalConfigured pass kiya */}
-      <CheckoutPanel sandboxAllowed={sandboxAllowed} paypalConfigured={paypalConfigured} />
+      {/* ✅ UPDATED: Pass new props to CheckoutPanel */}
+      <CheckoutPanel 
+        sandboxAllowed={sandboxAllowed} 
+        paypalConfigured={paypalConfigured}
+        hasUsedTrial={hasUsedTrial}
+        hasActivePaidPlan={!!activePaidLicense}
+        activePlanExpiry={activePaidLicense?.expiresAt || null}
+      />
 
       <div className="grid grid-3" style={{ marginBottom: 16 }}>
         <div className="card">
