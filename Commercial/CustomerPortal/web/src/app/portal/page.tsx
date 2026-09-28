@@ -15,6 +15,13 @@ import Link from "next/link";
 import { brand } from "@/lib/brand";
 import { product } from "@/lib/product";
 
+// ✅ NEW: Proper type definition to avoid 'any'
+type DashboardSub = {
+  status?: string;
+  plan?: string;
+  expirationDate?: string;
+};
+
 export default async function DashboardPage() {
   await ensureSeedData();
   await ensureBillingStoreLoaded();
@@ -26,8 +33,9 @@ export default async function DashboardPage() {
   
   const licenses = email ? await listLicensesForCustomer(email) : [];
   const devices = email ? listDevicesForCustomer(email) : [];
-  const subs = email ? listSubscriptionsForCustomer(email) : [];
   
+  // ✅ SAFE TYPE CASTING: No 'any' used
+  const subs = email ? (listSubscriptionsForCustomer(email) as DashboardSub[]) : [];
   const billing = email ? getBillingSummary(email) : { invoices: [], payments: [], subscriptions: [], emails: [] };
   const tickets = email ? listSupportTickets({ customerEmail: email }) : [];
   
@@ -39,10 +47,9 @@ export default async function DashboardPage() {
 
   const activeDevices = devices.filter((d) => d.status === "active").length;
   
-  // ✅ UPDATED: Better subscription fallback to catch trialing/pending
-  const primarySub = subs.find((s: any) => s.status === "active" || s.status === "trialing" || s.status === "pending") || 
-                     subs[0] || 
-                     billing.subscriptions[0];
+  // ✅ UPDATED: Safe subscription fallback without 'any'
+  const allSubs = [...subs, ...(billing.subscriptions as DashboardSub[])];
+  const primarySub = allSubs.find((s) => s.status === "active" || s.status === "trialing" || s.status === "pending") || allSubs[0];
 
   const openTickets = tickets.filter((t) => t.status === "open" || t.status === "pending").length;
 
@@ -67,11 +74,11 @@ export default async function DashboardPage() {
         <div className="card">
           <h3>Subscription</h3>
           <div className="value" style={{ fontSize: 18 }}>
-            <StatusBadge status={(primarySub as { status?: string })?.status || "None"} />
+            <StatusBadge status={primarySub?.status || "None"} />
           </div>
           <div className="meta">
-            {primarySub
-              ? `${(primarySub as any).plan} · exp ${(primarySub as any).expirationDate?.slice(0, 10) || "—"}`
+            {primarySub?.plan
+              ? `${primarySub.plan} · exp ${primarySub.expirationDate?.slice(0, 10) || "—"}`
               : "No subscription — "}
             {!primarySub && <Link href="/portal/billing">Billing</Link>}
           </div>
