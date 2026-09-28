@@ -26,7 +26,6 @@ import {
 } from "@/server/accounts/license-emails";
 import { product, productDurationDays } from "@/lib/product";
 
-// ✅ Supabase Client
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -41,7 +40,6 @@ export type ActivateResult =
   | { ok: true; license: LicensePublicDto; deviceId: string; token: string; mt5AccountChanged?: boolean }
   | { ok: false; error: string };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function withoutMac(lic: Partial<LicenseRecord>): Omit<Partial<LicenseRecord>, "integrityMac"> {
   const { integrityMac, ...rest } = lic;
   return rest;
@@ -111,7 +109,6 @@ async function findOldestTrialForEmailNorm(emailNorm: string): Promise<Partial<L
   return mapSupabaseLicense(data);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapSupabaseLicense(row: any): Partial<LicenseRecord> {
   return {
     id: row.id,
@@ -227,7 +224,6 @@ export async function createLicense(input: {
   
   const mt5Acc = input.mt5AccountNumber?.trim() ? input.mt5AccountNumber.trim() : undefined;
 
-  // ✅ NEW RULE 1: ONE-TIME FREE TRIAL CHECK (Email + IP)
   if (input.type === "trial") {
     const { data: emailTrial } = await supabaseAdmin
       .from("trial_claims")
@@ -244,15 +240,10 @@ export async function createLicense(input: {
       .maybeSingle();
 
     if (emailTrial || ipTrial) {
-      return { 
-        ok: false, 
-        error: "TRIAL_ALREADY_USED", 
-        license: null 
-      };
+      return { ok: false, error: "TRIAL_ALREADY_USED", license: null };
     }
   }
 
-  // ✅ NEW RULE 2: PAID PLAN RESTRICTION (No double paid plans)
   if (input.type !== "trial") {
     const { data: activePaidLicenses } = await supabaseAdmin
       .from("licenses")
@@ -264,16 +255,12 @@ export async function createLicense(input: {
     if (activePaidLicenses && activePaidLicenses.length > 0) {
       const now = new Date();
       const activePlan = activePaidLicenses.find(lic => {
-        if (!lic.expires_at) return true; // Lifetime plan
-        return new Date(lic.expires_at) > now; // Not expired yet
+        if (!lic.expires_at) return true;
+        return new Date(lic.expires_at) > now;
       });
 
       if (activePlan) {
-        return { 
-          ok: false, 
-          error: "PAID_PLAN_ALREADY_ACTIVE", 
-          license: null 
-        };
+        return { ok: false, error: "PAID_PLAN_ALREADY_ACTIVE", license: null };
       }
     }
   }
@@ -362,7 +349,8 @@ export async function createLicense(input: {
     expires_at: expiresAt,
     grace_ends_at: null,
     last_validated_at: null,
-    key_envelope: input.type === "trial" ? sealSecret(plaintextKey) : null,
+    // ✅ UPDATED: Save encrypted key for ALL license types
+    key_envelope: sealSecret(plaintextKey), 
     email_norm: input.type === "trial" ? emailNorm : null,
     issued_ip_hash: input.type === "trial" ? ipHash || null : null,
     mt5_account_number: mt5Acc,

@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LicenseActionsPanel } from "@/components/LicenseActionsPanel";
 import { LicenseStoreBanner } from "@/components/LicenseStoreBanner";
+import { LicenseKeyCell } from "@/components/LicenseKeyCell"; // ✅ NEW IMPORT
 import { ensureSeedData } from "@/server/licensing/seed";
 import { listLicensesForCustomer } from "@/server/licensing/license-service";
 import { isSelfServePaidLicenseAllowed } from "@/server/billing/config";
@@ -25,21 +26,18 @@ export default async function LicensesPage() {
   
   const allowPaidSelfServe = isSelfServePaidLicenseAllowed();
 
-  // ✅ 1. Check if user has an active/pending/grace license
   const hasValidLicense = licenses.some(
     (lic) => lic.status === "active" || lic.status === "pending" || lic.status === "grace"
   );
 
-  // ✅ 2. Check if user has EVER used a trial (to hide trial button permanently)
   const hasUsedTrial = licenses.some((lic) => lic.type === "trial");
 
-  // ✅ 3. Check for 3-Day Renewal Reminder
   const now = new Date();
   const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   
   const expiringSoonLicense = licenses.find((lic) => {
     if (lic.status !== "active" && lic.status !== "grace") return false;
-    if (!lic.expiresAt) return false; // Lifetime doesn't expire
+    if (!lic.expiresAt) return false;
     const expDate = new Date(lic.expiresAt);
     return expDate > now && expDate <= threeDaysFromNow;
   });
@@ -68,7 +66,6 @@ export default async function LicensesPage() {
 
       <LicenseStoreBanner />
 
-      {/* ✅ NEW: 3-Day Renewal Reminder Banner */}
       {expiringSoonLicense && (
         <div 
           className="card" 
@@ -79,7 +76,7 @@ export default async function LicensesPage() {
           }}
         >
           <h3 style={{ marginBottom: 6, color: "var(--gm-warning, #d39e00)" }}>
-            ⚠️ Your {expiringSoonLicense.type} plan is expiring soon!
+            ️ Your {expiringSoonLicense.type} plan is expiring soon!
           </h3>
           <p className="meta" style={{ marginTop: 8, lineHeight: 1.5, marginBottom: 12 }}>
             Your current plan will expire on <strong>{new Date(expiringSoonLicense.expiresAt!).toLocaleDateString()}</strong>. 
@@ -95,7 +92,6 @@ export default async function LicensesPage() {
         </div>
       )}
       
-      {/* ✅ UPDATED: Pass hasUsedTrial to LicenseActionsPanel */}
       {!hasValidLicense ? (
         <LicenseActionsPanel 
           allowPaidSelfServe={allowPaidSelfServe} 
@@ -138,9 +134,10 @@ export default async function LicensesPage() {
             )}
             {licenses.map((lic) => (
               <tr key={lic.id}>
+                {/* ✅ UPDATED: LicenseKeyCell added here */}
                 <td>
-                  <div className="mono">{lic.keyMasked}</div>
-                  <div className="meta">{lic.id}</div>
+                  <LicenseKeyCell licenseId={lic.id} keyMasked={lic.keyMasked} />
+                  <div className="meta" style={{ marginTop: 4 }}>{lic.id}</div>
                 </td>
                 <td>
                   {lic.mt5AccountNumber ? (

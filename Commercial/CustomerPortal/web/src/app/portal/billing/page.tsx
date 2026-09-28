@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CheckoutPanel } from "@/components/CheckoutPanel";
+import { LicenseKeyCell } from "@/components/LicenseKeyCell"; // ✅ NEW IMPORT
 import { getBillingSummary, formatMoney, PLAN_CATALOG } from "@/server/billing/billing-service";
 import { ensureBillingStoreLoaded, billingStoreDurability } from "@/server/billing/store";
 import { getProviderConfigStatus, isSandboxCheckoutAllowed } from "@/server/billing/config";
@@ -25,7 +26,6 @@ export default async function BillingPage() {
   const paypalConfigured = getProviderConfigStatus("paypal").configured;
   const sandboxAllowed = isSandboxCheckoutAllowed();
 
-  // ✅ NEW: Check trial and active plan status
   const hasUsedTrial = licenses.some((l) => l.type === "trial");
   
   const now = new Date();
@@ -52,7 +52,6 @@ export default async function BillingPage() {
         </p>
       </header>
 
-      {/* ✅ NEW: 3-Day Renewal Reminder Banner */}
       {expiringSoonLicense && (
         <div 
           className="card" 
@@ -85,7 +84,6 @@ export default async function BillingPage() {
         </p>
       )}
 
-      {/* ✅ UPDATED: Pass new props to CheckoutPanel */}
       <CheckoutPanel 
         sandboxAllowed={sandboxAllowed} 
         paypalConfigured={paypalConfigured}
@@ -109,13 +107,21 @@ export default async function BillingPage() {
           <div className="meta">Renewal: {sub?.renewalDate?.slice(0, 10) || "—"}</div>
           <div className="meta">Next billing: {sub?.nextBillingDate?.slice(0, 10) || "—"}</div>
         </div>
+        {/* ✅ UPDATED: License Status Card with Key Cell */}
         <div className="card">
           <h3>License Status</h3>
-          <div className="value" style={{ fontSize: 16 }}>
+          <div className="value" style={{ fontSize: 16, marginBottom: 8 }}>
             {lic ? <StatusBadge status={lic.status} /> : "—"}
           </div>
-          <div className="meta">
-            <Link href="/portal/licenses">{lic?.keyMasked || "My Licenses"}</Link>
+          <div className="meta" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {lic ? (
+              <>
+                <LicenseKeyCell licenseId={lic.id} keyMasked={lic.keyMasked} />
+                <Link href="/portal/licenses" style={{ textDecoration: "underline", fontSize: 12 }}>View in My Licenses</Link>
+              </>
+            ) : (
+              <Link href="/portal/licenses" style={{ textDecoration: "underline" }}>My Licenses</Link>
+            )}
           </div>
         </div>
       </div>
